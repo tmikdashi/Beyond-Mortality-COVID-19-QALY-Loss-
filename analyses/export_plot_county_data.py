@@ -11,7 +11,7 @@ from definitions import ROOT_DIR
 county_cases_time_series = defaultdict(list)
 
 # Specifying the file path. NOTE: please use this file path: '/data/county_time_data_all_dates.csv'
-csv_file_path = ROOT_DIR + '/data/county_time_data_all_dates.csv'
+csv_file_path = ROOT_DIR + '/data/county_time_data_all_dates_small.csv'
 
 # Opening and reading the CSV file
 with open(csv_file_path, 'r', newline='') as csvfile:
