@@ -74,5 +74,5 @@ for county_qaly_loss in county_qaly_losses:
 state_qaly_loss_rows = [[state, qaly_loss] for state, qaly_loss in state_qaly_losses.items()]
 
 # Write into a CSV file
-write_csv(rows=state_qaly_loss_rows, file_name=ROOT_DIR + '/Analysis/state_qalys.csv')
+write_csv(rows=state_qaly_loss_rows, file_name=ROOT_DIR + '/analyses/state_qalys.csv')
 

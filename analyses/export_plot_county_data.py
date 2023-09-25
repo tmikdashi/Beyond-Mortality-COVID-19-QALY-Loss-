@@ -57,7 +57,7 @@ for county, time_series in county_cases_time_series.items():
     county_cases_rows.append([county, time_series[0][2]] + data)
 
 # Write into a CSV file using the write_csv function
-write_csv(rows=[header_row] + county_cases_rows, file_name=ROOT_DIR + '/analyses/county_cases_time_series.csv')
+write_csv(rows=[header_row] + county_cases_rows, file_name=ROOT_DIR + '/data/summary/county_cases.csv')
 
 
 # PART 2
@@ -90,7 +90,8 @@ for county in counties_to_plot:
             plt.text(dates[i], 0, dates[i], color='red', verticalalignment='bottom', horizontalalignment='center')
 
     # Save each plot with a unique filename, e.g., county_cases_countyname.png
-    filename = f'county_cases_{county}.png'
+    filename = os.path.join(ROOT_DIR + '/data/summary', f'county_cases_{county}.png')
+
     output_figure(plt, filename)
 
 # Show the plots (optional)
