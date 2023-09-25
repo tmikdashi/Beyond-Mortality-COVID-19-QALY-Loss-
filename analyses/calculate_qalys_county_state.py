@@ -9,9 +9,9 @@ from definitions import ROOT_DIR
 
 # Loading the data
 # When I use read_csv_rows, it appears to skip through the first 1715 counties. Any advice on why that could be?
-#rows = read_csv_rows(file_name=ROOT_DIR + '/Analysis/county_cases_time_series.csv',
-                   #if_ignore_first_row = False)
-cases_csv_file = ROOT_DIR + '/Analysis/county_cases_time_series.csv'
+#cases_csv_file = read_csv_rows(file_name=ROOT_DIR + '/analyses/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/analyses/county_cases_time_series.csv',
+                    #if_ignore_first_row = True)
+cases_csv_file = ROOT_DIR + '/analyses/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/analyses/county_cases_time_series.csv'
 
 # Create a dictionary to store the time series of cases for each county
 county_cumulative_cases = defaultdict(list)
