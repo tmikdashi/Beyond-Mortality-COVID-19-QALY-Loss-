@@ -29,11 +29,6 @@ for row in rows:
 # Create a list of unique dates across all counties
 unique_dates = sorted(set(date for time_series in county_cases_time_series.values() for date, _ in time_series))
 
-# Create a list of unique county and state combinations
-# TODO: I am not sure if you need this since keys of a dictionary must be unique anyway.
-#  So no need to find the unique keys.
-#  I commented this out but if you agree that this is not needed, please delete this line.
-# unique_county_state_combinations = sorted(set((county, state) for county, state in county_cases_time_series.keys()))
 
 # Create the header row with dates
 header_row = ['County', 'State'] + unique_dates
@@ -55,4 +50,4 @@ for key, time_series in county_cases_time_series.items():
     county_cases_rows.append([key[0], key[1]] + data)
 
 # Write into a CSV file using the write_csv function
-write_csv(rows=[header_row] + county_cases_rows, file_name=ROOT_DIR + '/data/summary/county_cases.csv')
+write_csv(rows=[header_row] + county_cases_rows, file_name= ROOT_DIR + '/data/summary/county_cases.csv')
