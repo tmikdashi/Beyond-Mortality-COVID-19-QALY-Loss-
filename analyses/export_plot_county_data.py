@@ -1,8 +1,8 @@
-import csv
-import os
 from collections import defaultdict
+
 import numpy as np
 from deampy.in_out_functions import write_csv, read_csv_rows
+
 from definitions import ROOT_DIR
 
 # Read the data
@@ -21,7 +21,7 @@ for row in rows:
     if state == 'NA':
         state = 'PR'
     # Replace missing values with 'NA'
-    cases = float(cases) if cases != '' else np.nan
+    cases = float(cases)*7 if cases != '' else np.nan
 
     # Append the data to the respective county's time series
     county_cases_time_series[(county, state)].append((date, cases))
@@ -30,7 +30,10 @@ for row in rows:
 unique_dates = sorted(set(date for time_series in county_cases_time_series.values() for date, _ in time_series))
 
 # Create a list of unique county and state combinations
-unique_county_state_combinations = sorted(set((county, state) for county, state in county_cases_time_series.keys()))
+# TODO: I am not sure if you need this since keys of a dictionary must be unique anyway.
+#  So no need to find the unique keys.
+#  I commented this out but if you agree that this is not needed, please delete this line.
+# unique_county_state_combinations = sorted(set((county, state) for county, state in county_cases_time_series.keys()))
 
 # Create the header row with dates
 header_row = ['County', 'State'] + unique_dates
@@ -38,8 +41,9 @@ header_row = ['County', 'State'] + unique_dates
 # Create a list of data rows for each county, ensuring length of all the rows is the same
 county_cases_rows = []
 
-for county, state in unique_county_state_combinations:
-    time_series = county_cases_time_series[(county, state)]
+# TODO: you can get both key and values of a dictionary using the items() method as below.
+#  It is faster than getting the keys and then getting the values.
+for key, time_series in county_cases_time_series.items():
     data = []
     for date in unique_dates:
         found = False
@@ -51,9 +55,7 @@ for county, state in unique_county_state_combinations:
         if not found:
             # If data is missing for a date, fill with np.nan
             data.append(np.nan)
-    county_cases_rows.append([county, state] + data)
+    county_cases_rows.append([key[0], key[1]] + data)
 
 # Write into a CSV file using the write_csv function
 write_csv(rows=[header_row] + county_cases_rows, file_name=ROOT_DIR + '/data/summary/county_cases.csv')
-
-
