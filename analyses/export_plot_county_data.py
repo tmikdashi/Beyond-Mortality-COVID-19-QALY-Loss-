@@ -40,9 +40,6 @@ header_row = ['County', 'State'] + unique_dates
 
 # Create a list of data rows for each county, ensuring length of all the rows is the same
 county_cases_rows = []
-
-# TODO: you can get both key and values of a dictionary using the items() method as below.
-#  It is faster than getting the keys and then getting the values.
 for key, time_series in county_cases_time_series.items():
     data = []
     for date in unique_dates:

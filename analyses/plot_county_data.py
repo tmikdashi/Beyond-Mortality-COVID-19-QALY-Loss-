@@ -1,51 +1,39 @@
-# TODO: please move the code to plot cases by county here.
-#  It should read the csv file county_cases.csv and plot the cases
-
-import csv
-import numpy as np
 import os
+
 import matplotlib.pyplot as plt
+import numpy as np
+from deampy.in_out_functions import read_csv_rows, write_csv
 from deampy.plots.plot_support import output_figure
+
 from definitions import ROOT_DIR
 
-# PART 1: Loading the data for plotting
+# Read the data
+data_rows = read_csv_rows(file_name=ROOT_DIR + '/data/summary/county_cases.csv',
+                          if_ignore_first_row=False)
 
-csv_file_path = ROOT_DIR + '/data/summary/county_cases.csv'
-
-# Create a dictionary to store the data from the CSV file
 county_cases_data = {}
+for row in data_rows[1:]:
+    county = row[0]
+    state = row[1]
+    cases = row[2:]
 
-# Open and read the CSV file
-with open(csv_file_path, 'r', newline='') as csvfile:
-    csvreader = csv.reader(csvfile)
-    header = next(csvreader)
+    # Convert cases to a list of floats, handling missing values
+    cases = [float(case) if case != 'NA' else np.nan for case in cases]
 
-    for row in csvreader:
-        county = row[0]
-        state = row[1]
-        cases = row[2:]
+    county_cases_data[(county, state)] = cases
 
-        # Convert cases to a list of floats, handling missing values
-        cases = [float(case) if case != 'NA' else np.nan for case in cases]
-
-        county_cases_data[(county, state)] = cases
-
-# PART 2: Finding counties and states with missing values and counting missing values
+# find counties and states with missing values and counting missing values
 counties_with_missing_values = {}
-
 for (county, state), cases in county_cases_data.items():
     num_missing_values = sum(np.isnan(cases))
     if num_missing_values > 0:
         counties_with_missing_values[(county, state)] = num_missing_values
 
-# This could be deleted eventually
-# Print the county and state names and the number of missing values
+# report counties with missing values
+rows = [['County', 'State', 'Number of Missing Values']]
 for (county, state), num_missing_values in counties_with_missing_values.items():
-    print(f"County: {county}, State: {state}, Missing Values: {num_missing_values}")
-
-# Display the count of how many counties there are
-print(f"Total Counties with Missing Values: {len(counties_with_missing_values)}")
-
+    rows.append([county, state, num_missing_values])
+write_csv(rows=rows, file_name=ROOT_DIR + '/data/summary/counties_with_missing_values.csv')
 
 
 # PART 3: PLOTTING the first 9 counties with missing data
@@ -55,7 +43,7 @@ counties_to_plot = list(counties_with_missing_values.keys())[:9]
 for (county, state) in counties_to_plot:
     # Extract the date and cases data for the county
     cases = county_cases_data[(county, state)]
-    dates = header[2:]
+    dates = data_rows[0][2:]
 
     # Creating a new figure and plot the data
     plt.figure(figsize=(12, 6))
@@ -78,4 +66,3 @@ for (county, state) in counties_to_plot:
     # Save each plot with a unique filename, e.g., county_cases_countyname.png
     filename = os.path.join(ROOT_DIR + '/data/summary', f'county_cases_{county}_{state}.png')
     output_figure(plt, filename)
-
