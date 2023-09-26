@@ -10,7 +10,7 @@ from definitions import ROOT_DIR
 
 # PART 1: Loading the data for plotting
 
-csv_file_path = ROOT_DIR + '/analyses/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/data/summary/county_cases.csv'
+csv_file_path = ROOT_DIR + '/data/summary/county_cases.csv'
 
 # Create a dictionary to store the data from the CSV file
 county_cases_data = {}
