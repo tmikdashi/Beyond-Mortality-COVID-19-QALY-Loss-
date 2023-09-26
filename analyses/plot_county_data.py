@@ -38,6 +38,15 @@ for (county, state), cases in county_cases_data.items():
     if num_missing_values > 0:
         counties_with_missing_values[(county, state)] = num_missing_values
 
+# This could be deleted eventually
+# Print the county and state names and the number of missing values
+for (county, state), num_missing_values in counties_with_missing_values.items():
+    print(f"County: {county}, State: {state}, Missing Values: {num_missing_values}")
+
+# Display the count of how many counties there are
+print(f"Total Counties with Missing Values: {len(counties_with_missing_values)}")
+
+
 
 # PART 3: PLOTTING the first 9 counties with missing data
 counties_to_plot = list(counties_with_missing_values.keys())[:9]
@@ -69,3 +78,4 @@ for (county, state) in counties_to_plot:
     # Save each plot with a unique filename, e.g., county_cases_countyname.png
     filename = os.path.join(ROOT_DIR + '/data/summary', f'county_cases_{county}_{state}.png')
     output_figure(plt, filename)
+
