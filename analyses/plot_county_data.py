@@ -2,25 +2,14 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from deampy.in_out_functions import read_csv_rows, write_csv
+from deampy.in_out_functions import write_csv
 from deampy.plots.plot_support import output_figure
 
 from definitions import ROOT_DIR
+from support.support_functions import get_dict_of_county_cases_and_dates
 
-# Read the data
-data_rows = read_csv_rows(file_name=ROOT_DIR + '/data/summary/county_cases.csv',
-                          if_ignore_first_row=False)
-
-county_cases_data = {}
-for row in data_rows[1:]:
-    county = row[0]
-    state = row[1]
-    cases = row[2:]
-
-    # Convert cases to a list of floats, handling missing values
-    cases = [float(case) if case != 'NA' else np.nan for case in cases]
-
-    county_cases_data[(county, state)] = cases
+# get the dictionary of county cases
+county_cases_data, dates = get_dict_of_county_cases_and_dates()
 
 # find counties and states with missing values and counting missing values
 counties_with_missing_values = {}
@@ -43,7 +32,6 @@ counties_to_plot = list(counties_with_missing_values.keys())[:9]
 for (county, state) in counties_to_plot:
     # Extract the date and cases data for the county
     cases = county_cases_data[(county, state)]
-    dates = data_rows[0][2:]
 
     # Creating a new figure and plot the data
     plt.figure(figsize=(12, 6))
@@ -64,5 +52,5 @@ for (county, state) in counties_to_plot:
     plt.legend()
 
     # Save each plot with a unique filename, e.g., county_cases_countyname.png
-    filename = os.path.join(ROOT_DIR + '/data/summary', f'county_cases_{county}_{state}.png')
+    filename = os.path.join(ROOT_DIR + '/figs/cases', f'county_cases_{county}_{state}.png')
     output_figure(plt, filename)

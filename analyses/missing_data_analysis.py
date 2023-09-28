@@ -1,25 +1,13 @@
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-from deampy.in_out_functions import read_csv_rows
 from itertools import cycle
-from definitions import ROOT_DIR
 
-# Read the data: you need to run export_county_data to generate this csv file
-data_rows = read_csv_rows(
-    file_name=ROOT_DIR + '/data/summary/county_cases.csv',
-    if_ignore_first_row=False)
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
-county_cases_data = {}
-for row in data_rows[1:]:
-    county = row[0]
-    state = row[1]
-    cases = row[2:]
+from support.support_functions import get_dict_of_county_cases_and_dates
 
-    # Convert cases to a list of floats, handling missing values
-    cases = [float(case) if case != 'NA' else np.nan for case in cases]
-
-    county_cases_data[(county, state)] = cases
+# get the dictionary of county cases
+county_cases_data, dates = get_dict_of_county_cases_and_dates()
 
 # To be able to group by date and state, create a df to manipulate the data
 df = pd.DataFrame(county_cases_data)
@@ -58,7 +46,8 @@ ax.legend(title='State', bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.xticks(rotation=45)
 
 # Adjust subplot parameters to make room for state labels
-plt.subplots_adjust(bottom=0.25)
+# plt.subplots_adjust(bottom=0.25)
+plt.tight_layout()
 
 # Show or save the plot
 plt.show()

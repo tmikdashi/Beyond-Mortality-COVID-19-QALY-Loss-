@@ -29,7 +29,6 @@ for row in rows:
 # Create a list of unique dates across all counties
 unique_dates = sorted(set(date for time_series in county_cases_time_series.values() for date, _ in time_series))
 
-
 # Create the header row with dates
 header_row = ['County', 'State'] + unique_dates
 
