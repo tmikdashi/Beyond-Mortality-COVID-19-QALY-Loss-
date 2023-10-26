@@ -1,127 +1,85 @@
 from classes.model import AllStates
-from data_preprocessing.support_functions import generate_county_data_csv
+from data_preprocessing.support_functions import generate_county_data_csv, get_dict_of_county_data_by_type
 from definitions import ROOT_DIR
 
-##################
-# HOSPITALIZATIONS
-##################
+
 # Create the model and populate it with data from the provided csv files
+generate_county_data_csv('cases')
+generate_county_data_csv('deaths')
 generate_county_data_csv('hospitalizations')
 
-#all_states = AllStates(county_data_csvfile=ROOT_DIR + '/csv_files/county_hospitalizations.csv')
-all_states = AllStates(county_data_csvfile=ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv')
-all_states.populate('hospitalizations')
-
-
-# TESTING:
-# To get the overall QALY loss across states and time
-all_states_overall_qaly_loss_hosp = all_states.get_overall_qaly_loss(case_weight=0.15)
-print(f"Overall QALY Loss for all states from hospitalizations: {all_states_overall_qaly_loss_hosp}")
-
-# To get the weekly QALY loss across states:
-all_states_weekly_qaly_loss_hosp = all_states.get_weekly_qaly_loss(case_weight=0.15)
-print(f"Weekly QALY Loss for all states: {all_states_weekly_qaly_loss_hosp}")
-
-# To get the total QALY loss for by state:
-overall_qaly_loss_by_state_hosp = all_states.get_overall_qaly_loss_by_state(case_weight=0.15)
-for state_name, weekly_qaly_loss_hosp in overall_qaly_loss_by_state_hosp.items():
-    print(f"Overall QALY Loss for {state_name}: {weekly_qaly_loss_hosp}")
-
-# To get the weeklyQALY loss for by state -- REMOVE # TO PRINT
-weekly_qaly_loss_by_state_hosp = all_states.get_weekly_qaly_loss_by_state(case_weight=0.15)
-#for state_name, weekly_qaly_loss in weekly_qaly_loss_by_state.items():
-    #print(f"Weekly QALY Loss for {state_name}: {weekly_qaly_loss}")
-
-
-# TESTING: Pulling Specific Data
-# To get the overall QALY loss for one county
-overall_qaly_loss_for_county_hosp=all_states.get_overall_qaly_loss_for_a_county(county_name="Autauga", state_name="AL",case_weight=0.15)
-print(f"Overall QALY Loss for Autauga, AL : {overall_qaly_loss_for_county_hosp}")
-
-# To get the weekly QALY loss for one county
-weekly_qaly_loss_for_county_hosp = all_states.get_weekly_qaly_loss_for_a_county(county_name="Autauga", state_name="AL", case_weight=0.15)
-print(f"Weekly QALY Loss for Autauga, AL: {weekly_qaly_loss_for_county_hosp}")
-
-# To get the overall QALY loss for one state
-overall_qaly_loss_for_state_hosp = all_states.get_overall_qaly_loss_for_a_state(state_name="AL", case_weight=0.15)
-print(f"Overall QALY Loss for AL: {overall_qaly_loss_for_state_hosp}")
-
-# To get the weekly QALY loss for one state
-weekly_qaly_loss_for_state_hosp = all_states.get_weekly_qaly_loss_for_a_state(state_name="AL", case_weight=0.15)
-print(f"Weekly QALY Loss for AL: {weekly_qaly_loss_for_state_hosp}")
-
-
-# TESTING PLOTS
-# To plot weeklyQALY Loss by state
-all_states.plot_weekly_qaly_loss_by_state(data_type ='hospitalizations',case_weight=0.15)
-
-# To plot national weeklyQALY Loss
-all_states.plot_weekly_qaly_loss(data_type ='hospitalizations',case_weight=0.15)
-
-# To map weeklyQALY Loss per county
-all_states.plot_map_of_qaly_loss_by_county(case_weight=0.15)
-
-
-
-##################
-# DEATHS
-##################
-
-# Create the model and populate it with data from the provided csv files
-generate_county_data_csv('deaths')
-
+#all_states = AllStates(county_cases_csvfile=ROOT_DIR + '/csv_files/county_cases.csv')
 #all_states = AllStates(county_data_csvfile=ROOT_DIR + '/csv_files/county_deaths.csv')
-all_states = AllStates(county_data_csvfile=ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_deaths.csv')
+all_states_cases = AllStates(county_data_csvfile=ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv')
+all_states_deaths = AllStates(county_data_csvfile=ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_deaths.csv')
+all_states_hospitalizations = AllStates(county_data_csvfile=ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv')
 
-all_states.populate('deaths')
-
-
-# TESTING:
-# To get the overall QALY loss across states and time
-all_states_overall_qaly_loss_deaths = all_states.get_overall_qaly_loss(data_type='deaths', case_weight=0.15)
-print(f"Overall QALY Loss for all states from deaths: {all_states_overall_qaly_loss_deaths}")
-
-# To get the weekly QALY loss across states:
-all_states_weekly_qaly_loss_deaths = all_states.get_weekly_qaly_loss(data_type='deaths',case_weight=0.15)
-print(f"Weekly QALY Loss for all states: {all_states_weekly_qaly_loss_deaths}")
-
-# To get the total QALY loss for by state:
-overall_qaly_loss_by_state_deaths = all_states.get_overall_qaly_loss_by_state(data_type='deaths',case_weight=0.15)
-for state_name, weekly_qaly_loss_deaths in overall_qaly_loss_by_state_deaths.items():
-    print(f"Overall QALY Loss for {state_name}: {weekly_qaly_loss_deaths}")
-
-# To get the weeklyQALY loss for by state -- REMOVE # TO PRINT
-weekly_qaly_loss_by_state_deaths = all_states.get_weekly_qaly_loss_by_state(data_type='deaths',case_weight=0.15)
-#for state_name, weekly_qaly_loss in weekly_qaly_loss_by_state.items():
-    #print(f"Weekly QALY Loss for {state_name}: {weekly_qaly_loss}")
+all_states_cases.populate('cases')
+all_states_deaths.populate('deaths')
+all_states_hospitalizations.populate('hospitalizations')
 
 
-# TESTING: Pulling Specific Data
-# To get the overall QALY loss for one county
-overall_qaly_loss_for_county_deaths=all_states.get_overall_qaly_loss_for_a_county(county_name="Autauga", state_name="AL",case_weight=0.15)
-print(f"Overall QALY Loss for Autauga, AL : {overall_qaly_loss_for_county_deaths}")
 
-# To get the weekly QALY loss for one county
-weekly_qaly_loss_for_county_deaths = all_states.get_weekly_qaly_loss_for_a_county(county_name="Autauga", state_name="AL", case_weight=0.15)
-print(f"Weekly QALY Loss for Autauga, AL: {weekly_qaly_loss_for_county_deaths}")
+total_overall_qaly_loss = all_states_cases.get_overall_qaly_loss(case_weight=0.1) + all_states_hospitalizations.get_overall_qaly_loss(case_weight=0.15) + all_states_deaths.get_overall_qaly_loss(case_weight=0.2)
+print(f"Total QALY Loss for all states from cases, hospitalizations and deaths: {total_overall_qaly_loss}")
 
-# To get the overall QALY loss for one state
-overall_qaly_loss_for_state_deaths = all_states.get_overall_qaly_loss_for_a_state(state_name="AL", case_weight=0.15)
-print(f"Overall QALY Loss for AL: {overall_qaly_loss_for_state_deaths}")
-
-# To get the weekly QALY loss for one state
-weekly_qaly_loss_for_state_deaths = all_states.get_weekly_qaly_loss_for_a_state(state_name="AL", case_weight=0.15)
-print(f"Weekly QALY Loss for AL: {weekly_qaly_loss_for_state_deaths}")
+total_weekly_qaly_loss = all_states_cases.get_weekly_qaly_loss(case_weight=0.1) + all_states_hospitalizations.get_weekly_qaly_loss(case_weight=0.15) + all_states_deaths.get_weekly_qaly_loss(case_weight=0.2)
+print(f"Total weekly QALY Loss for all states from cases, hospitalizations and deaths: {total_weekly_qaly_loss}")
 
 
-# TESTING PLOTS
-# To plot weeklyQALY Loss by state
-all_states.plot_weekly_qaly_loss_by_state(data_type ='deaths',case_weight=0.15)
+total_overall_qaly_loss_by_state_cases = all_states_cases.get_overall_qaly_loss_by_state(case_weight=0.1)
+total_overall_qaly_loss_by_state_hospitalizations = all_states_hospitalizations.get_overall_qaly_loss_by_state(case_weight=0.15)
+total_overall_qaly_loss_by_state_deaths = all_states_deaths.get_overall_qaly_loss_by_state(case_weight=0.2)
+total_overall_qaly_loss_by_state = {}
+for state_name in total_overall_qaly_loss_by_state_cases:
+    total_overall_qaly_loss_by_state[state_name] = (
+        total_overall_qaly_loss_by_state_cases[state_name] +
+        total_overall_qaly_loss_by_state_hospitalizations[state_name] +
+        total_overall_qaly_loss_by_state_deaths[state_name]
+    )
 
-# To plot national weeklyQALY Loss
-all_states.plot_weekly_qaly_loss(data_type ='deaths',case_weight=0.15)
-
-# To map weeklyQALY Loss per county
-all_states.plot_map_of_qaly_loss_by_county(case_weight=0.15)
+for state_name, weekly_qaly_loss in total_overall_qaly_loss_by_state.items():
+    print(f"Total QALY Loss for {state_name}: {weekly_qaly_loss}")
 
 
+
+## PLOTTING WEEKLY QALY LOSS BY TYPE
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Define the case weight, hospitalizations weight, and deaths weight
+case_weight = 0.1
+hospitalizations_weight = 0.15
+deaths_weight = 0.2
+
+# Calculate the weekly total QALY loss for each data type
+total_weekly_cases = all_states_cases.get_weekly_qaly_loss(case_weight)
+total_weekly_hospitalizations = all_states_hospitalizations.get_weekly_qaly_loss(hospitalizations_weight)
+total_weekly_deaths = all_states_deaths.get_weekly_qaly_loss(deaths_weight)
+
+# Get the dates from your data
+county_data, dates = get_dict_of_county_data_by_type('cases')
+
+# Determine the maximum length among the data
+max_length = max(len(total_weekly_cases), len(total_weekly_hospitalizations), len(total_weekly_deaths))
+
+# Pad the arrays with zeros to match the maximum length
+total_weekly_cases = np.pad(total_weekly_cases, (0, max_length - len(total_weekly_cases)))
+total_weekly_hospitalizations = np.pad(total_weekly_hospitalizations, (0, max_length - len(total_weekly_hospitalizations)))
+total_weekly_deaths = np.pad(total_weekly_deaths, (0, max_length - len(total_weekly_deaths)))
+
+# Create a line plot with dates on the x-axis
+plt.figure(figsize=(12, 6))
+x = dates[:max_length]  # Take the first 'max_length' dates
+plt.plot(x, total_weekly_cases, label="Cases")
+plt.plot(x, total_weekly_hospitalizations, label="Hospitalizations")
+plt.plot(x, total_weekly_deaths, label="Deaths")
+
+plt.xlabel("Date")
+plt.ylabel("QALY Loss")
+plt.title("Weekly QALY Loss by Data Type")
+plt.legend()
+plt.xticks(rotation=90)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
