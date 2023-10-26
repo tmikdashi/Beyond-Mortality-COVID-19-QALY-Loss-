@@ -4,7 +4,7 @@ from deampy.in_out_functions import read_csv_rows
 from definitions import ROOT_DIR
 
 
-def get_dict_of_county_cases_and_dates():
+def get_dict_of_county_cases_and_dates(data_type):
     """
     This function reads the county_cases.csv file and returns a dictionary of county cases and dates.
     :return: (dictionary, list) a dictionary with (county, state) as keys and a list of cases as values,
