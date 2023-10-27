@@ -5,7 +5,7 @@ from definitions import ROOT_DIR
 # Create the model and populate it with data from the provided csv files
 generate_county_data_csv('cases')
 all_states = AllStates(county_cases_csvfile=ROOT_DIR + '/csv_files/county_cases.csv')
-all_states.populate()
+all_states.populate('cases')
 
 
 # TESTING:
