@@ -4,10 +4,9 @@ import mapclassify as mc
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from deampy.plots.plot_support import output_figure
 
-from data_preprocessing.support_functions import get_dict_of_county_data_by_type,generate_county_data_csv
+from data_preprocessing.support_functions import get_dict_of_county_data_by_type
 from definitions import ROOT_DIR
 
 
@@ -35,6 +34,9 @@ class County:
 
         :param weekly_cases: Weekly cases data as a numpy array.
         """
+        # TODO: you could modify this function to also get weekly deaths and hospitalizations as arguments
+        #  and then update self.totalHospitalizations and self.totalDeaths accordingly.
+
         if not isinstance(weekly_cases, np.ndarray):
             weekly_cases = np.array(weekly_cases)
 
@@ -48,6 +50,10 @@ class County:
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
         :return: Weekly QALY loss as a numpy array.
         """
+        # TODO: you could modify this function to also get hosp_weight and death_weight as arguments and then
+        #  update the formula below accordingly. Remember that death_weight is a little complicated
+        #  since that dependents on the age of the person who died. For now, just use some made up numbers
+        #  (say 20) and we will sort this out.
         return case_weight * self.weeklyCases
 
     def get_overall_qaly_loss(self, case_weight):
@@ -57,6 +63,8 @@ class County:
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
         :return: Overall QALY loss for the County.
          """
+        # TODO: the same comment as above.
+
         return case_weight * self.totalCases
 
 
@@ -82,8 +90,9 @@ class State:
         """
         self.counties[county.name] = county
         self.population += county.population
+        # TODO: like this, you could also define self.totalHospitalizations and self.totalDeaths and update them here
         self.totalCases += county.totalCases
-
+        # TODO: like this, you could also define self.weeklyHospitalizations and self.weeklyDeaths and update them here
         self.weeklyCases = np.add(self.weeklyCases, county.weeklyCases)  # Aggregate the weekly cases
 
     def get_overall_qaly_loss(self, case_weight):
@@ -93,6 +102,8 @@ class State:
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
         :return: Overall QALY loss for the State.
         """
+        # TODO: you could modify this function to also get hosp_weight and death_weight as arguments and then
+        #  update the formula below accordingly.
         return case_weight * self.totalCases
 
     def get_weekly_qaly_loss(self, case_weight):
@@ -102,6 +113,7 @@ class State:
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
         :return: Weekly QALY loss as a numpy array for the State.
         """
+        # TODO: same as above
         return np.array(case_weight * self.weeklyCases)
 
 
@@ -122,6 +134,9 @@ class AllStates:
         """
         Populates the AllStates object with county case data.
         """
+
+        # TODO: if you made above changes, then we probably don't need data_type here as an argument
+        #  and you could read the data on cases, hospitalizations, and deaths all here...
 
         county_data, dates = get_dict_of_county_data_by_type(data_type)
 
