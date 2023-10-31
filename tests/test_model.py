@@ -4,45 +4,60 @@ from definitions import ROOT_DIR
 
 # Create the model and populate it with data from the provided csv files
 generate_county_data_csv('cases')
-all_states = AllStates(county_data_csvfile=ROOT_DIR + '/csv_files/county_cases.csv')
-all_states.populate('cases')
+generate_county_data_csv('deaths')
+generate_county_data_csv('hospitalizations')
+
+#all_states = AllStates(
+#    county_case_csvfile=ROOT_DIR + '/csv_files/county_cases.csv',
+#    county_death_csvfile=ROOT_DIR + '/csv_files/county_deaths.csv',
+#    county_hosp_csvfile=ROOT_DIR + '/csv_files/county_hospitalizations.csv'
+#)
+all_states = AllStates(
+    county_case_csvfile=ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv',
+    county_death_csvfile=ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_deaths.csv',
+    county_hosp_csvfile=ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv')
+all_states.populate()
 
 
 # TESTING:
 # To get the overall QALY loss across states and time
-all_states_overall_qaly_loss = all_states.get_overall_qaly_loss(case_weight=0.1)
+all_states_overall_qaly_loss = all_states.get_overall_qaly_loss(case_weight=0.1, death_weight=0.2, hosp_weight=0.3)
 print(f"Overall QALY Loss for all states: {all_states_overall_qaly_loss}")
 
 # To get the weekly QALY loss across states:
-all_states_weekly_qaly_loss = all_states.get_weekly_qaly_loss(case_weight=0.1)
+all_states_weekly_qaly_loss = all_states.get_weekly_qaly_loss(case_weight=0.1, death_weight=0.2, hosp_weight=0.3)
 print(f"Weekly QALY Loss for all states: {all_states_weekly_qaly_loss}")
 
 # To get the total QALY loss for by state:
-overall_qaly_loss_by_state = all_states.get_overall_qaly_loss_by_state(case_weight=0.1)
+overall_qaly_loss_by_state = all_states.get_overall_qaly_loss_by_state(case_weight=0.1, death_weight=0.2, hosp_weight=0.3)
 for state_name, weekly_qaly_loss in overall_qaly_loss_by_state.items():
     print(f"Overall QALY Loss for {state_name}: {weekly_qaly_loss}")
 
 # To get the weeklyQALY loss for by state -- REMOVE # TO PRINT
-weekly_qaly_loss_by_state = all_states.get_weekly_qaly_loss_by_state(case_weight=0.1)
+weekly_qaly_loss_by_state = all_states.get_weekly_qaly_loss_by_state(case_weight=0.1, death_weight=0.2, hosp_weight=0.3)
 #for state_name, weekly_qaly_loss in weekly_qaly_loss_by_state.items():
     #print(f"Weekly QALY Loss for {state_name}: {weekly_qaly_loss}")
 
 
 # TESTING: Pulling Specific Data
 # To get the overall QALY loss for one county
-overall_qaly_loss_for_county=all_states.get_overall_qaly_loss_for_a_county(county_name="Autauga", state_name="AL",case_weight=0.1)
-print(f"Overall QALY Loss for Autauga, AL : {overall_qaly_loss_for_county}")
+overall_qaly_loss_for_county = all_states.get_overall_qaly_loss_for_a_county(
+    county_name="Autauga", state_name="AL", case_weight=0.1, death_weight=0.2, hosp_weight=0.3)
+print(f"Overall QALY Loss for Autauga, AL: {overall_qaly_loss_for_county}")
 
 # To get the weekly QALY loss for one county
-weekly_qaly_loss_for_county = all_states.get_weekly_qaly_loss_for_a_county(county_name="Autauga", state_name="AL", case_weight=0.1)
+weekly_qaly_loss_for_county = all_states.get_weekly_qaly_loss_for_a_county(
+    county_name="Autauga", state_name="AL", case_weight=0.1, death_weight=0.2, hosp_weight=0.3)
 print(f"Weekly QALY Loss for Autauga, AL: {weekly_qaly_loss_for_county}")
 
 # To get the overall QALY loss for one state
-overall_qaly_loss_for_state = all_states.get_overall_qaly_loss_for_a_state(state_name="AL", case_weight=0.1)
+overall_qaly_loss_for_state = all_states.get_overall_qaly_loss_for_a_state(
+    state_name="AL", case_weight=0.1, death_weight=0.2, hosp_weight=0.3)
 print(f"Overall QALY Loss for AL: {overall_qaly_loss_for_state}")
 
 # To get the weekly QALY loss for one state
-weekly_qaly_loss_for_state = all_states.get_weekly_qaly_loss_for_a_state(state_name="AL", case_weight=0.1)
+weekly_qaly_loss_for_state = all_states.get_weekly_qaly_loss_for_a_state(
+    state_name="AL", case_weight=0.1, death_weight=0.2, hosp_weight=0.3)
 print(f"Weekly QALY Loss for AL: {weekly_qaly_loss_for_state}")
 
 

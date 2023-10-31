@@ -184,7 +184,7 @@ class AllStates:
 
         county_case_data, dates = get_dict_of_county_data_by_type('cases')
         county_death_data, dates = get_dict_of_county_data_by_type('deaths')
-        county_hosp_data, dates = get_dict_of_county_data_by_type('hospitalization')
+        county_hosp_data, dates = get_dict_of_county_data_by_type('hospitalizations')
 
         self.numWeeks = len(dates)
 
@@ -284,35 +284,53 @@ class AllStates:
 
     def get_weekly_qaly_loss_for_a_county(self, county_name, state_name, case_weight,death_weight, hosp_weight):
         """
-        For a given county, returns the weekly QALY loss, across timepoints.
+        For a given county, returns the weekly QALY loss, including cases, deaths, and hospitalizations, across timepoints.
         The county is identified by both its county name and state.
 
         :param county_name: Name of the county.
         :param state_name: Name of the state.
         :param case_weight: Coefficient applied to each case in calculating QALY loss.
+        :param death_weight: Coefficient applied to each death in calculating QALY loss.
+        :param hosp_weight: Coefficient applied to each hospitalization in calculating QALY loss.
         :return: Weekly QALY loss for the specified county as a timeseries.
         """
-        return case_weight * self.states[state_name].counties[county_name].weeklyCases
+        county = self.states[state_name].counties[county_name]
+        weekly_case_qaly_loss = case_weight * county.weeklyCases
+        weekly_death_qaly_loss = death_weight * county.weeklyDeaths
+        weekly_hosp_qaly_loss = hosp_weight * county.weeklyHosp
+        return np.array(weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss)
 
-    def get_overall_qaly_loss_for_a_state(self, state_name, case_weight,):
+    def get_overall_qaly_loss_for_a_state(self, state_name, case_weight,death_weight, hosp_weight):
         """
-        Get the overall QALY loss for a specific state.
+        Get the overall QALY loss for a specific state, including cases, deaths, and hospitalizations.
 
         :param state_name: Name of the state.
         :param case_weight: Coefficient applied to each case in calculating QALY loss.
+        :param death_weight: Coefficient applied to each death in calculating QALY loss.
+        :param hosp_weight: Coefficient applied to each hospitalization in calculating QALY loss.
         :return: Overall QALY loss for the specified state.
         """
-        return self.states[state_name].get_overall_qaly_loss(case_weight)
+        state = self.states[state_name]
+        overall_case_qaly_loss = case_weight * state.totalCases
+        overall_death_qaly_loss = death_weight * state.totalDeaths
+        overall_hosp_qaly_loss = hosp_weight * state.totalHosp
+        return overall_case_qaly_loss + overall_death_qaly_loss + overall_hosp_qaly_loss
 
-    def get_weekly_qaly_loss_for_a_state(self, state_name, case_weight):
+    def get_weekly_qaly_loss_for_a_state(self, state_name, case_weight, death_weight, hosp_weight):
         """
-        Get the weekly QALY loss for a specific state, as a timeseries.
+        Get the weekly QALY loss for a specific state, including cases, deaths, and hospitalizations, as a timeseries.
 
         :param state_name: Name of the state.
         :param case_weight: Coefficient applied to each case in calculating QALY loss.
-        :return: Weekly QALY loss for the specified state as a timeseries
+        :param death_weight: Coefficient applied to each death in calculating QALY loss.
+        :param hosp_weight: Coefficient applied to each hospitalization in calculating QALY loss.
+        :return: Weekly QALY loss for the specified state as a timeseries.
         """
-        return self.states[state_name].get_weekly_qaly_loss(case_weight)
+        state = self.states[state_name]
+        weekly_case_qaly_loss = case_weight * state.weeklyCases
+        weekly_death_qaly_loss = death_weight * state.weeklyDeaths
+        weekly_hosp_qaly_loss = hosp_weight * state.weeklyHosp
+        return np.array(weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss)
 
     def plot_weekly_qaly_loss_by_state(self, case_weight):
         """
@@ -386,11 +404,13 @@ class AllStates:
 
         output_figure(fig, filename=ROOT_DIR + '/figs/national_qaly_loss.png')
 
-    def plot_map_of_qaly_loss_by_county(self, case_weight):
+    def plot_map_of_qaly_loss_by_county(self, case_weight, death_weight, hosp_weight):
         """
-        Plots a map of the QALY loss per 100,000 population for each county
+        Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
 
         :param case_weight: Coefficient applied to each case in calculating QALY loss.
+        :param death_weight: Coefficient applied to each death in calculating QALY loss.
+        :param hosp_weight: Coefficient applied to each hospitalization in calculating QALY loss.
         :return: A map of the QALY loss per 100,000 population for each county
         """
 
@@ -404,10 +424,13 @@ class AllStates:
         # Iterate over counties within states in the AllStates object
         for state in self.states.values():
             for county in state.counties.values():
+                # Calculate the QALY loss per 100,000 population
+                qaly_loss = (
+                            case_weight * county.totalCases + death_weight * county.totalDeaths + hosp_weight * county.totalHosp)
+                qaly_loss_per_100k = (qaly_loss / county.population) * 100000
                 # Append county data to the list
                 county_qaly_loss_data["COUNTY"].append(county.name)
                 county_qaly_loss_data["FIPS"].append(county.fips)
-                qaly_loss_per_100k = (county.get_overall_qaly_loss(case_weight) / county.population) * 100000
                 county_qaly_loss_data["QALY Loss per 100K"].append(qaly_loss_per_100k)
 
         # Create a DataFrame from the county data
@@ -468,7 +491,6 @@ class AllStates:
         plt.tight_layout()
 
         output_figure(fig, filename=ROOT_DIR + '/figs/map_county_qaly_loss.png')
-
 
 class AllDataTypes:
     def __init__(self, cases_csvfile, hospitalizations_csvfile, deaths_csvfile):
