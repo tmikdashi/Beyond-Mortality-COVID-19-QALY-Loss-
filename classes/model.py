@@ -26,9 +26,13 @@ class County:
         self.population = int(population)
 
         self.weeklyCases = np.array([])
+        self.weeklyDeaths = np.array([])
+        self.weeklyHospitalizations = np.array([])
         self.totalCases = None
+        self.totalDeaths = None
+        self.totalHospitalizations = None
 
-    def add_traj(self, weekly_cases):
+    def add_traj(self, weekly_cases, weekly_deaths, weekly_hosp):
         """
         Add weekly case data to the County object.
 
@@ -39,11 +43,22 @@ class County:
 
         if not isinstance(weekly_cases, np.ndarray):
             weekly_cases = np.array(weekly_cases)
+        if not isinstance(weekly_deaths, np.ndarray):
+            weekly_deaths = np.array(weekly_deaths)
+        if not isinstance(weekly_hosp, np.ndarray):
+            weekly_hosp = np.array(weekly_hosp)
+
 
         self.weeklyCases = np.nan_to_num(weekly_cases, nan=0)
-        self.totalCases = sum(self.weeklyCases)
+        self.weeklyDeaths = np.nan_to_num(weekly_deaths, nan=0)
+        self.weeklyHosp = np.nan_to_num(weekly_hosp, nan=0)
 
-    def get_weekly_qaly_loss(self, case_weight):
+        self.totalCases = sum(self.weeklyCases)
+        self.totalDeaths = sum(self.weeklyDeaths)
+        self.totalHosp = sum(self.weeklyHosp)
+
+
+    def get_weekly_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
         Calculates  weekly QALY loss for the County.
 
@@ -54,9 +69,13 @@ class County:
         #  update the formula below accordingly. Remember that death_weight is a little complicated
         #  since that dependents on the age of the person who died. For now, just use some made up numbers
         #  (say 20) and we will sort this out.
-        return case_weight * self.weeklyCases
+        weekly_case_qaly_loss= case_weight * self.weeklyCases
+        weekly_death_qaly_loss= death_weight * self.weeklyDeaths
+        weekly_hosp_qaly_loss= hosp_weight * self.weeklyHosp
 
-    def get_overall_qaly_loss(self, case_weight):
+        return (weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss)
+
+    def get_overall_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
         Calculates overall QALY loss for the County, across all timepoints.
 
@@ -65,7 +84,12 @@ class County:
          """
         # TODO: the same comment as above.
 
-        return case_weight * self.totalCases
+        overall_case_qaly_loss = case_weight * self.totalCases
+        overall_death_qaly_loss = death_weight * self.totalDeaths
+        overall_hosp_qaly_loss = hosp_weight * self.totalHosp
+
+        return (overall_case_qaly_loss + overall_death_qaly_loss + overall_hosp_qaly_loss)
+
 
 
 class State:
@@ -79,8 +103,12 @@ class State:
         self.population = 0
         self.counties = {}  # Dictionary of county objects
         self.weeklyCases = np.zeros(num_weeks, dtype=int)
+        self.weeklyDeaths = np.zeros(num_weeks, dtype=int)
+        self.weeklyHosp = np.zeros(num_weeks, dtype=int)
         self.weeklyQALYLoss = []
         self.totalCases = 0
+        self.totalDeaths = 0
+        self.totalHosp = 0
 
     def add_county(self, county):
         """
@@ -90,12 +118,15 @@ class State:
         """
         self.counties[county.name] = county
         self.population += county.population
-        # TODO: like this, you could also define self.totalHospitalizations and self.totalDeaths and update them here
         self.totalCases += county.totalCases
-        # TODO: like this, you could also define self.weeklyHospitalizations and self.weeklyDeaths and update them here
-        self.weeklyCases = np.add(self.weeklyCases, county.weeklyCases)  # Aggregate the weekly cases
+        self.totalDeaths += county.totalDeaths
+        self.totalHosp += county.totalHosp
+        # Aggregate the weekly cases
+        self.weeklyCases = np.add(self.weeklyCases, county.weeklyCases)
+        self.weeklyHosp = np.add(self.weeklyHosp, county.weeklyHosp)
+        self.weeklyDeaths = np.add(self.weeklyDeaths, county.weeklyDeaths)
 
-    def get_overall_qaly_loss(self, case_weight):
+    def get_overall_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
         Calculates the overall QALY loss for the State.
 
@@ -104,9 +135,13 @@ class State:
         """
         # TODO: you could modify this function to also get hosp_weight and death_weight as arguments and then
         #  update the formula below accordingly.
-        return case_weight * self.totalCases
+        overall_case_qaly_loss = case_weight * self.totalCases
+        overall_death_qaly_loss = death_weight * self.totalDeaths
+        overall_hosp_qaly_loss = hosp_weight * self.totalHosp
 
-    def get_weekly_qaly_loss(self, case_weight):
+        return (overall_case_qaly_loss + overall_death_qaly_loss + overall_hosp_qaly_loss)
+
+    def get_weekly_qaly_loss(self, case_weight,death_weight,hosp_weight):
         """
         Calculates the weekly QALY loss for the State.
 
@@ -114,23 +149,32 @@ class State:
         :return: Weekly QALY loss as a numpy array for the State.
         """
         # TODO: same as above
-        return np.array(case_weight * self.weeklyCases)
+        weekly_case_qaly_loss = np.arrray(case_weight * self.weeklyCases)
+        weekly_death_qaly_loss = np.arrray(death_weight * self.weeklyDeaths)
+        weekly_hosp_qaly_loss = np.arrray(hosp_weight * self.weeklyHosp)
+
+        return np.array(weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss)
 
 
 class AllStates:
-    def __init__(self, county_data_csvfile):
+    def __init__(self, county_case_csvfile, county_death_csvfile, county_hosp_csvfile):
         """
         Initialize an AllStates object.
 
-        :param county_data_csvfile: (string) path to the csv file containing county data
+        :param county_case_csvfile: (string) path to the csv file containing county data
+
         """
 
         self.states = {}  # dictionary of state objects
-        self.countyDataCSVfile = pd.read_csv(county_data_csvfile)
+        self.countyCaseCSVfile = pd.read_csv(county_case_csvfile)
+        self.countyDeathCSVfile = pd.read_csv(county_death_csvfile)
+        self.countyHospCSVfile = pd.read_csv(county_hosp_csvfile)
         self.totalCases = 0
+        self.totalDeaths = 0
+        self.totalHosp = 0
         self.numWeeks = 0
 
-    def populate(self, data_type):
+    def populate(self):
         """
         Populates the AllStates object with county case data.
         """
@@ -138,7 +182,9 @@ class AllStates:
         # TODO: if you made above changes, then we probably don't need data_type here as an argument
         #  and you could read the data on cases, hospitalizations, and deaths all here...
 
-        county_data, dates = get_dict_of_county_data_by_type(data_type)
+        county_case_data, dates = get_dict_of_county_data_by_type('cases')
+        county_death_data, dates = get_dict_of_county_data_by_type('deaths')
+        county_hosp_data, dates = get_dict_of_county_data_by_type('hospitalization')
 
         self.numWeeks = len(dates)
 
