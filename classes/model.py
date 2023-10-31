@@ -188,10 +188,12 @@ class AllStates:
 
         self.numWeeks = len(dates)
 
-        for (county, state, fips, population), data_values in county_data.items():
-            # If the state does not already exist in self.states, add it to the dictionary
+        for (county, state, fips, population), case_values in county_case_data.items():
+            death_values = county_death_data.get((county, state, fips, population), np.zeros(self.numWeeks))
+            hosp_values = county_hosp_data.get((county, state, fips, population), np.zeros(self.numWeeks))
+
             if state not in self.states:
-                self.states[state] = State(name=state, num_weeks=self.numWeeks)  # Pass num_weeks parameter
+                self.states[state] = State(name=state, num_weeks=self.numWeeks)
 
             # Create a new County object
             county_obj = County(
@@ -201,13 +203,18 @@ class AllStates:
                 population=int(population))
 
             # Add weekly cases data to County object and County object to the state
-            county_obj.add_traj(weekly_cases=data_values)
+            county_obj.add_traj(weekly_cases=case_values, weekly_deaths=death_values, weekly_hosp=hosp_values)
             self.states[state].add_county(county_obj)
 
-            # update total cases across all states
+            # update across all states
             self.totalCases += county_obj.totalCases
+            self.totalDeaths += county_obj.totalDeaths
+            self.totalHosp += county_obj.totalHosp
+            self.weeklyCases = np.add(self.weeklyCases, county_obj.weeklyCases)
+            self.weeklyHosp = np.add(self.weeklyHosp, county_obj.weeklyHosp)
+            self.weeklyDeaths = np.add(self.weeklyDeaths, county_obj.weeklyDeaths)
 
-    def get_overall_qaly_loss_by_state(self, case_weight):
+    def get_overall_qaly_loss_by_state(self, case_weight, death_weight, hosp_weight):
         """
         Returns overall QALY Loss by state, cumulating across time.
 
@@ -216,11 +223,12 @@ class AllStates:
         """
         overall_qaly_loss_by_state = {}
         for state_name, state_obj in self.states.items():
-            overall_qaly_loss_by_state[state_name] = state_obj.get_overall_qaly_loss(case_weight)
-
+            overall_qaly_loss = state_obj.get_overall_qaly_loss(case_weight, death_weight, hosp_weight)
+            overall_qaly_loss_by_state[state_name] = overall_qaly_loss
         return overall_qaly_loss_by_state
 
-    def get_weekly_qaly_loss_by_state(self, case_weight):
+
+    def get_weekly_qaly_loss_by_state(self, case_weight, death_weight, hosp_weight):
         """
         Returns weekly QALY Loss by state, as a timeseries that cumulates across counties
 
@@ -228,22 +236,24 @@ class AllStates:
         :return: Dictionary with state names as keys and their respective weekly QALY losses as a timeseries
         """
         weekly_qaly_loss_by_state = {}
-
         for state_name, state_obj in self.states.items():
-            weekly_qaly_loss_by_state[state_name] = state_obj.get_weekly_qaly_loss(case_weight)
-
+            weekly_qaly_loss = state_obj.get_weekly_qaly_loss(case_weight, death_weight, hosp_weight)
+            weekly_qaly_loss_by_state[state_name] = weekly_qaly_loss
         return weekly_qaly_loss_by_state
 
-    def get_overall_qaly_loss(self, case_weight):
+    def get_overall_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
         Returns overall QALY Loss, cumulating across all states and across all timepoints.
 
         :param case_weight: Coefficient applied to each case in calculating QALY loss.
         :return: Overall QALY loss summed over all states and timepoints.
         """
-        return case_weight * self.totalCases
+        overall_case_qaly_loss = case_weight * self.totalCases
+        overall_death_qaly_loss = death_weight * self.totalDeaths
+        overall_hosp_qaly_loss = hosp_weight * self.totalHosp
+        return overall_case_qaly_loss + overall_death_qaly_loss + overall_hosp_qaly_loss
 
-    def get_weekly_qaly_loss(self, case_weight):
+    def get_weekly_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
         Returns weekly QALY loss across all states.
 
@@ -252,11 +262,14 @@ class AllStates:
         """
 
         weekly_qaly_loss = np.zeros(self.numWeeks, dtype=float)
+
         for state in self.states.values():
-            weekly_qaly_loss += state.get_weekly_qaly_loss(case_weight)
+            state_qaly_loss = state.get_weekly_qaly_loss(case_weight, death_weight, hosp_weight)
+            weekly_qaly_loss += state_qaly_loss
+
         return np.array(weekly_qaly_loss)
 
-    def get_overall_qaly_loss_for_a_county(self, county_name, state_name, case_weight):
+    def get_overall_qaly_loss_for_a_county(self, county_name, state_name, case_weight,death_weight, hosp_weight):
         """
         For a given county, returns the overall QALY loss, cumulating over time.
         The county is identified by both its county name and state.
@@ -267,9 +280,9 @@ class AllStates:
         :return: Overall QALY loss for the specified county.
         """
 
-        return self.states[state_name].counties[county_name].get_overall_qaly_loss(case_weight)
+        return self.states[state_name].counties[county_name].get_overall_qaly_loss(case_weight,death_weight, hosp_weight)
 
-    def get_weekly_qaly_loss_for_a_county(self, county_name, state_name, case_weight):
+    def get_weekly_qaly_loss_for_a_county(self, county_name, state_name, case_weight,death_weight, hosp_weight):
         """
         For a given county, returns the weekly QALY loss, across timepoints.
         The county is identified by both its county name and state.
@@ -281,7 +294,7 @@ class AllStates:
         """
         return case_weight * self.states[state_name].counties[county_name].weeklyCases
 
-    def get_overall_qaly_loss_for_a_state(self, state_name, case_weight):
+    def get_overall_qaly_loss_for_a_state(self, state_name, case_weight,):
         """
         Get the overall QALY loss for a specific state.
 
