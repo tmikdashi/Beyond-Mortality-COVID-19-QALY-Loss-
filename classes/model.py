@@ -38,9 +38,6 @@ class County:
 
         :param weekly_cases: Weekly cases data as a numpy array.
         """
-        # TODO: you could modify this function to also get weekly deaths and hospitalizations as arguments
-        #  and then update self.totalHospitalizations and self.totalDeaths accordingly.
-
         if not isinstance(weekly_cases, np.ndarray):
             weekly_cases = np.array(weekly_cases)
         if not isinstance(weekly_deaths, np.ndarray):
@@ -65,10 +62,7 @@ class County:
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
         :return: Weekly QALY loss as a numpy array.
         """
-        # TODO: you could modify this function to also get hosp_weight and death_weight as arguments and then
-        #  update the formula below accordingly. Remember that death_weight is a little complicated
-        #  since that dependents on the age of the person who died. For now, just use some made up numbers
-        #  (say 20) and we will sort this out.
+
         weekly_case_qaly_loss= case_weight * self.weeklyCases
         weekly_death_qaly_loss= death_weight * self.weeklyDeaths
         weekly_hosp_qaly_loss= hosp_weight * self.weeklyHosp
@@ -82,7 +76,6 @@ class County:
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
         :return: Overall QALY loss for the County.
          """
-        # TODO: the same comment as above.
 
         overall_case_qaly_loss = case_weight * self.totalCases
         overall_death_qaly_loss = death_weight * self.totalDeaths
@@ -133,8 +126,7 @@ class State:
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
         :return: Overall QALY loss for the State.
         """
-        # TODO: you could modify this function to also get hosp_weight and death_weight as arguments and then
-        #  update the formula below accordingly.
+
         overall_case_qaly_loss = case_weight * self.totalCases
         overall_death_qaly_loss = death_weight * self.totalDeaths
         overall_hosp_qaly_loss = hosp_weight * self.totalHosp
@@ -148,10 +140,10 @@ class State:
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
         :return: Weekly QALY loss as a numpy array for the State.
         """
-        # TODO: same as above
-        weekly_case_qaly_loss = np.arrray(case_weight * self.weeklyCases)
-        weekly_death_qaly_loss = np.arrray(death_weight * self.weeklyDeaths)
-        weekly_hosp_qaly_loss = np.arrray(hosp_weight * self.weeklyHosp)
+
+        weekly_case_qaly_loss = np.array(case_weight * self.weeklyCases)
+        weekly_death_qaly_loss = np.array(death_weight * self.weeklyDeaths)
+        weekly_hosp_qaly_loss = np.array(hosp_weight * self.weeklyHosp)
 
         return np.array(weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss)
 
@@ -173,14 +165,14 @@ class AllStates:
         self.totalDeaths = 0
         self.totalHosp = 0
         self.numWeeks = 0
+        #self.weeklyCases = np.array([], dtype=int)
+        #self.weeklyDeaths = np.zeros(self.numWeeks, dtype=int)
+        #self.weeklyHosp = np.zeros(self.numWeeks, dtype=int)
 
     def populate(self):
         """
         Populates the AllStates object with county case data.
         """
-
-        # TODO: if you made above changes, then we probably don't need data_type here as an argument
-        #  and you could read the data on cases, hospitalizations, and deaths all here...
 
         county_case_data, dates = get_dict_of_county_data_by_type('cases')
         county_death_data, dates = get_dict_of_county_data_by_type('deaths')
@@ -210,9 +202,6 @@ class AllStates:
             self.totalCases += county_obj.totalCases
             self.totalDeaths += county_obj.totalDeaths
             self.totalHosp += county_obj.totalHosp
-            self.weeklyCases = np.add(self.weeklyCases, county_obj.weeklyCases)
-            self.weeklyHosp = np.add(self.weeklyHosp, county_obj.weeklyHosp)
-            self.weeklyDeaths = np.add(self.weeklyDeaths, county_obj.weeklyDeaths)
 
     def get_overall_qaly_loss_by_state(self, case_weight, death_weight, hosp_weight):
         """
@@ -332,14 +321,16 @@ class AllStates:
         weekly_hosp_qaly_loss = hosp_weight * state.weeklyHosp
         return np.array(weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss)
 
-    def plot_weekly_qaly_loss_by_state(self, case_weight):
+    def plot_weekly_qaly_loss_by_state(self, case_weight, death_weight, hosp_weight):
         """
         Plots the weekly QALY loss per 100,000 population for each state in a single plot
 
         :param case_weight: Coefficient applied to each case in calculating QALY loss.
-        :return: Plot of weekly QALY loss per 100,000 population for each state in a single plot
+        :param death_weight: Coefficient applied to each death in calculating QALY loss.
+        :param hosp_weight: Coefficient applied to each hospitalization in calculating QALY loss.
+        :return: Plot of weekly QALY loss per 100,000 population for each state in a single plot.
         """
-        weekly_qaly_loss_by_state = self.get_weekly_qaly_loss_by_state(case_weight)
+        weekly_qaly_loss_by_state = self.get_weekly_qaly_loss_by_state(case_weight, death_weight, hosp_weight)
 
         # Define dates
         county_data, dates = get_dict_of_county_data_by_type('cases')
@@ -368,7 +359,7 @@ class AllStates:
 
         output_figure(fig, filename=ROOT_DIR + '/figs/weekly_qaly_loss_by_state.png')
 
-    def plot_weekly_qaly_loss(self, case_weight):
+    def plot_weekly_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
         Plots the weekly QALY loss per 100,000 population summed over all states
 
@@ -380,7 +371,7 @@ class AllStates:
         county_data, dates = get_dict_of_county_data_by_type('cases')
 
         # Calculate the total weekly QALY loss and national population for all states
-        total_weekly_qaly_loss = self.get_weekly_qaly_loss(case_weight)
+        total_weekly_qaly_loss = self.get_weekly_qaly_loss(case_weight, death_weight, hosp_weight)
         total_population = sum(state.population for state in self.states.values())
 
         # Calculate the weekly QALY loss per 100,000 population
@@ -492,247 +483,3 @@ class AllStates:
 
         output_figure(fig, filename=ROOT_DIR + '/figs/map_county_qaly_loss.png')
 
-class AllDataTypes:
-    def __init__(self, cases_csvfile, hospitalizations_csvfile, deaths_csvfile):
-        """
-        Initialize an AllDataTypes object.
-
-        :param cases_csvfile: Path to the CSV file containing cases data.
-        :param hospitalizations_csvfile: Path to the CSV file containing hospitalizations data.
-        :param deaths_csvfile: Path to the CSV file containing deaths data.
-        """
-
-        self.all_states_cases = AllStates(county_data_csvfile=cases_csvfile)
-        self.all_states_hospitalizations = AllStates(county_data_csvfile=hospitalizations_csvfile)
-        self.all_states_deaths = AllStates(county_data_csvfile=deaths_csvfile)
-        #defining colors for plots
-        self.colors = {
-            'cases': 'blue',
-            'deaths': 'red',
-            'hospitalizations': 'green'
-        }
-
-        # Populate data
-        self.all_states_cases.populate('cases')
-        self.all_states_hospitalizations.populate('hospitalizations')
-        self.all_states_deaths.populate('deaths')
-
-    def get_total_qaly_loss(self, case_weight, hospitalizations_weight, deaths_weight):
-        """
-        Calculate the total QALY loss over time for all states, accumulating over data types.
-
-        :param case_weight: Coefficient applied to cases in calculating QALY loss.
-        :param hospitalizations_weight: Coefficient applied to hospitalizations in calculating QALY loss.
-        :param deaths_weight: Coefficient applied to deaths in calculating QALY loss.
-        :return: Total QALY loss for all states.
-        """
-        total_cases_qaly_loss = self.all_states_cases.get_overall_qaly_loss(case_weight)
-        total_hospitalizations_qaly_loss = self.all_states_hospitalizations.get_overall_qaly_loss(hospitalizations_weight)
-        total_deaths_qaly_loss = self.all_states_deaths.get_overall_qaly_loss(deaths_weight)
-
-        total_qaly_loss = total_cases_qaly_loss + total_hospitalizations_qaly_loss + total_deaths_qaly_loss
-        return total_qaly_loss
-
-    def get_total_weekly_qaly_loss(self, case_weight, hospitalizations_weight, deaths_weight):
-        """
-        Get the total weekly QALY loss for all states.
-
-        :param case_weight: Coefficient applied to cases in calculating QALY loss.
-        :param hospitalizations_weight: Coefficient applied to hospitalizations in calculating QALY loss.
-        :param deaths_weight: Coefficient applied to deaths in calculating QALY loss.
-        :return: Total weekly QALY loss for all states.
-        """
-        total_weekly_cases = self.all_states_cases.get_weekly_qaly_loss(case_weight)
-        total_weekly_hospitalizations = self.all_states_hospitalizations.get_weekly_qaly_loss(hospitalizations_weight)
-        total_weekly_deaths = self.all_states_deaths.get_weekly_qaly_loss(deaths_weight)
-
-        # Sum the weekly QALY loss for each data type
-        total_weekly_qaly_loss = total_weekly_cases + total_weekly_hospitalizations + total_weekly_deaths
-
-        return total_weekly_qaly_loss
-
-    def get_total_overall_qaly_loss_by_state(self, case_weight, hospitalizations_weight, deaths_weight):
-        """
-        Get the total overall QALY loss by state for all states.
-
-        :param case_weight: Coefficient applied to cases in calculating QALY loss.
-        :param hospitalizations_weight: Coefficient applied to hospitalizations in calculating QALY loss.
-        :param deaths_weight: Coefficient applied to deaths in calculating QALY loss.
-        :return: Dictionary with state names as keys and their respective total overall QALY losses.
-        """
-        total_overall_qaly_loss_by_state_cases = self.all_states_cases.get_overall_qaly_loss_by_state(case_weight)
-        total_overall_qaly_loss_by_state_hospitalizations = self.all_states_hospitalizations.get_overall_qaly_loss_by_state(hospitalizations_weight)
-        total_overall_qaly_loss_by_state_deaths = self.all_states_deaths.get_overall_qaly_loss_by_state(deaths_weight)
-
-        total_overall_qaly_loss_by_state = {}
-
-        for state_name in total_overall_qaly_loss_by_state_cases:
-            total_overall_qaly_loss_by_state[state_name] = (
-                total_overall_qaly_loss_by_state_cases[state_name] +
-                total_overall_qaly_loss_by_state_hospitalizations[state_name] +
-                total_overall_qaly_loss_by_state_deaths[state_name]
-            )
-
-        return total_overall_qaly_loss_by_state
-
-    def get_qaly_loss_by_state_and_type(self, case_weight, hospitalizations_weight, deaths_weight):
-        """
-        Get the total overall QALY loss by state broken down by data type
-
-        :param case_weight: Coefficient applied to cases in calculating QALY loss.
-        :param hospitalizations_weight: Coefficient applied to hospitalizations in calculating QALY loss.
-        :param deaths_weight: Coefficient applied to deaths in calculating QALY loss.
-        :return: Dictionary with state names as keys and their respective overall QALY losses by data type
-        """
-        qaly_loss_by_state_and_type = {}
-
-        for state_name, state_obj in self.all_states_cases.states.items():
-            # Calculate QALY loss for each data type
-            cases_qaly_loss = state_obj.get_overall_qaly_loss(case_weight)
-            hospitalizations_qaly_loss = self.all_states_hospitalizations.states[state_name].get_overall_qaly_loss(
-                hospitalizations_weight)
-            deaths_qaly_loss = self.all_states_deaths.states[state_name].get_overall_qaly_loss(deaths_weight)
-
-            qaly_loss_by_state_and_type[state_name] = {
-                'cases': cases_qaly_loss,
-                'hospitalizations': hospitalizations_qaly_loss,
-                'deaths': deaths_qaly_loss
-            }
-
-        return qaly_loss_by_state_and_type
-
-    def plot_weekly_qaly_loss_by_data_type(self, case_weight, hospitalizations_weight, deaths_weight):
-        """
-                    Plots weekly QALY loss per 100,000 population across all states, broken down by data type
-
-                    :param case_weight: Coefficient applied to each case in calculating QALY loss.
-                    :param hospitalizations_weight: Coefficient applied to each hospitalization in calculating QALY loss.
-                    :param deaths_weight: Coefficient applied to each death in calculating QALY loss.
-                    :return: Plot weekly QALY loss per 100,000 population across all states, broken down by data type
-            """
-        # Calculate the weekly QALY loss for each data type
-        total_weekly_cases = self.all_states_cases.get_weekly_qaly_loss(case_weight)
-        total_weekly_hospitalizations = self.all_states_hospitalizations.get_weekly_qaly_loss(hospitalizations_weight)
-        total_weekly_deaths = self.all_states_deaths.get_weekly_qaly_loss(deaths_weight)
-
-        # Get the dates from your data
-        county_data, dates = get_dict_of_county_data_by_type('cases')
-
-        # Determine the maximum length among the data
-        max_length = max(len(total_weekly_cases), len(total_weekly_hospitalizations), len(total_weekly_deaths))
-
-        # Pad the arrays with zeros to match the maximum length
-        total_weekly_cases = np.pad(total_weekly_cases, (0, max_length - len(total_weekly_cases)))
-        total_weekly_hospitalizations = np.pad(total_weekly_hospitalizations,
-                                               (0, max_length - len(total_weekly_hospitalizations)))
-        total_weekly_deaths = np.pad(total_weekly_deaths, (0, max_length - len(total_weekly_deaths)))
-
-        # Get the total population
-        total_population = sum(state.population for state in self.all_states_cases.states.values())
-
-        # Calculate the weekly QALY loss per 100,000 population for each data type
-        total_weekly_cases_per_100k = [(qaly_loss / total_population) * 100000 for qaly_loss in total_weekly_cases]
-        total_weekly_hospitalizations_per_100k = [(qaly_loss / total_population) * 100000 for qaly_loss in
-                                                  total_weekly_hospitalizations]
-        total_weekly_deaths_per_100k = [(qaly_loss / total_population) * 100000 for qaly_loss in total_weekly_deaths]
-
-        # Create a line plot with dates on the x-axis
-        fig, ax = plt.subplots(figsize=(12, 6))
-        x = dates[:max_length]  # Take the first 'max_length' dates
-        ax.plot(x, total_weekly_cases_per_100k, label="Cases per 100K")
-        ax.plot(x, total_weekly_hospitalizations_per_100k, label="Hospitalizations per 100K")
-        ax.plot(x, total_weekly_deaths_per_100k, label="Deaths per 100K")
-
-        ax.set_xlabel("Date")
-        ax.tick_params(axis='x', labelsize=6.5)
-        plt.xticks(rotation=90)
-        ax.set_ylabel("QALY Loss per 100,000 Population")
-        ax.set_title("Weekly QALY Loss by Data Type (per 100,000 Population)")
-        ax.legend()
-        ax.grid(True)
-
-        # Save the figure as an output file
-        output_figure(fig, filename=ROOT_DIR + '/figs/total_weekly_qaly_loss_by_data_type.png')
-
-    def plot_total_weekly_qaly_loss(self, case_weight, hospitalizations_weight, deaths_weight):
-        """
-                Plots the weekly QALY loss per 100,000 population summed over all states and all data types
-
-                :param case_weight: Coefficient applied to each case in calculating QALY loss.
-                :param hospitalizations_weight: Coefficient applied to each hospitalization in calculating QALY loss.
-                :param deaths_weight: Coefficient applied to each death in calculating QALY loss.
-                :return: Plot of total weekly QALY loss per 100,000 population summed over all states and all data types
-                """
-        # Calculate the total weekly QALY loss for all states
-        total_weekly_qaly_loss = self.get_total_weekly_qaly_loss(case_weight, hospitalizations_weight, deaths_weight)
-
-        # Get the dates from your data
-        county_data, dates = get_dict_of_county_data_by_type('cases')
-
-        # Get the total population
-        total_population = sum(state.population for state in self.all_states_cases.states.values())
-
-        # Calculate the total weekly QALY loss per 100,000 population
-        total_weekly_qaly_loss_per_100k = [(qaly_loss / total_population) * 100000 for qaly_loss in
-                                           total_weekly_qaly_loss]
-
-        # Create a line plot with dates on the x-axis
-        fig, ax = plt.subplots(figsize=(12, 6))
-        x = dates[:len(total_weekly_qaly_loss)]  # Use the same number of dates as QALY loss data
-        ax.plot(x, total_weekly_qaly_loss_per_100k, label="Total Weekly QALY Loss per 100K", color='blue')
-
-        ax.set_xlabel("Date")
-        ax.tick_params(axis='x', labelsize=6.5)
-        plt.xticks(rotation=90)
-        ax.set_ylabel("Total Weekly QALY Loss per 100,000 Population")
-        ax.set_title("Total Weekly QALY Loss (per 100,000 Population) from Cases, Hospitalizations, and Deaths")
-        ax.legend()
-        ax.grid(True)
-
-        # Save the figure as an output file
-        output_figure(fig, filename=ROOT_DIR + '/figs/total_weekly_qaly_loss.png')
-
-    def plot_qaly_loss_by_state_and_type(self, case_weight, hospitalizations_weight, deaths_weight):
-        """
-                Provides bar graph of QALY loss per 100,000 population in each state, broken down by data type
-
-                :param case_weight: Coefficient applied to each case in calculating QALY loss.
-                :param hospitalizations_weight: Coefficient applied to each hospitalization in calculating QALY loss.
-                :param deaths_weight: Coefficient applied to each death in calculating QALY loss.
-                :return: Bar graph of QALY loss per 100,000 population in each state, broken down by data type
-        """
-        # Calculate QALY loss for each data type (cases, hospitalizations, deaths)
-        qaly_loss_by_state_and_type = self.get_qaly_loss_by_state_and_type(case_weight, hospitalizations_weight,
-                                                                           deaths_weight)
-
-        # Create a bar graph where each bar represents a state and shows QALY loss by data type within each bar
-        data_types = ['cases', 'hospitalizations', 'deaths']
-        state_names = list(qaly_loss_by_state_and_type.keys())
-        num_data_types = len(data_types)
-        width = 0.8
-
-        fig, ax = plt.subplots(figsize=(12, 6))
-
-        bottom = np.zeros(len(state_names))
-
-        for i, data_type in enumerate(data_types):
-            qaly_loss = [qaly_loss_by_state_and_type[state_name][data_type] for state_name in state_names]
-
-            # Calculate QALY loss per 100,000 population based on the state's population
-            state_populations = [self.all_states_cases.states[state_name].population for state_name in state_names]
-            qaly_loss_per_100k = [(loss / pop) * 100000 for loss, pop in zip(qaly_loss, state_populations)]
-
-            ax.bar(state_names, qaly_loss_per_100k, width, label=data_type, color=self.colors[data_type], bottom=bottom)
-            bottom += qaly_loss_per_100k
-
-        ax.set_xlabel('States')
-        ax.set_ylabel('QALY Loss per 100,000 Population')
-        ax.set_title('QALY Loss per 100,000 Population by State and Data Type')
-        ax.legend()
-
-        plt.xticks(rotation=90)
-        plt.grid(True)
-        plt.tight_layout()
-
-        # Save the figure as an output file
-        output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_type.png')

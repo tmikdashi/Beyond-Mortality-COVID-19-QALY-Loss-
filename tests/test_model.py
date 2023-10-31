@@ -7,15 +7,10 @@ generate_county_data_csv('cases')
 generate_county_data_csv('deaths')
 generate_county_data_csv('hospitalizations')
 
-#all_states = AllStates(
-#    county_case_csvfile=ROOT_DIR + '/csv_files/county_cases.csv',
-#    county_death_csvfile=ROOT_DIR + '/csv_files/county_deaths.csv',
-#    county_hosp_csvfile=ROOT_DIR + '/csv_files/county_hospitalizations.csv'
-#)
 all_states = AllStates(
-    county_case_csvfile=ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv',
-    county_death_csvfile=ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_deaths.csv',
-    county_hosp_csvfile=ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv')
+    county_case_csvfile=ROOT_DIR + '/csv_files/county_cases.csv',
+    county_death_csvfile=ROOT_DIR + '/csv_files/county_deaths.csv',
+    county_hosp_csvfile=ROOT_DIR + '/csv_files/county_hospitalizations.csv')
 all_states.populate()
 
 
@@ -63,10 +58,10 @@ print(f"Weekly QALY Loss for AL: {weekly_qaly_loss_for_state}")
 
 # TESTING PLOTS
 # To plot weeklyQALY Loss by state
-all_states.plot_weekly_qaly_loss_by_state(case_weight=0.1)
+all_states.plot_weekly_qaly_loss_by_state(case_weight=0.1, death_weight=0.2, hosp_weight=0.3)
 
 # To plot national weeklyQALY Loss
-all_states.plot_weekly_qaly_loss(case_weight=0.1)
+all_states.plot_weekly_qaly_loss(case_weight=0.1, death_weight=0.2, hosp_weight=0.3)
 
 # To map weeklyQALY Loss per county
-all_states.plot_map_of_qaly_loss_by_county(case_weight=0.1)
+all_states.plot_map_of_qaly_loss_by_county(case_weight=0.1,death_weight=0.2, hosp_weight=0.3)
