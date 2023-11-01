@@ -177,12 +177,13 @@ class AllStates:
 
         self.numWeeks = len(dates)
 
+         # Creating a chained exception to handle situations where data is available for cases but not for deaths/hosp
         for (county, state, fips, population), case_values in county_case_data.items():
-            # TODO: I think it is better to avoid using get with a default value np.zeros(self.numWeeks).
-            #  If the data for (county, state, fips, population) is missing, we python to raise an error so
-            #  that we know about it.
-            death_values = county_death_data.get((county, state, fips, population), np.zeros(self.numWeeks))
-            hosp_values = county_hosp_data.get((county, state, fips, population), np.zeros(self.numWeeks))
+            try:
+                death_values = county_death_data[(county, state, fips, population)]
+                hosp_values = county_hosp_data[(county, state, fips, population)]
+            except KeyError as e:
+                raise KeyError(f"Data not found for {county}, {state}, {fips}, {population}.") from e
 
             if state not in self.states:
                 self.states[state] = State(name=state, num_weeks=self.numWeeks)
@@ -288,12 +289,7 @@ class AllStates:
         :return: Weekly QALY loss for the specified county as a timeseries.
         """
         county = self.states[state_name].counties[county_name]
-        # TODO: County object has a function get_weekly_qaly_loss() that we can use here to simplify the code
-        weekly_case_qaly_loss = case_weight * county.weeklyCases
-        weekly_death_qaly_loss = death_weight * county.weeklyDeaths
-        weekly_hosp_qaly_loss = hosp_weight * county.weeklyHosp
-        return np.array(weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss)
-
+        return county.get_weekly_qaly_loss(case_weight, death_weight, hosp_weight)
     def get_overall_qaly_loss_for_a_state(self, state_name, case_weight,death_weight, hosp_weight):
         """
         Get the overall QALY loss for a specific state, including cases, deaths, and hospitalizations.
@@ -305,11 +301,7 @@ class AllStates:
         :return: Overall QALY loss for the specified state.
         """
         state = self.states[state_name]
-        # TODO: State object has a function get_overall_qaly_loss() that we can use here to simplify the code
-        overall_case_qaly_loss = case_weight * state.totalCases
-        overall_death_qaly_loss = death_weight * state.totalDeaths
-        overall_hosp_qaly_loss = hosp_weight * state.totalHosp
-        return overall_case_qaly_loss + overall_death_qaly_loss + overall_hosp_qaly_loss
+        return state.get_overall_qaly_loss(case_weight,death_weight, hosp_weight)
 
     def get_weekly_qaly_loss_for_a_state(self, state_name, case_weight, death_weight, hosp_weight):
         """
@@ -322,12 +314,7 @@ class AllStates:
         :return: Weekly QALY loss for the specified state as a timeseries.
         """
         state = self.states[state_name]
-        # TODO: similar comment as above here
-        weekly_case_qaly_loss = case_weight * state.weeklyCases
-        weekly_death_qaly_loss = death_weight * state.weeklyDeaths
-        weekly_hosp_qaly_loss = hosp_weight * state.weeklyHosp
-        return np.array(weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss)
-
+        return state.get_weekly_qaly_loss(case_weight,death_weight, hosp_weight)
     def plot_weekly_qaly_loss_by_state(self, case_weight, death_weight, hosp_weight):
         """
         Plots the weekly QALY loss per 100,000 population for each state in a single plot
