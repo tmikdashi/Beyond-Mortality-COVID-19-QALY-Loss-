@@ -10,6 +10,80 @@ from data_preprocessing.support_functions import get_dict_of_county_data_by_type
 from definitions import ROOT_DIR
 
 
+# TODO: All three classes that we have so far have a lot in common in terms of
+#  outcomes (e.g., weekly cases, total cases, etc) they store. So we can simplify things a little
+#  by creating two new classes
+
+
+class Outcome:
+
+    def __init__(self):
+
+        self.weeklyObs = np.array([])
+        self.totalObs = None
+        self.weeklyQALYLoss = np.array([])
+        self.totalQALYLoss = None
+
+    def add_traj(self, weekly_obs):
+        """
+        Add weekly data to the Outcome object.
+        :param weekly_obs: Weekly data as a numpy array.
+        """
+        if not isinstance(weekly_obs, np.ndarray):
+            weekly_obs = np.array(weekly_obs)
+
+        self.weeklyObs = np.nan_to_num(weekly_obs, nan=0)
+        self.totalObs = sum(self.weeklyObs)
+
+    def calculate_qaly_loss(self, quality_weight):
+        """
+        Calculates the weekly and overall QALY
+        :param quality_weight:
+        """
+        self.weeklyQALYLoss = quality_weight * self.weeklyObs
+        self.totalQALYLoss = sum(self.weeklyQALYLoss)
+
+
+class Outcomes:
+    def __int__(self):
+        self.cases = Outcome()
+        self.hosps = Outcome()
+        self.deaths = Outcome()
+
+        self.weeklyQALYLoss = 0
+        self.totalQALYLoss = np.array([])
+
+    def add_traj(self, weekly_cases, weekly_hosp, weekly_deaths):
+        """
+        Add weekly cases, hospitalization, and deaths and calculate the total cases, hospitalizations, and deaths.
+        :param weekly_cases: Weekly cases data as a numpy array.
+        :param weekly_hosp: Weekly hospitalizations data as a numpy array.
+        :param weekly_deaths: Weekly deaths data as a numpy array.
+        """
+        self.cases.add_traj(weekly_obs=weekly_cases)
+        self.hosps.add_traj(weekly_obs=weekly_hosp)
+        self.deaths.add_traj(weekly_obs=weekly_deaths)
+
+    def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
+        """
+        Calculates the weekly and overall QALY
+        :param case_weight:
+        :param death_weight:
+        :param hosp_weight:
+        """
+
+        # TODO: The reason I changed "get_qaly_loss" to "calculate_qaly_loss" is because you could do the
+        #   calculation once and then you could get the loss by using .weeklyQALYLoss and .totalQALYLoss
+        #   whenever you need them.
+        self.cases.calculate_qaly_loss(quality_weight=case_weight)
+        self.hosps.calculate_qaly_loss(quality_weight=hosp_weight)
+        self.deaths.calculate_qaly_loss(quality_weight=death_weight)
+
+        self.weeklyQALYLoss = self.cases.weeklyQALYLoss + self.hosps.weeklyQALYLoss + self.deaths.weeklyQALYLoss
+        self.totalQALYLoss = self.cases.totalQALYLoss + self.hosps.totalQALYLoss + self.deaths.totalQALYLoss
+
+
+# TODO: I updated the County class accordingly and I wonder if you could revise everything else.
 class County:
     def __init__(self, name, state, fips, population):
         """
@@ -24,62 +98,26 @@ class County:
         self.state = state
         self.fips = fips
         self.population = int(population)
-
-        self.weeklyCases = np.array([])
-        self.weeklyDeaths = np.array([])
-        self.weeklyHosp = np.array([])
-        self.totalCases = None
-        self.totalDeaths = None
-        self.totalHosp = None
+        self.outcomes = Outcomes()
 
     def add_traj(self, weekly_cases, weekly_deaths, weekly_hosp):
         """
-        Add weekly case data to the County object.
-
+        Add weekly data to the County object.
         :param weekly_cases: Weekly cases data as a numpy array.
+        :param weekly_hosp: Weekly hospitalizations data as a numpy array.
+        :param weekly_deaths: Weekly deaths data as a numpy array.
         """
-        if not isinstance(weekly_cases, np.ndarray):
-            weekly_cases = np.array(weekly_cases)
-        if not isinstance(weekly_deaths, np.ndarray):
-            weekly_deaths = np.array(weekly_deaths)
-        if not isinstance(weekly_hosp, np.ndarray):
-            weekly_hosp = np.array(weekly_hosp)
+        self.outcomes.add_traj(
+            weekly_cases=weekly_cases, weekly_hosp=weekly_hosp, weekly_deaths=weekly_deaths)
 
-        self.weeklyCases = np.nan_to_num(weekly_cases, nan=0)
-        self.weeklyDeaths = np.nan_to_num(weekly_deaths, nan=0)
-        self.weeklyHosp = np.nan_to_num(weekly_hosp, nan=0)
-
-        self.totalCases = sum(self.weeklyCases)
-        self.totalDeaths = sum(self.weeklyDeaths)
-        self.totalHosp = sum(self.weeklyHosp)
-
-    def get_weekly_qaly_loss(self, case_weight, death_weight, hosp_weight):
+    def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
-        Calculates  weekly QALY loss for the County.
-
+        Calculates the weekly anad total QALY loss for the County.
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
-        :return: Weekly QALY loss as a numpy array.
         """
 
-        weekly_case_qaly_loss = case_weight * self.weeklyCases
-        weekly_death_qaly_loss = death_weight * self.weeklyDeaths
-        weekly_hosp_qaly_loss = hosp_weight * self.weeklyHosp
-
-        return weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss
-
-    def get_overall_qaly_loss(self, case_weight, death_weight, hosp_weight):
-        """
-        Calculates overall QALY loss for the County, across all timepoints.
-
-        :param case_weight: Weight to be applied to each case in calculating QALY loss.
-        :return: Overall QALY loss for the County.
-         """
-
-        overall_case_qaly_loss = case_weight * self.totalCases
-        overall_death_qaly_loss = death_weight * self.totalDeaths
-        overall_hosp_qaly_loss = hosp_weight * self.totalHosp
-
-        return overall_case_qaly_loss + overall_death_qaly_loss + overall_hosp_qaly_loss
+        self.outcomes.calculate_qaly_loss(
+            case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
 
 
 class State:
@@ -92,13 +130,7 @@ class State:
         self.name = name
         self.population = 0
         self.counties = {}  # Dictionary of county objects
-        self.weeklyCases = np.zeros(num_weeks, dtype=int)
-        self.weeklyDeaths = np.zeros(num_weeks, dtype=int)
-        self.weeklyHosp = np.zeros(num_weeks, dtype=int)
-        self.weeklyQALYLoss = []
-        self.totalCases = 0
-        self.totalDeaths = 0
-        self.totalHosp = 0
+        self.outcomes = Outcomes()
 
     def add_county(self, county):
         """
@@ -108,13 +140,11 @@ class State:
         """
         self.counties[county.name] = county
         self.population += county.population
-        self.totalCases += county.totalCases
-        self.totalDeaths += county.totalDeaths
-        self.totalHosp += county.totalHosp
-        # Aggregate the weekly cases
-        self.weeklyCases = np.add(self.weeklyCases, county.weeklyCases)
-        self.weeklyHosp = np.add(self.weeklyHosp, county.weeklyHosp)
-        self.weeklyDeaths = np.add(self.weeklyDeaths, county.weeklyDeaths)
+        # TODO: note how we can now access the county's outcomes by using county.outcomes
+        self.outcomes.add_traj(
+            weekly_cases=county.outcomes.cases.weeklyObs,
+            weekly_hosp=county.outcomes.hosps.weeklyObs,
+            weekly_deaths=county.outcomes.deaths.weeklyObs)
 
     def get_overall_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
@@ -123,12 +153,14 @@ class State:
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
         :return: Overall QALY loss for the State.
         """
-
-        overall_case_qaly_loss = case_weight * self.totalCases
-        overall_death_qaly_loss = death_weight * self.totalDeaths
-        overall_hosp_qaly_loss = hosp_weight * self.totalHosp
-
-        return overall_case_qaly_loss + overall_death_qaly_loss + overall_hosp_qaly_loss
+        # TODO now you can just to this:
+        return self.outcomes.totalQALYLoss
+        #
+        # overall_case_qaly_loss = case_weight * self.totalCases
+        # overall_death_qaly_loss = death_weight * self.totalDeaths
+        # overall_hosp_qaly_loss = hosp_weight * self.totalHosp
+        #
+        # return overall_case_qaly_loss + overall_death_qaly_loss + overall_hosp_qaly_loss
 
     def get_weekly_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
@@ -137,12 +169,14 @@ class State:
         :param case_weight: Weight to be applied to each case in calculating QALY loss.
         :return: Weekly QALY loss as a numpy array for the State.
         """
-
-        weekly_case_qaly_loss = np.array(case_weight * self.weeklyCases)
-        weekly_death_qaly_loss = np.array(death_weight * self.weeklyDeaths)
-        weekly_hosp_qaly_loss = np.array(hosp_weight * self.weeklyHosp)
-
-        return np.array(weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss)
+        # TODO now you can just to this:
+        return self.outcomes.weeklyQALYLoss
+        #
+        # weekly_case_qaly_loss = np.array(case_weight * self.weeklyCases)
+        # weekly_death_qaly_loss = np.array(death_weight * self.weeklyDeaths)
+        # weekly_hosp_qaly_loss = np.array(hosp_weight * self.weeklyHosp)
+        #
+        # return np.array(weekly_case_qaly_loss + weekly_death_qaly_loss + weekly_hosp_qaly_loss)
 
 
 class AllStates:
