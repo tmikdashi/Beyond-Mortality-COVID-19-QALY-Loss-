@@ -1,7 +1,6 @@
 import csv
-import numpy as np
 from collections import defaultdict
-from deampy.in_out_functions import write_csv, read_csv_rows
+from deampy.in_out_functions import write_csv
 from definitions import ROOT_DIR
 
 
@@ -37,7 +36,7 @@ with open(cases_csv_file, 'r', newline='') as csvfile:
 # Creating a list to store CountyQALYLoss instances
 county_qaly_losses = []
 
-from classes.county_qaly_loss import CountyQALYLoss
+from _playground.classes.county_qaly_loss import CountyQALYLoss
 
 for county_state_key, cases_data in county_cumulative_cases.items():
     county, state = county_state_key.split(', ')

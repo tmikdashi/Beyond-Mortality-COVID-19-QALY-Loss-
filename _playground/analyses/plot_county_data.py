@@ -6,7 +6,7 @@ from deampy.in_out_functions import write_csv
 from deampy.plots.plot_support import output_figure
 
 from definitions import ROOT_DIR
-from support.support_functions import get_dict_of_county_cases_and_dates
+from _playground.support.support_functions import get_dict_of_county_cases_and_dates
 
 # get the dictionary of county cases
 county_cases_data, dates = get_dict_of_county_cases_and_dates()

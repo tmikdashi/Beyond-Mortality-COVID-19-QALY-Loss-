@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from support.support_functions import get_dict_of_county_cases_and_dates
+from _playground.support.support_functions import get_dict_of_county_cases_and_dates
 
 # get the dictionary of county cases
 county_cases_data, dates = get_dict_of_county_cases_and_dates()
