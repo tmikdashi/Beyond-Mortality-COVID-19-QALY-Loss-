@@ -30,7 +30,6 @@ class Outcome:
         self.weeklyObs = np.nan_to_num(weekly_obs, nan=0)
         self.totalObs = sum(self.weeklyObs)
 
-
     def calculate_qaly_loss(self, quality_weight):
         """
         Calculates the weekly and overall QALY
@@ -38,8 +37,6 @@ class Outcome:
         """
         self.weeklyQALYLoss = quality_weight * self.weeklyObs
         self.totalQALYLoss = sum(self.weeklyQALYLoss)
-
-
 
 
 class Outcomes:
@@ -76,8 +73,6 @@ class Outcomes:
 
         self.weeklyQALYLoss = self.cases.weeklyQALYLoss + self.hosps.weeklyQALYLoss + self.deaths.weeklyQALYLoss
         self.totalQALYLoss = self.cases.totalQALYLoss + self.hosps.totalQALYLoss + self.deaths.totalQALYLoss
-
-
 
 
 class County:
@@ -161,7 +156,6 @@ class State:
         # I repeatedly got blank values. I think I'm most likely missing something in the execution and population of
         # AllStates that is contributing to this issue.
 
-
     def get_weekly_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
         Calculates the weekly QALY loss for the State.
@@ -181,7 +175,6 @@ class State:
         #  but it didn't work when I tried it
 
 
-
 class AllStates:
     def __init__(self, county_case_csvfile, county_death_csvfile, county_hosp_csvfile):
         """
@@ -199,7 +192,7 @@ class AllStates:
         self.numWeeks = 0
         self.totalPopulation = 0
 
-    def populate(self,case_weight, death_weight, hosp_weight):
+    def populate(self, case_weight, death_weight, hosp_weight):
         """
         Populates the AllStates object with county case data.
         """
@@ -231,7 +224,6 @@ class AllStates:
                 fips=fips,
                 population=int(population))
 
-
             # Add weekly data to County object and County object to the state
             county_obj.add_traj(weekly_cases=case_values, weekly_deaths=death_values, weekly_hosp=hosp_values)
 
@@ -245,8 +237,6 @@ class AllStates:
             state_obj.get_weekly_qaly_loss(case_weight, death_weight, hosp_weight)
             state_obj.get_overall_qaly_loss(case_weight, death_weight, hosp_weight)
 
-
-
     def get_overall_qaly_loss(self):
         """
         Returns overall QALY Loss, cumulating across all states and across all timepoints.
@@ -258,7 +248,6 @@ class AllStates:
             total_qaly_loss += state_obj.outcomes.totalQALYLoss
         self.outcomes.totalQALYLoss = total_qaly_loss
         print(f"Total QALY Loss for all states: {self.outcomes.totalQALYLoss}")
-
 
     def get_weekly_qaly_loss(self):
         """
@@ -351,7 +340,6 @@ class AllStates:
         state_obj = self.states.get(state_name)
         print(f"Weekly QALY Loss for {state_name}: {state_obj.outcomes.weeklyQALYLoss}")
 
-
     def get_weekly_qaly_loss_for_a_county(self, county_name, state_name,):
         """
         Get the weekly QALY loss for a specific state.
@@ -365,7 +353,6 @@ class AllStates:
             county_obj = state_obj.counties.get(county_name)
             if county_obj:
                 print(f"Overall QALY Loss for {county_name},{state_name} : {county_obj.outcomes.weeklyQALYLoss}")
-
 
     def plot_weekly_qaly_loss_by_state(self):
         """
@@ -397,7 +384,6 @@ class AllStates:
 
         output_figure(fig, filename=ROOT_DIR + '/figs/weekly_qaly_loss_by_state.png')
 
-
     def plot_weekly_qaly_loss(self):
         """
         Plots the weekly QALY loss per 100,000 population summed over all states
@@ -425,8 +411,6 @@ class AllStates:
         ax.tick_params(axis='x', labelsize=6.5)
 
         output_figure(fig, filename=ROOT_DIR + '/figs/national_qaly_loss.png')
-
-
 
     def plot_map_of_qaly_loss_by_county(self):
         """
