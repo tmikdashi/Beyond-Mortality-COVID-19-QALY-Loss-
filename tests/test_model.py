@@ -12,6 +12,7 @@ all_states = AllStates(
     county_death_csvfile=ROOT_DIR + '/csv_files/county_deaths.csv',
     county_hosp_csvfile=ROOT_DIR + '/csv_files/county_hospitalizations.csv')
 
+
 all_states.populate(case_weight=0.1, death_weight=0.3, hosp_weight=0.2)
 
 #ALL STATES AND COUNTIES
@@ -42,5 +43,6 @@ all_states.get_weekly_qaly_loss_for_a_county("Autauga", "AL")
 all_states.plot_map_of_qaly_loss_by_county()
 all_states.plot_weekly_qaly_loss_by_state()
 all_states.plot_weekly_qaly_loss()
+#all_states.plot_weekly_qaly_loss_by_outcomes()
 
 
