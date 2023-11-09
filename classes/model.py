@@ -32,7 +32,8 @@ class Outcome:
     def calculate_qaly_loss(self, quality_weight):
         """
         Calculates the weekly and overall QALY
-        :param quality_weight:
+        :param quality_weight: Weight to be applied to each case in calculating QALY loss.
+        :return Weekly QALY loss as a numpy array or numerical values to total QALY loss.
         """
         self.weeklyQALYLoss = quality_weight * self.weeklyObs
         self.totalQALYLoss = sum(self.weeklyQALYLoss)
@@ -61,9 +62,10 @@ class Outcomes:
     def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
         Calculates the weekly and overall QALY
-        :param case_weight:
-        :param death_weight:
-        :param hosp_weight:
+        :param case_weight: : cases-specific weight to be applied to each case in calculating QALY loss.
+        :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
+        :param hosp_weight: hosp-specific weight to be applied to each hospitalization in calculating QALY loss.
+        :return Overall and QALY loss for across all outcomes.
         """
 
         self.cases.calculate_qaly_loss(quality_weight=case_weight)
@@ -103,16 +105,28 @@ class County:
     def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
         Calculates the weekly and total QALY loss for the County.
-        :param case_weight: Weight to be applied to each case in calculating QALY loss.
+
+        :param case_weight: : cases-specific weight to be applied to each case in calculating QALY loss.
+        :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
+        :param hosp_weight: hosp-specific weight to be applied to each hospitalization in calculating QALY loss.
+        :return QALY loss for each county.
+
         """
 
         self.outcomes.calculate_qaly_loss(
             case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
 
-    def get_overall_qaly_loss(self, case_weight, death_weight, hosp_weight):
+    def get_overall_qaly_loss(self):
+        """
+        Retrieves total QALY loss for the County, across outcomes.
+        """
+
         return self.outcomes.totalQALYLoss
 
-    def get_weekly_qaly_loss(self, case_weight, death_weight, hosp_weight):
+    def get_weekly_qaly_loss(self):
+        """
+        Retrieves weekly QALY loss for the County, across outcomes.
+        """
         return self.outcomes.weeklyQALYLoss
 
 
@@ -144,11 +158,13 @@ class State:
 
     def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
-                Calculates the overall QALY loss for the State.
+        Calculates the overall QALY loss for the State.
 
-                :param case_weight: Weight to be applied to each case in calculating QALY loss.
-                :return: Overall QALY loss for the State.
-                """
+        :param case_weight: : cases-specific weight to be applied to each case in calculating QALY loss.
+        :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
+        :param hosp_weight: hosp-specific weight to be applied to each hospitalization in calculating QALY loss.
+        :return: Total and Weekly QALY loss for the State.
+        """
 
         state_qaly_loss = 0.0
         state_weekly_qaly_loss = np.zeros(self.numWeeks)
@@ -158,10 +174,16 @@ class State:
         self.outcomes.totalQALYLoss = state_qaly_loss
         self.outcomes.weeklyQALYLoss = state_weekly_qaly_loss
 
-    def get_overall_qaly_loss(self, case_weight, death_weight, hosp_weight):
+    def get_overall_qaly_loss(self):
+        """
+        Retrieves total QALY loss for the State, across outcomes.
+        """
         return self.outcomes.totalQALYLoss
 
-    def get_weekly_qaly_loss(self, case_weight, death_weight, hosp_weight):
+    def get_weekly_qaly_loss(self):
+        """
+        Retrieves weekly QALY loss for the State, across outcomes.
+        """
         return self.outcomes.weeklyQALYLoss
 
 class AllStates:
@@ -184,6 +206,10 @@ class AllStates:
     def populate(self, case_weight, death_weight, hosp_weight):
         """
         Populates the AllStates object with county case data.
+        :param case_weight: : cases-specific weight to be applied to each case in calculating QALY loss.
+        :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
+        :param hosp_weight: hosp-specific weight to be applied to each hospitalization in calculating QALY loss.
+
         """
 
         county_case_data, dates = get_dict_of_county_data_by_type('cases')

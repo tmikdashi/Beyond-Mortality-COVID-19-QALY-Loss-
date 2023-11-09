@@ -44,7 +44,6 @@ all_states.get_weekly_qaly_loss_for_a_county("Autauga", "AL")
 all_states.plot_map_of_qaly_loss_by_county()
 all_states.plot_weekly_qaly_loss_by_state()
 all_states.plot_weekly_qaly_loss()
-all_states.print_weekly_cases_qaly_loss_by_state()
 all_states.plot_weekly_qaly_loss_by_outcome()
 all_states.plot_qaly_loss_by_state_and_by_outcome()
 
