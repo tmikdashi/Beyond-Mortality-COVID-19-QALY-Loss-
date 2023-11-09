@@ -255,6 +255,8 @@ class AllStates:
         self.outcomes.weeklyQALYLoss = overall_weekly_qaly_loss
         print(f"Weekly QALY Loss for all states: {self.outcomes.weeklyQALYLoss}")
 
+
+
     def get_overall_qaly_loss_by_county(self):
         """
         Print the overall QALY loss for each county.
