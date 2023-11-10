@@ -1,16 +1,23 @@
 from classes.model_v2 import AllStates
 
 
+# create the model, populate it, and calculate the QALY loss
 all_states = AllStates()
 all_states.populate()
 all_states.calculate_qaly_loss(case_weight=0.1, hosp_weight=0.2, death_weight=0.3)
 
 print('Total US population: ', '{:,}'.format(all_states.population))
 print('Total US QALY loss: ', '{:,.0f}'.format(all_states.get_overall_qaly_loss()))
+
+# get and print QALY loss by outcome
+qaly_loss_by_outcome = all_states.get_qaly_loss_by_outcome()
+for outcome, value in qaly_loss_by_outcome.items():
+    print('   Due to {}:'.format(outcome),
+          '{:,.0f}'.format(value))
+
+
 print('Weekly US QALY loss: ', all_states.get_weekly_qaly_loss())
 
-
-all_states.get_weekly_qaly_loss_by_outcome()
 
 #TODO: many of these are just to demonstrate that the functions work and therefore can be deleted later
 

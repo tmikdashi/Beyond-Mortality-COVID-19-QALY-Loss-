@@ -49,6 +49,7 @@ class AnOutcome:
 
 class PandemicOutcomes:
     def __init__(self):
+
         self.cases = AnOutcome()
         self.hosps = AnOutcome()
         self.deaths = AnOutcome()
@@ -302,22 +303,16 @@ class AllStates:
 
         return self.pandemicOutcomes.weeklyQALYLoss
 
-    def get_weekly_qaly_loss_by_outcome(self):
+    def get_qaly_loss_by_outcome(self):
         """
-        :return: Weekly QALY losses due to cases,
+        :return: (dictionary) of QALY loss by outcome with keys 'cases', 'hosps', 'deaths'
         """
 
-        weekly_qaly_losses_cases = {state_name: state_obj.pandemicOutcomes.cases.weeklyQALYLoss for state_name, state_obj in
-                                    self.states.items()}
-        weekly_qaly_losses_deaths = {state_name: state_obj.pandemicOutcomes.deaths.weeklyQALYLoss for state_name, state_obj in
-                                     self.states.items()}
-        weekly_qaly_losses_hosps = {state_name: state_obj.pandemicOutcomes.hosps.weeklyQALYLoss for state_name, state_obj in
-                                    self.states.items()}
+        dict_results = {'cases': self.pandemicOutcomes.cases.totalQALYLoss,
+                        'hosps': self.pandemicOutcomes.hosps.totalQALYLoss,
+                        'deaths': self.pandemicOutcomes.deaths.totalQALYLoss}
 
-        # Update the outcomes object with the overall weekly QALY loss
-        self.pandemicOutcomes.cases.weeklyQALYLoss = np.sum(list(weekly_qaly_losses_cases.values()), axis=0)
-        self.pandemicOutcomes.deaths.weeklyQALYLoss = np.sum(list(weekly_qaly_losses_deaths.values()), axis=0)
-        self.pandemicOutcomes.hosps.weeklyQALYLoss = np.sum(list(weekly_qaly_losses_hosps.values()), axis=0)
+        return dict_results
 
     def get_overall_qaly_loss_by_county(self):
         """
