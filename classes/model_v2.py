@@ -179,32 +179,6 @@ class State:
         self.pandemicOutcomes.calculate_qaly_loss(
             case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
 
-
-        # state_qaly_loss = {outcome_name: 0 for outcome_name in ['cases', 'hosps', 'deaths']}
-        # state_weekly_qaly_loss = {outcome_name: np.zeros(self.numWeeks) for outcome_name in
-        #                           ['cases', 'hosps', 'deaths']}
-        #
-        # for county in self.counties.values():
-        #     for outcome_name in state_qaly_loss.keys():
-        #         state_qaly_loss[outcome_name] += getattr(county.pandemicOutcomes, outcome_name).totalQALYLoss
-        #         state_weekly_qaly_loss[outcome_name] += getattr(county.pandemicOutcomes, outcome_name).weeklyQALYLoss
-        #
-        # # I realize this is very redundant and am debugging some aspects of the code to get rid of this
-        # self.pandemicOutcomes.cases.totalQALYLoss = state_qaly_loss['cases']
-        # self.pandemicOutcomes.hosps.totalQALYLoss = state_qaly_loss['hosps']
-        # self.pandemicOutcomes.deaths.totalQALYLoss = state_qaly_loss['deaths']
-        #
-        # self.pandemicOutcomes.cases.weeklyQALYLoss = state_weekly_qaly_loss['cases']
-        # self.pandemicOutcomes.hosps.weeklyQALYLoss = state_weekly_qaly_loss['hosps']
-        # self.pandemicOutcomes.deaths.weeklyQALYLoss = state_weekly_qaly_loss['deaths']
-        #
-        # # Update totalQALYLoss and weeklyQALYLoss for all outcomes
-        # self.pandemicOutcomes.totalQALYLoss = sum(state_qaly_loss.values())
-        # self.pandemicOutcomes.weeklyQALYLoss = (
-        #         self.pandemicOutcomes.cases.weeklyQALYLoss +
-        #         self.pandemicOutcomes.deaths.weeklyQALYLoss +
-        #         self.pandemicOutcomes.hosps.weeklyQALYLoss)
-
     def get_overall_qaly_loss(self):
         """
         Retrieves total QALY loss for the State, across outcomes.
@@ -525,12 +499,10 @@ class AllStates:
 
         return fig
 
-
     def plot_weekly_qaly_loss_by_outcome(self):
         """
         Plots national weekly QALY Loss across all states broken down by cases, hospitalizations and deaths.
         """
-
 
         fig, ax = plt.subplots(figsize=(12, 6))
 
@@ -606,4 +578,3 @@ class AllStates:
 
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
-
