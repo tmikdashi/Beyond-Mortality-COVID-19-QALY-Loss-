@@ -10,8 +10,6 @@ print('Total US QALY loss: ', '{:,.0f}'.format(all_states.get_overall_qaly_loss(
 print('Weekly US QALY loss: ', all_states.get_weekly_qaly_loss())
 
 
-all_states.get_overall_qaly_loss()
-all_states.get_weekly_qaly_loss()
 all_states.get_weekly_qaly_loss_by_outcome()
 
 #TODO: many of these are just to demonstrate that the functions work and therefore can be deleted later

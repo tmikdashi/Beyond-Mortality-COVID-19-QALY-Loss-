@@ -272,6 +272,12 @@ class AllStates:
             self.states[state].add_county(county)
 
     def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
+        """
+        calculates the QALY loss for all states and the nation
+        :param case_weight:
+        :param death_weight:
+        :param hosp_weight:
+        """
 
         # calculate QALY loss for each state
         for state in self.states.values():
@@ -284,17 +290,13 @@ class AllStates:
 
     def get_overall_qaly_loss(self):
         """
-        Returns overall QALY Loss, cumulating across all states and across all timepoints.
-
-        :return: Overall QALY loss summed over all states and timepoints.
+        :return: Overall QALY loss summed over all states.
         """
 
         return self.pandemicOutcomes.totalQALYLoss
 
     def get_weekly_qaly_loss(self):
         """
-        Calculate and return the weekly QALY loss for each state.
-
         :return: Weekly QALY losses across all states as numpy array
         """
 
@@ -302,9 +304,7 @@ class AllStates:
 
     def get_weekly_qaly_loss_by_outcome(self):
         """
-        Calculate and return the weekly QALY loss for each state.
-
-        :return: Weekly QALY losses across all states as numpy array
+        :return: Weekly QALY losses due to cases,
         """
 
         weekly_qaly_losses_cases = {state_name: state_obj.pandemicOutcomes.cases.weeklyQALYLoss for state_name, state_obj in
