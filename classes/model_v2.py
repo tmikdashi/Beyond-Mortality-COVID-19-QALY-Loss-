@@ -10,13 +10,13 @@ from data_preprocessing.support_functions import get_dict_of_county_data_by_type
 from definitions import ROOT_DIR
 
 
-class Outcome:
+class AnOutcome:
 
     def __init__(self):
         self.weeklyObs = np.array([])
-        self.totalObs = None
+        self.totalObs = 0
         self.weeklyQALYLoss = np.array([])
-        self.totalQALYLoss = None
+        self.totalQALYLoss = 0
 
     def add_traj(self, weekly_obs):
         """
@@ -26,8 +26,16 @@ class Outcome:
         if not isinstance(weekly_obs, np.ndarray):
             weekly_obs = np.array(weekly_obs)
 
-        self.weeklyObs = np.nan_to_num(weekly_obs, nan=0)
-        self.totalObs = sum(self.weeklyObs)
+        # replace missing values with 0
+        weekly_obs = np.nan_to_num(weekly_obs, nan=0)
+
+        # add the weekly data to the existing data
+        if len(self.weeklyObs) == 0:
+            self.weeklyObs = weekly_obs
+        else:
+            self.weeklyObs += weekly_obs
+
+        self.totalObs += sum(weekly_obs)
 
     def calculate_qaly_loss(self, quality_weight):
         """
@@ -39,11 +47,11 @@ class Outcome:
         self.totalQALYLoss = sum(self.weeklyQALYLoss)
 
 
-class Outcomes:
+class PandemicOutcomes:
     def __init__(self):
-        self.cases = Outcome()
-        self.hosps = Outcome()
-        self.deaths = Outcome()
+        self.cases = AnOutcome()
+        self.hosps = AnOutcome()
+        self.deaths = AnOutcome()
 
         self.weeklyQALYLoss = np.array([])
         self.totalQALYLoss = 0
@@ -59,13 +67,12 @@ class Outcomes:
         self.hosps.add_traj(weekly_obs=weekly_hosp)
         self.deaths.add_traj(weekly_obs=weekly_deaths)
 
-    def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
+    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
         """
         Calculates the weekly and overall QALY
         :param case_weight: cases-specific weight to be applied to each case in calculating QALY loss.
-        :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
         :param hosp_weight: hosp-specific weight to be applied to each hospitalization in calculating QALY loss.
-        :return Overall and QALY loss for across all outcomes.
+        :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
         """
 
         self.cases.calculate_qaly_loss(quality_weight=case_weight)
@@ -90,7 +97,7 @@ class County:
         self.state = state
         self.fips = fips
         self.population = int(population)
-        self.outcomes = Outcomes()
+        self.pandemicOutcomes = PandemicOutcomes()
 
     def add_traj(self, weekly_cases, weekly_deaths, weekly_hosp):
         """
@@ -99,7 +106,7 @@ class County:
         :param weekly_hosp: Weekly hospitalizations data as a numpy array.
         :param weekly_deaths: Weekly deaths data as a numpy array.
         """
-        self.outcomes.add_traj(
+        self.pandemicOutcomes.add_traj(
             weekly_cases=weekly_cases, weekly_hosp=weekly_hosp, weekly_deaths=weekly_deaths)
 
     def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
@@ -110,23 +117,22 @@ class County:
         :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
         :param hosp_weight: hosp-specific weight to be applied to each hospitalization in calculating QALY loss.
         :return QALY loss for each county.
-
         """
 
-        self.outcomes.calculate_qaly_loss(
+        self.pandemicOutcomes.calculate_qaly_loss(
             case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
 
     def get_overall_qaly_loss(self):
         """
         Retrieves total QALY loss for the County, across outcomes.
         """
-        return self.outcomes.totalQALYLoss
+        return self.pandemicOutcomes.totalQALYLoss
 
     def get_weekly_qaly_loss(self):
         """
         Retrieves weekly QALY loss for the County, across outcomes.
         """
-        return self.outcomes.weeklyQALYLoss
+        return self.pandemicOutcomes.weeklyQALYLoss
 
 
 class State:
@@ -139,7 +145,7 @@ class State:
         self.name = name
         self.population = 0
         self.counties = {}  # Dictionary of county objects
-        self.outcomes = Outcomes()
+        self.pandemicOutcomes = PandemicOutcomes()
         self.numWeeks = num_weeks
 
     def add_county(self, county):
@@ -150,83 +156,79 @@ class State:
         """
         self.counties[county.name] = county
         self.population += county.population
-        self.outcomes.add_traj(
-            weekly_cases=county.outcomes.cases.weeklyObs,
-            weekly_hosp=county.outcomes.hosps.weeklyObs,
-            weekly_deaths=county.outcomes.deaths.weeklyObs)
+        self.pandemicOutcomes.add_traj(
+            weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
+            weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
+            weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
 
-    def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
+    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
         """
         Calculates QALY loss for the State.
-        #TODO: for this function I also explicitly defined QALY loss by outcome. These values are used later on for
-        outcome-specific plots (see below). I expected outcome-specific values of totalQALYLoss and
-        weeklyQALYLoss to be automatically calculated/accessible when state.outcomes.totalQALYLoss is calculated but
-        that isn't the case. Is there perhaps something I'm missing in my code that is preventing this?
-
         :param case_weight: : cases-specific weight to be applied to each case in calculating QALY loss.
-        :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
         :param hosp_weight: hosp-specific weight to be applied to each hospitalization in calculating QALY loss.
-        :return: Total and Weekly QALY loss for the State.
+        :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
         """
-        state_qaly_loss = {outcome_name: 0 for outcome_name in ['cases', 'hosps', 'deaths']}
-        state_weekly_qaly_loss = {outcome_name: np.zeros(self.numWeeks) for outcome_name in
-                                  ['cases', 'hosps', 'deaths']}
 
+        # calculate QALY loss for each county
         for county in self.counties.values():
-            for outcome_name in state_qaly_loss.keys():
-                state_qaly_loss[outcome_name] += getattr(county.outcomes, outcome_name).totalQALYLoss
-                state_weekly_qaly_loss[outcome_name] += getattr(county.outcomes, outcome_name).weeklyQALYLoss
+            county.calculate_qaly_loss(
+                case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
 
-        # I realize this is very redundant and am debugging some aspects of the code to get rid of this
-        self.outcomes.cases.totalQALYLoss = state_qaly_loss['cases']
-        self.outcomes.hosps.totalQALYLoss = state_qaly_loss['hosps']
-        self.outcomes.deaths.totalQALYLoss = state_qaly_loss['deaths']
-
-        self.outcomes.cases.weeklyQALYLoss = state_weekly_qaly_loss['cases']
-        self.outcomes.hosps.weeklyQALYLoss = state_weekly_qaly_loss['hosps']
-        self.outcomes.deaths.weeklyQALYLoss = state_weekly_qaly_loss['deaths']
-
-        # Update totalQALYLoss and weeklyQALYLoss for all outcomes
-        self.outcomes.totalQALYLoss = sum(state_qaly_loss.values())
-        self.outcomes.weeklyQALYLoss = (
-                self.outcomes.cases.weeklyQALYLoss +
-                self.outcomes.deaths.weeklyQALYLoss +
-                self.outcomes.hosps.weeklyQALYLoss)
+        # calculate QALY loss for the state
+        self.pandemicOutcomes.calculate_qaly_loss(
+            case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
 
 
+        # state_qaly_loss = {outcome_name: 0 for outcome_name in ['cases', 'hosps', 'deaths']}
+        # state_weekly_qaly_loss = {outcome_name: np.zeros(self.numWeeks) for outcome_name in
+        #                           ['cases', 'hosps', 'deaths']}
+        #
+        # for county in self.counties.values():
+        #     for outcome_name in state_qaly_loss.keys():
+        #         state_qaly_loss[outcome_name] += getattr(county.pandemicOutcomes, outcome_name).totalQALYLoss
+        #         state_weekly_qaly_loss[outcome_name] += getattr(county.pandemicOutcomes, outcome_name).weeklyQALYLoss
+        #
+        # # I realize this is very redundant and am debugging some aspects of the code to get rid of this
+        # self.pandemicOutcomes.cases.totalQALYLoss = state_qaly_loss['cases']
+        # self.pandemicOutcomes.hosps.totalQALYLoss = state_qaly_loss['hosps']
+        # self.pandemicOutcomes.deaths.totalQALYLoss = state_qaly_loss['deaths']
+        #
+        # self.pandemicOutcomes.cases.weeklyQALYLoss = state_weekly_qaly_loss['cases']
+        # self.pandemicOutcomes.hosps.weeklyQALYLoss = state_weekly_qaly_loss['hosps']
+        # self.pandemicOutcomes.deaths.weeklyQALYLoss = state_weekly_qaly_loss['deaths']
+        #
+        # # Update totalQALYLoss and weeklyQALYLoss for all outcomes
+        # self.pandemicOutcomes.totalQALYLoss = sum(state_qaly_loss.values())
+        # self.pandemicOutcomes.weeklyQALYLoss = (
+        #         self.pandemicOutcomes.cases.weeklyQALYLoss +
+        #         self.pandemicOutcomes.deaths.weeklyQALYLoss +
+        #         self.pandemicOutcomes.hosps.weeklyQALYLoss)
 
     def get_overall_qaly_loss(self):
         """
         Retrieves total QALY loss for the State, across outcomes.
         """
-        return self.outcomes.totalQALYLoss
+        return self.pandemicOutcomes.totalQALYLoss
 
     def get_weekly_qaly_loss(self):
         """
         Retrieves weekly QALY loss for the State, across outcomes.
         """
-        return self.outcomes.weeklyQALYLoss
-
+        return self.pandemicOutcomes.weeklyQALYLoss
 
 
 class AllStates:
-    def __init__(self, county_case_csvfile, county_death_csvfile, county_hosp_csvfile):
+    def __init__(self):
         """
         Initialize an AllStates object.
-
-        :param county_case_csvfile: (string) path to the csv file containing county data
-
         """
 
         self.states = {}  # dictionary of state objects
-        self.outcomes = Outcomes()
-        self.countyCaseCSVfile = pd.read_csv(county_case_csvfile)
-        self.countyDeathCSVfile = pd.read_csv(county_death_csvfile)
-        self.countyHospCSVfile = pd.read_csv(county_hosp_csvfile)
+        self.pandemicOutcomes = PandemicOutcomes()
         self.numWeeks = 0
-        self.totalPopulation = 0
+        self.population = 0
 
-    def populate(self, case_weight, death_weight, hosp_weight):
+    def populate(self):
         """
         Populates the AllStates object with county case data.
         """
@@ -237,41 +239,48 @@ class AllStates:
 
         self.numWeeks = len(dates)
 
+        for (county_name, state, fips, population), case_values in county_case_data.items():
 
-        # Creating a chained exception to handle situations where data is available for cases but not for deaths/hosp
-        for (county, state, fips, population), case_values in county_case_data.items():
+            self.population += int(population)
+
+            # making sure data is available for deaths and hospitalizations
             try:
-                death_values = county_death_data[(county, state, fips, population)]
-                hosp_values = county_hosp_data[(county, state, fips, population)]
+                death_values = county_death_data[(county_name, state, fips, population)]
+                hosp_values = county_hosp_data[(county_name, state, fips, population)]
             except KeyError as e:
-                raise KeyError(f"Data not found for {county}, {state}, {fips}, {population}.") from e
+                raise KeyError(f"Data not found for {county_name}, {state}, {fips}, {population}.") from e
 
+            # create a new county
+            county = County(
+                name=county_name, state=state, fips=fips, population=int(population))
+
+            # Add weekly data to county object
+            county.add_traj(
+                weekly_cases=case_values, weekly_deaths=death_values, weekly_hosp=hosp_values)
+
+            # update the nation pandemic outcomes based on the outcomes for this county
+            self.pandemicOutcomes.add_traj(
+                weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
+                weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
+                weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
+
+            # create a new state if not already in the dictionary of states
             if state not in self.states:
                 self.states[state] = State(name=state, num_weeks=self.numWeeks)
 
+            # add the new county to the state
+            self.states[state].add_county(county)
 
-            county_obj = County(
-                name=county,
-                state=state,
-                fips=fips,
-                population=int(population))
+    def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
 
-            # Add weekly data to County object and County object to the state
-            county_obj.add_traj(weekly_cases=case_values, weekly_deaths=death_values, weekly_hosp=hosp_values)
+        # calculate QALY loss for each state
+        for state in self.states.values():
+            state.calculate_qaly_loss(
+                case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
 
-            # Performing calculations such that following functions simply extract calculated values
-            county_obj.calculate_qaly_loss(case_weight, death_weight, hosp_weight)
-
-            self.states[state].add_county(county_obj)
-
-
-        for state_obj in self.states.values():
-            state_obj.calculate_qaly_loss(case_weight, death_weight, hosp_weight)
-
-        for state_name, state_obj in self.states.items():
-            self.totalPopulation += state_obj.population
-
-
+        # calculate QALY loss for the nation
+        self.pandemicOutcomes.calculate_qaly_loss(
+            case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
 
     def get_overall_qaly_loss(self):
         """
@@ -279,11 +288,8 @@ class AllStates:
 
         :return: Overall QALY loss summed over all states and timepoints.
         """
-        total_qaly_loss = 0
-        for state_obj in self.states.values():
-            total_qaly_loss += state_obj.outcomes.totalQALYLoss
-        self.outcomes.totalQALYLoss = total_qaly_loss
-        print(f"Total QALY Loss for all states: {self.outcomes.totalQALYLoss}")
+
+        return self.pandemicOutcomes.totalQALYLoss
 
     def get_weekly_qaly_loss(self):
         """
@@ -292,16 +298,7 @@ class AllStates:
         :return: Weekly QALY losses across all states as numpy array
         """
 
-        weekly_qaly_losses = []
-
-        for state_obj in self.states.values():
-            weekly_qaly_losses.append(state_obj.outcomes.weeklyQALYLoss)
-
-        self.outcomes.weeklyQALYLoss = np.sum(weekly_qaly_losses, axis=0)
-
-        print(f"Weekly QALY Loss for all states: {self.outcomes.weeklyQALYLoss}")
-
-
+        return self.pandemicOutcomes.weeklyQALYLoss
 
     def get_weekly_qaly_loss_by_outcome(self):
         """
@@ -310,17 +307,17 @@ class AllStates:
         :return: Weekly QALY losses across all states as numpy array
         """
 
-        weekly_qaly_losses_cases = {state_name: state_obj.outcomes.cases.weeklyQALYLoss for state_name, state_obj in
+        weekly_qaly_losses_cases = {state_name: state_obj.pandemicOutcomes.cases.weeklyQALYLoss for state_name, state_obj in
                                     self.states.items()}
-        weekly_qaly_losses_deaths = {state_name: state_obj.outcomes.deaths.weeklyQALYLoss for state_name, state_obj in
+        weekly_qaly_losses_deaths = {state_name: state_obj.pandemicOutcomes.deaths.weeklyQALYLoss for state_name, state_obj in
                                      self.states.items()}
-        weekly_qaly_losses_hosps = {state_name: state_obj.outcomes.hosps.weeklyQALYLoss for state_name, state_obj in
+        weekly_qaly_losses_hosps = {state_name: state_obj.pandemicOutcomes.hosps.weeklyQALYLoss for state_name, state_obj in
                                     self.states.items()}
 
         # Update the outcomes object with the overall weekly QALY loss
-        self.outcomes.cases.weeklyQALYLoss = np.sum(list(weekly_qaly_losses_cases.values()), axis=0)
-        self.outcomes.deaths.weeklyQALYLoss = np.sum(list(weekly_qaly_losses_deaths.values()), axis=0)
-        self.outcomes.hosps.weeklyQALYLoss = np.sum(list(weekly_qaly_losses_hosps.values()), axis=0)
+        self.pandemicOutcomes.cases.weeklyQALYLoss = np.sum(list(weekly_qaly_losses_cases.values()), axis=0)
+        self.pandemicOutcomes.deaths.weeklyQALYLoss = np.sum(list(weekly_qaly_losses_deaths.values()), axis=0)
+        self.pandemicOutcomes.hosps.weeklyQALYLoss = np.sum(list(weekly_qaly_losses_hosps.values()), axis=0)
 
     def get_overall_qaly_loss_by_county(self):
         """
@@ -330,7 +327,7 @@ class AllStates:
         """
         for state_name, state_obj in self.states.items():
             for county_name, county_obj in state_obj.counties.items():
-                print(f"Overall QALY Loss for {county_name}, {state_name}: {county_obj.outcomes.totalQALYLoss}")
+                print(f"Overall QALY Loss for {county_name}, {state_name}: {county_obj.pandemicOutcomes.totalQALYLoss}")
 
     def get_overall_qaly_loss_by_state(self):
         """
@@ -339,7 +336,7 @@ class AllStates:
         :return: Overall QALY loss by states summed across all timepoints.
         """
         for state_name, state_obj in self.states.items():
-            print(f"Overall QALY Loss for {state_name}: {state_obj.outcomes.totalQALYLoss}")
+            print(f"Overall QALY Loss for {state_name}: {state_obj.pandemicOutcomes.totalQALYLoss}")
 
     def get_weekly_qaly_loss_by_state(self):
         """
@@ -349,7 +346,7 @@ class AllStates:
         """
 
         for state_name, state_obj in self.states.items():
-            print(f"Weekly QALY Loss for {state_name}: {state_obj.outcomes.weeklyQALYLoss}")
+            print(f"Weekly QALY Loss for {state_name}: {state_obj.pandemicOutcomes.weeklyQALYLoss}")
 
     def get_weekly_qaly_loss_by_county(self):
         """
@@ -359,7 +356,7 @@ class AllStates:
         """
         for state_name, state_obj in self.states.items():
             for county_name, county_obj in state_obj.counties.items():
-                print(f"Weekly QALY Loss for  {county_name},{state_name}: {county_obj.outcomes.weeklyQALYLoss}")
+                print(f"Weekly QALY Loss for  {county_name},{state_name}: {county_obj.pandemicOutcomes.weeklyQALYLoss}")
 
     def get_overall_qaly_loss_for_a_county(self, county_name, state_name, ):
         """
@@ -373,7 +370,7 @@ class AllStates:
         if state_obj:
             county_obj = state_obj.counties.get(county_name)
             if county_obj:
-                print(f"Overall QALY Loss for {county_name},{state_name} : {county_obj.outcomes.totalQALYLoss}")
+                print(f"Overall QALY Loss for {county_name},{state_name} : {county_obj.pandemicOutcomes.totalQALYLoss}")
 
     def get_overall_qaly_loss_for_a_state(self, state_name):
         """
@@ -383,7 +380,7 @@ class AllStates:
         :return: Overall QALY loss for the specified state, summed over all timepoints.
         """
         state_obj = self.states.get(state_name)
-        print(f"Overall QALY Loss for {state_name}: {state_obj.outcomes.totalQALYLoss}")
+        print(f"Overall QALY Loss for {state_name}: {state_obj.pandemicOutcomes.totalQALYLoss}")
 
     def get_weekly_qaly_loss_for_a_state(self, state_name):
         """
@@ -393,7 +390,7 @@ class AllStates:
         :return: Weekly QALY loss for the specified state.
         """
         state_obj = self.states.get(state_name)
-        print(f"Weekly QALY Loss for {state_name}: {state_obj.outcomes.weeklyQALYLoss}")
+        print(f"Weekly QALY Loss for {state_name}: {state_obj.pandemicOutcomes.weeklyQALYLoss}")
 
     def get_weekly_qaly_loss_for_a_county(self, county_name, state_name, ):
         """
@@ -407,7 +404,7 @@ class AllStates:
         if state_obj:
             county_obj = state_obj.counties.get(county_name)
             if county_obj:
-                print(f"Overall QALY Loss for {county_name},{state_name} : {county_obj.outcomes.weeklyQALYLoss}")
+                print(f"Overall QALY Loss for {county_name},{state_name} : {county_obj.pandemicOutcomes.weeklyQALYLoss}")
 
 
     def plot_weekly_qaly_loss_by_state(self):
@@ -419,11 +416,11 @@ class AllStates:
         fig, ax = plt.subplots(figsize=(12, 6))
 
         for state_name, state_obj in self.states.items():
-            weeks = range(1, len(state_obj.outcomes.weeklyQALYLoss) + 1)
+            weeks = range(1, len(state_obj.pandemicOutcomes.weeklyQALYLoss) + 1)
 
             # Calculate the weekly QALY loss per 100,000 population
             state_qaly_loss_per_100k = [(qaly_loss / state_obj.population) * 100000 for qaly_loss in
-                                        state_obj.outcomes.weeklyQALYLoss]
+                                        state_obj.pandemicOutcomes.weeklyQALYLoss]
 
             ax.plot(weeks, state_qaly_loss_per_100k, label=state_name)
 
@@ -449,8 +446,8 @@ class AllStates:
         fig, ax = plt.subplots(figsize=(12, 6))
 
         # Plot the total weekly QALY loss per 100,000 population
-        weeks = range(1, len(self.outcomes.weeklyQALYLoss) + 1)
-        ax.plot(weeks, self.outcomes.weeklyQALYLoss)
+        weeks = range(1, len(self.pandemicOutcomes.weeklyQALYLoss) + 1)
+        ax.plot(weeks, self.pandemicOutcomes.weeklyQALYLoss)
 
         ax.set_title('National Weekly QALY Loss from Cases, Hospitalizations and Deaths')
         ax.set_xlabel('Date')
@@ -477,7 +474,7 @@ class AllStates:
         for state in self.states.values():
             for county in state.counties.values():
                 # Calculate the QALY loss per 100,000 population
-                qaly_loss = county.outcomes.totalQALYLoss
+                qaly_loss = county.pandemicOutcomes.totalQALYLoss
                 qaly_loss_per_100k = (qaly_loss / county.population) * 100000
                 # Append county data to the list
                 county_qaly_loss_data["COUNTY"].append(county.name)
@@ -543,10 +540,10 @@ class AllStates:
         fig, ax = plt.subplots(figsize=(12, 6))
 
         # Plot the lines for each outcome
-        weeks = range(1, len(self.outcomes.cases.weeklyQALYLoss) + 1)
-        ax.plot(weeks, self.outcomes.cases.weeklyQALYLoss, label='Cases', color='blue')
-        ax.plot(weeks, self.outcomes.hosps.weeklyQALYLoss, label='Hospitalizations', color='green')
-        ax.plot(weeks, self.outcomes.deaths.weeklyQALYLoss, label='Deaths', color='red')
+        weeks = range(1, len(self.pandemicOutcomes.cases.weeklyQALYLoss) + 1)
+        ax.plot(weeks, self.pandemicOutcomes.cases.weeklyQALYLoss, label='Cases', color='blue')
+        ax.plot(weeks, self.pandemicOutcomes.hosps.weeklyQALYLoss, label='Hospitalizations', color='green')
+        ax.plot(weeks, self.pandemicOutcomes.deaths.weeklyQALYLoss, label='Deaths', color='red')
 
         ax.set_title('Weekly National QALY Loss by Outcome ')
         ax.set_xlabel('Date')
@@ -589,9 +586,9 @@ class AllStates:
         # Iterate through each state
         for i, state_obj in enumerate(states_list):
             # Calculate the heights for each segment
-            cases_height = (state_obj.outcomes.cases.totalQALYLoss/ state_obj.population) * 100000
-            deaths_height = (state_obj.outcomes.deaths.totalQALYLoss/ state_obj.population) * 100000
-            hosps_height = (state_obj.outcomes.hosps.totalQALYLoss/ state_obj.population) * 100000
+            cases_height = (state_obj.pandemicOutcomes.cases.totalQALYLoss / state_obj.population) * 100000
+            deaths_height = (state_obj.pandemicOutcomes.deaths.totalQALYLoss / state_obj.population) * 100000
+            hosps_height = (state_obj.pandemicOutcomes.hosps.totalQALYLoss / state_obj.population) * 100000
 
             # Plot the segments
             ax.bar(i, cases_height, color=cases_color, width=bar_width, align='center', label='Cases' if i == 0 else "")
