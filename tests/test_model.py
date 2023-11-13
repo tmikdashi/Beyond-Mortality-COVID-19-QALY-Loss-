@@ -1,4 +1,4 @@
-from classes.model_v2 import AllStates
+from classes.model import AllStates
 
 
 # create the model, populate it, and calculate the QALY loss
