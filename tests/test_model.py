@@ -18,6 +18,10 @@ for outcome, value in qaly_loss_by_outcome.items():
 
 print('Weekly US QALY loss: ', all_states.get_weekly_qaly_loss())
 
+# TODO: when I run in this module, I get this warning:
+#     "No artists with labels found to put in legend.
+#     Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+
 
 #TODO: many of these are just to demonstrate that the functions work and therefore can be deleted later
 
