@@ -3,14 +3,14 @@ from deampy.parameters import Beta, Gamma
 
 class ParameterValues:
 
-    def __int__(self):
+    def __init__(self):
 
         self.qWeightCase = 0.1
         self.qWeightHosp = 0.3
         self.qWeightDeath = 10
 
     def __str__(self):
-        return "qWeightCase: {}, qWeightHosp: {}, qWeightDeath: {}".format(
+        return "qWeightCase: {:.4f}, qWeightHosp: {}, qWeightDeath: {}".format(
             self.qWeightCase, self.qWeightHosp, self.qWeightDeath)
 
 
