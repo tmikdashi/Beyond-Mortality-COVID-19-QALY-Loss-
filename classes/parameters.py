@@ -10,7 +10,7 @@ class ParameterValues:
         self.qWeightDeath = 10
 
     def __str__(self):
-        return "qWeightCase: {:.4f}, qWeightHosp: {}, qWeightDeath: {}".format(
+        return "qWeightCase: {:.4f}, qWeightHosp: {:.4f}, qWeightDeath: {:.4f}".format(
             self.qWeightCase, self.qWeightHosp, self.qWeightDeath)
 
 
@@ -26,10 +26,12 @@ class ParameterGenerator:
         self.parameters['case_dur_symp'] = Gamma(mean=14/364, st_dev=2/364)
 
         # parameters to calculate the QALY loss due to a hospitalizations
-        # to be completed ...
+        self.parameters['hosp_dur_stay'] = Gamma(mean=6.12, st_dev=5.70) #updated value
+        self.parameters['hosp_weight'] = Beta(mean=0.8, st_dev=0.1)
 
         # parameters to calculate the QALY loss due to a death
-        # to be completed ...
+        self.parameters['death_age'] = Beta(mean=0.5, st_dev=0.1)
+        self.parameters['death_weight'] = Beta(mean=0.5, st_dev=0.1)
 
     def generate(self, rng):
         """
@@ -45,6 +47,9 @@ class ParameterGenerator:
 
         # calculate QALY loss due to a case
         self._calculate_qaly_loss_due_to_case(param=param)
+        self._calculate_qaly_loss_due_to_hosp(param=param)
+        self._calculate_qaly_loss_due_to_death(param=param)
+
 
         return param
 
@@ -61,3 +66,12 @@ class ParameterGenerator:
         param.qWeightCase = (self.parameters['case_weight_symp'].value
                              * self.parameters['case_prob_symp'].value
                              * self.parameters['case_dur_symp'].value)
+
+    def _calculate_qaly_loss_due_to_hosp(self, param):
+
+        param.qWeightHosp = (self.parameters['hosp_dur_stay'].value
+                              * self.parameters['hosp_weight'].value)
+
+    def _calculate_qaly_loss_due_to_death(self, param):
+        param.qWeightDeath = (self.parameters['death_age'].value
+                              * self.parameters['death_weight'].value)

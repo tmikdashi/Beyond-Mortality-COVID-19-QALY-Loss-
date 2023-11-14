@@ -396,7 +396,6 @@ class AllStates:
         ax.set_title('Weekly QALY Loss per 100,000 Population by State')
         ax.set_xlabel('Week')
         ax.set_ylabel('QALY Loss per 100,000 Population')
-        ax.legend()
         ax.grid(True)
 
         plt.xticks(rotation=90)
@@ -421,7 +420,6 @@ class AllStates:
         ax.set_title('National Weekly QALY Loss from Cases, Hospitalizations and Deaths')
         ax.set_xlabel('Date')
         ax.set_ylabel('QALY Loss')
-        ax.legend()
         ax.grid(True)
 
         plt.xticks(rotation=90)
@@ -515,7 +513,6 @@ class AllStates:
         ax.set_title('Weekly National QALY Loss by Outcome ')
         ax.set_xlabel('Date')
         ax.set_ylabel('QALY Loss ')
-        ax.legend()
         ax.grid(True)
 
         plt.xticks(rotation=90)
