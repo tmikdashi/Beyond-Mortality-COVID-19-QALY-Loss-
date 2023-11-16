@@ -204,7 +204,7 @@ def generate_prop_deaths_by_age_group_and_sex():
     total_deaths = data['Deaths'].sum()
 
     # Add a new column for the proportion of deaths
-    data['Age group'] = array("1-18, 19-2")
+    data['Age group'] = ["<1", "0-17", ]
 
     # Separate the 'Proportion of Deaths' into two columns for different sexes
     data['Proportion of Deaths Male'] = data['Proportion of Deaths'] * (data['Sex'] == 'Male')
