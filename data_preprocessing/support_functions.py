@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 import numpy as np
+import pandas as pd
 from deampy.in_out_functions import write_csv, read_csv_rows
 
 from definitions import ROOT_DIR
@@ -188,13 +189,13 @@ def generate_prop_deaths_by_age_group_and_sex():
     # Read CSV file row by row
 
     data_type_mapping = {
-        'Sex': str,
-        'Age Group': str,
-        'Deaths': int
+        'Sex': 7,
+        'Age Group': 8,
+        'Deaths': 9
     }
 
     # Read the data
-    rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
+    rows = read_csv_rows(file_name=ROOT_DIR + '/data/Provisional_COVID-19_Deaths_by_Sex_and_Age (3).csv',
                          if_ignore_first_row=True)
 
     # Create a DataFrame from the list of rows
@@ -203,8 +204,7 @@ def generate_prop_deaths_by_age_group_and_sex():
     # Calculate the total deaths
     total_deaths = data['Deaths'].sum()
 
-    # Add a new column for the proportion of deaths
-    data['Age group'] = ["<1", "0-17", ]
+    data['Proportion of Deaths'] = data['Deaths']/total_deaths
 
     # Separate the 'Proportion of Deaths' into two columns for different sexes
     data['Proportion of Deaths Male'] = data['Proportion of Deaths'] * (data['Sex'] == 'Male')
@@ -215,7 +215,7 @@ def generate_prop_deaths_by_age_group_and_sex():
     data.to_csv(output_file_path, index=False)
 
     # If you have a write_csv function, use it to write rows
-    header_row = list(data.columns)
+    header_row = ['Age Group', 'Proportion of Deaths Male', 'Proportion of Deaths Female']
     combined_rows = [header_row] + data.values.tolist()
     write_csv(rows=combined_rows, file_name=output_file_path)
 
@@ -227,17 +227,40 @@ def generate_life_exp_by_age_group_and_sex():
         'Age': 1,
         'COVID-19 Deaths': 7
     }
-    rows = read_csv_rows(file_name=ROOT_DIR + '/data/PerLifeTables_M_Alt2_TR2017.csv',
+    rows_m = read_csv_rows(file_name=ROOT_DIR + '/data/PerLifeTables_M_Alt2_TR2017.csv',
                          if_ignore_first_row=True)
+    rows_f = read_csv_rows(file_name=ROOT_DIR + '/data/PerLifeTables_F_Alt2_TR2017.csv',
+                           if_ignore_first_row=True)
 
     # Create a DataFrame from the list of rows
-    data = pd.DataFrame(rows)
+    data_m = pd.DataFrame(rows_m)
+    data_f = pd.DataFrame(rows_f)
 
+    # need to assign the cal
+    data_m['Age Group'] = ['Under 1 year', '1-4 years','5-14 years', '25-34 years', '35-44 years', '45-54 years',
+                         '55-64 years', '65-74 years', '75-84 years', '85 years and over']
+    data_f['Age Group'] = ['Under 1 year', '1-4 years', '5-14 years', '25-34 years', '35-44 years', '45-54 years',
+                           '55-64 years', '65-74 years', '75-84 years', '85 years and over']
+    window_size = 5
+    for i in range(0, len(df['COVID-19 Deaths']), window_size):
+        average_LE= df['COVID-19 Deaths'][i:i+window_size].mean()
+        print('Average Life Expectancy Values within Age Groups: {average_LE} ')
+
+    data_m['Average LE Male'] = data_m['average_LE']
+    data_f['Average LE Female'] = data_m['average_LE']
 
 # Generate the output file name for the combined data
     output_file = ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv'
 
     # Create the header row with dates for each data type
-    header_row = ['Age Group', 'Life Exp Male', 'Life Exp Female']
-    for data_type in data_type_mapping.keys():
-        header_row += [f'{data_type} {date}' for date in unique_dates]
+    header_row = ['Age Group', 'Average LE Male', 'Average LE Female']
+    combined_rows = [header_row] + data_m.values.tolist() + data_f.values.tolist()
+    write_csv(rows=combined_rows, file_name=output_file)
+
+def calculate_nb_deaths_per_age_group_by_sex():
+
+    rows = read_csv_rows(file_name=ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv',
+                         if_ignore_first_row=True)
+
+    rows['Nb of deaths male'] = rows['Proportion of Deaths Male'] * AllStates.deaths.weeklyQALYLoss
+    rows['Nb of deaths male'] = rows['Proportion of Deaths Female'] * AllStates.deaths.weeklyQALYLoss
