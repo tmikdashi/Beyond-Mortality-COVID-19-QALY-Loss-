@@ -1,4 +1,6 @@
-from deampy.parameters import Beta, Gamma
+from math import sumprod
+
+from deampy.parameters import Beta, Gamma, Dirichlet, ConstantArray
 
 
 class ParameterValues:
@@ -30,8 +32,10 @@ class ParameterGenerator:
         self.parameters['hosp_weight'] = Beta(mean=0.8, st_dev=0.1)
 
         # parameters to calculate the QALY loss due to a death
-        self.parameters['death_age'] = Beta(mean=0.5, st_dev=0.1)
-        self.parameters['death_weight'] = Beta(mean=0.5, st_dev=0.1)
+        self.parameters['death_age_dist'] = Dirichlet(
+            par_ns=[10, 20, 30]) # this is the number of deaths in each age group
+        self.parameters['death_weight_by_age'] = ConstantArray(
+            values=[80, 60, 40]) # this is the life-expectancy in each age group
 
     def generate(self, rng):
         """
@@ -49,7 +53,6 @@ class ParameterGenerator:
         self._calculate_qaly_loss_due_to_case(param=param)
         self._calculate_qaly_loss_due_to_hosp(param=param)
         self._calculate_qaly_loss_due_to_death(param=param)
-
 
         return param
 
@@ -73,5 +76,6 @@ class ParameterGenerator:
                               * self.parameters['hosp_weight'].value)
 
     def _calculate_qaly_loss_due_to_death(self, param):
-        param.qWeightDeath = (self.parameters['death_age'].value
-                              * self.parameters['death_weight'].value)
+        param.qWeightDeath = sumprod(
+            self.parameters['death_age_dist'].value,
+            self.parameters['death_weight_by_age'].value)
