@@ -184,5 +184,48 @@ def generate_combined_county_data_csv():
     # Write into a CSV file using the write_csv function
     write_csv(rows=[header_row] + combined_county_data_rows, file_name=output_file)
 
+def generate_prop_deaths_by_age_group_and_sex():
+    data_type_mapping = {
+        'Sex': 5,
+        'Age Group': 6,
+        'COVID-19 Deaths': 20
+    }
+
+    data = read_csv_rows(file_name=ROOT_DIR + '/data/Provisional_COVID-19_Deaths_by_Sex_Age (2).csv',
+                         if_ignore_first_row=True)
+
+    total_deaths= data['COVID-19 Deaths'].sum()
+    data['Proportion'] = data['COVID-19 Deaths']/ total_deaths
+
+    for index, row in data.iterrows():
+        sex = row['Sex']
+        age_group= row['Age Group']
+        covid_deaths = row['COVID-19 Deaths']
+        proportion = row['Proportion']
 
 
+    # Generate the output file name for the combined data
+    output_file = ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv'
+
+    # Create the header row with dates for each data type
+    header_row = ['Age Group', 'Proportion of Total Deaths Male', 'Proportion of Total Deaths Female']
+    for data_type in data_type_mapping.keys():
+        header_row += [f'{data_type} {date}' for date in unique_dates]
+
+
+def generate_life_exp_by_age_group_and_sex():
+
+    data_type_mapping = {
+        'Year': 0,
+        'Age': 1,
+        'COVID-19 Deaths': 7
+    }
+    rows = read_csv_rows(file_name=ROOT_DIR + '/data/PerLifeTables_M_Alt2_TR2017.csv',
+                         if_ignore_first_row=True)
+# Generate the output file name for the combined data
+    output_file = ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv'
+
+    # Create the header row with dates for each data type
+    header_row = ['Age Group', 'Life Exp Male', 'Life Exp Female']
+    for data_type in data_type_mapping.keys():
+        header_row += [f'{data_type} {date}' for date in unique_dates]

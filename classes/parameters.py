@@ -1,3 +1,4 @@
+
 from math import sumprod
 
 from deampy.parameters import Beta, Gamma, Dirichlet, ConstantArray
