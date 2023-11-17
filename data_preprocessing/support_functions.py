@@ -218,16 +218,7 @@ def generate_prop_deaths_by_age_group_and_sex():
 
 
 
-
-
-
 def generate_life_exp_by_age_group_and_sex():
-
-    data_type_mapping = {
-        'Year': 0,
-        'Age': 1,
-        'COVID-19 Deaths': 7
-    }
     rows_m = read_csv_rows(file_name=ROOT_DIR + '/data/PerLifeTables_M_Alt2_TR2017.csv',
                          if_ignore_first_row=True)
     rows_f = read_csv_rows(file_name=ROOT_DIR + '/data/PerLifeTables_F_Alt2_TR2017.csv',
@@ -237,18 +228,23 @@ def generate_life_exp_by_age_group_and_sex():
     data_m = pd.DataFrame(rows_m)
     data_f = pd.DataFrame(rows_f)
 
-    # need to assign the cal
-    data_m['Age Group'] = ['Under 1 year', '1-4 years','5-14 years', '25-34 years', '35-44 years', '45-54 years',
-                         '55-64 years', '65-74 years', '75-84 years', '85 years and over']
-    data_f['Age Group'] = ['Under 1 year', '1-4 years', '5-14 years', '25-34 years', '35-44 years', '45-54 years',
-                           '55-64 years', '65-74 years', '75-84 years', '85 years and over']
-    window_size = 5
-    for i in range(0, len(df['COVID-19 Deaths']), window_size):
-        average_LE= df['COVID-19 Deaths'][i:i+window_size].mean()
-        print('Average Life Expectancy Values within Age Groups: {average_LE} ')
+    # Creating average life expectancy values across different years
+    window_size =5 # specifying that we are looking at average every 5 years
+    data_m.loc[data_m['Age'] <1,'Age group'] = "Under 1 year"
+    data_m.loc[data_m['Age'] >= 1 & data_m['Age'] < 5,'Age group'] = "1-4 years"
+    data_m.loc[data_m['Age'] >= 5 & data_m['Age'] < 15,'Age group'] = "5-14 years"
+    data_m.loc[data_m['Age'] >= 15 & data_m['Age'] < 25, 'Age group'] = "15-24 years"
+    data_m.loc[data_m['Age'] >= 25 & data_m['Age'] < 35, 'Age group'] = '25-34 years'
+    data_m.loc[data_m['Age'] >= 35 & data_m['Age'] < 45, 'Age group'] = '35-44 years'
+    data_m.loc[data_m['Age'] >= 45 & data_m['Age'] < 55, 'Age group'] = '45-54 years'
+    data_m.loc[data_m['Age'] >= 55 & data_m['Age'] < 65, 'Age group'] = '55-64 years'
+    data_m.loc[data_m['Age'] >= 65 & data_m['Age'] < 75, 'Age group'] = '65-74 years'
+    data_m.loc[data_m['Age'] >= 75 & data_m['Age'] < 85, 'Age group'] = '75-84 years'
+    data_m.loc[data_m['Age'] >= 85, 'Age group'] = '85 years and over'
 
-    data_m['Average LE Male'] = data_m['average_LE']
-    data_f['Average LE Female'] = data_m['average_LE']
+    data_m['Average LE Male'] = data_m.group_by('Age Group')[data_m[' Expectation of life at age x'].mean()]
+    data_f['Average LE Male'] = data_m.group_by('Age Group')[data_f[' Expectation of life at age x'].mean()]
+
 
 # Generate the output file name for the combined data
     output_file = ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv'
