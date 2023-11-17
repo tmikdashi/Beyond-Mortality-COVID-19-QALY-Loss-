@@ -186,38 +186,39 @@ def generate_combined_county_data_csv():
     write_csv(rows=[header_row] + combined_county_data_rows, file_name=output_file)
 
 def generate_prop_deaths_by_age_group_and_sex():
-    # Read CSV file row by row
-
-    data_type_mapping = {
-        'Sex': 7,
-        'Age Group': 8,
-        'Deaths': 9
-    }
-
     # Read the data
     rows = read_csv_rows(file_name=ROOT_DIR + '/data/Provisional_COVID-19_Deaths_by_Sex_and_Age (3).csv',
                          if_ignore_first_row=True)
 
     # Create a DataFrame from the list of rows
-    data = pd.DataFrame(rows)
+    data = pd.DataFrame(rows, columns=["Data As Of", "Start Date", "End Date", "Group", "Year", "Month", "State", "Sex",
+                                       "Age Group", "COVID-19 Deaths", "Total Deaths", "Pneumonia Deaths",
+                                       "Pneumonia and COVID-19 Deaths", "Influenza Deaths",
+                                       "Pneumonia, Influenza, or COVID-19 Deaths", "Footnote"])
+    data['COVID-19 Deaths'] = pd.to_numeric(data['COVID-19 Deaths'], errors='coerce').fillna(0)
 
     # Calculate the total deaths
-    total_deaths = data['Deaths'].sum()
+    total_deaths = data['COVID-19 Deaths'].sum()
 
-    data['Proportion of Deaths'] = data['Deaths']/total_deaths
+    # Calculate proportions for male and female
+    data['Proportion of Deaths Male'] = data.apply(
+        lambda row: row['COVID-19 Deaths'] / total_deaths if row['Sex'] == 'Male' else 0, axis=1)
+    data['Proportion of Deaths Female'] = data.apply(
+        lambda row: row['COVID-19 Deaths'] / total_deaths if row['Sex'] == 'Female' else 0, axis=1)
 
-    # Separate the 'Proportion of Deaths' into two columns for different sexes
-    data['Proportion of Deaths Male'] = data['Proportion of Deaths'] * (data['Sex'] == 'Male')
-    data['Proportion of Deaths Female'] = data['Proportion of Deaths'] * (data['Sex'] == 'Female')
+    # Group by 'Age Group' to get unique rows for each age group
+    result = data.groupby('Age Group')[
+        ['Age Group', 'Proportion of Deaths Male', 'Proportion of Deaths Female']].max().reset_index(drop=True)
 
     # Save the new data with proportions to a new CSV file
     output_file_path = ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv'
-    data.to_csv(output_file_path, index=False)
-
-    # If you have a write_csv function, use it to write rows
     header_row = ['Age Group', 'Proportion of Deaths Male', 'Proportion of Deaths Female']
-    combined_rows = [header_row] + data.values.tolist()
+    combined_rows = [header_row] + result.values.tolist()
     write_csv(rows=combined_rows, file_name=output_file_path)
+
+
+
+
 
 
 def generate_life_exp_by_age_group_and_sex():

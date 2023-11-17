@@ -12,3 +12,4 @@ param_gen = ParameterGenerator()
 for i in range(10):
     param = param_gen.generate(rng)
     print(param)
+
