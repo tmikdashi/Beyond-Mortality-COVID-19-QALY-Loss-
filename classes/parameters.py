@@ -35,6 +35,7 @@ class ParameterGenerator:
         # parameters to calculate the QALY loss due to a death
         self.parameters['death_age_dist'] = Dirichlet(
             par_ns=[10, 20, 30]) # this is the number of deaths in each age group
+            par_ns=[]
         self.parameters['death_weight_by_age'] = ConstantArray(
             values=[80, 60, 40]) # this is the life-expectancy in each age group
 
