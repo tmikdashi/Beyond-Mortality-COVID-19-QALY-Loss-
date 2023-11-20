@@ -191,7 +191,7 @@ def generate_prop_deaths_by_age_group_and_sex():
     This function generate a csv containing information on the proportion of deaths associated with each age group and sex
 
     :return: creates a csv that describes the proportion of total COVID deaths come from each age group and sex.
-    The outputted csv is organized at 3 columns: Age Group, Males: Proportion of Deaths and Females: Proportion of Deaths.
+    The outputted csv is organized as 3 columns: Age Group, Males: Proportion of Deaths and Females: Proportion of Deaths.
 
     Note: 'Males: Proportion of Deaths' does not represent the proportion of deaths by age group among total male deaths
     Instead, all the values in Males: Proportion of Deaths and in Females: Proportion of Deaths sum to 1.
@@ -201,7 +201,7 @@ def generate_prop_deaths_by_age_group_and_sex():
     rows = read_csv_rows(file_name=ROOT_DIR + '/data/Provisional_COVID-19_Deaths_by_Sex_and_Age (3).csv',
                          if_ignore_first_row=True)
 
-    # Create a DataFrame from the list of rows: Some formatting with columns so took extra step to rename some columns
+    # Create a DataFrame from the list of rows: Some formatting issues with columns so took extra step to rename some columns
     data = pd.DataFrame(rows, columns=["Data As Of", "Start Date", "End Date", "Group", "Year", "Month", "State", "Sex",
                                        "Age group", "COVID-19 Deaths", "Total Deaths", "Pneumonia Deaths",
                                        "Pneumonia and COVID-19 Deaths", "Influenza Deaths",
@@ -212,6 +212,16 @@ def generate_prop_deaths_by_age_group_and_sex():
     data['COVID-19 Deaths'] = pd.to_numeric(data['COVID-19 Deaths'], errors='coerce').fillna(0)
     total_deaths = data['COVID-19 Deaths'].sum()
 
+    # Calculate proportions of deaths associated with each age group and sex
+    data['Prop of Deaths'] = data['COVID-19 Deaths'] / total_deaths
+
+    # Select relevant columns
+    prop_deaths_by_age_group_and_sex = data[['Age group', 'Sex', 'Prop of Deaths']]
+    output_file_path = ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv'
+    prop_deaths_by_age_group_and_sex.to_csv(output_file_path, index=False)
+
+    return prop_deaths_by_age_group_and_sex
+'''
     # Calculate proportions of deaths associated with each age group, while keeping track of sex
     # (Note: we are not calculating the proportion of deaths within a sex, but simply separating them)
     data['Males: Proportion of Deaths'] = data.apply(
@@ -222,12 +232,10 @@ def generate_prop_deaths_by_age_group_and_sex():
     # Group by 'Age Group'
     result = data.groupby('Age group')[
         ['Age group', 'Males: Proportion of Deaths', 'Females: Proportion of Deaths']].max().reset_index(drop=True)
-
+'''
     # Save the new proportions to a new CSV file
-    output_file_path = ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv'
-    header_row = ['Age group', 'Males: Proportion of Deaths', 'Females: Proportion of Deaths']
-    combined_rows = [header_row] + result.values.tolist()
-    write_csv(rows=combined_rows, file_name=output_file_path)
+
+
 
 
 def process_life_expectancy_data(data, sex):
@@ -257,22 +265,33 @@ def process_life_expectancy_data(data, sex):
     data.loc[mask, 'Age (years)'] = 100  # Set 'Age (years)' to 100 for '100 and over'
     data['Age (years)'] = data['Age (years)'].astype(int)  # Convert 'Age (years)' to integer
 
-    # Creating age groups
+    # Creating age groups that match those above
     age_cutoffs = [0, 1, 5, 15, 25, 35, 45, 55, 65, 75, 85, float('inf')]
     labels = ['Under 1 year', '1-4 years', '5-14 years', '15-24 years', '25-34 years',
               '35-44 years', '45-54 years', '55-64 years', '65-74 years', '75-84 years', '85 years and over']
 
     data['Age group'] = pd.cut(data['Age (years)'], bins=age_cutoffs, labels=labels, right=False)
-
-    # Convert 'Expectation of life at age x' to numeric (remove non-numeric characters)
-    data['Expectation of life at age x'] = data['Expectation of life at age x'].astype(str)
-    data['Expectation of life at age x'] = pd.to_numeric(data['Expectation of life at age x'].str.replace(r'\D', ''),
-                                                         errors='coerce')
+    data['Life Expectancy'] = data['Expectation of life at age x'].astype(str)
+    data['Life Expectancy'] = pd.to_numeric(data['Life Expectancy'].str.replace(r'\D', ''), errors='coerce')
 
     # Converting inputted sex to a new column
     data['Sex'] = sex
 
-    return data[['Age group', 'Expectation of life at age x', 'Sex']]
+    # Calculate average life expectancy by age group
+    avg_life_expectancy = data.groupby(['Age group', 'Sex'])['Life Expectancy'].mean().reset_index()
+
+    return avg_life_expectancy
+
+    # Calculate average life expectancy by age group
+    #data['Avg Life Expectancy'] = data.groupby('Age group')['Life Expectancy'].mean().reset_index()
+
+    # Calculate average life expectancy by age group
+    #avg_life_expectancy = data.groupby('Age group')['Life Expectancy'].mean().reset_index()
+
+    # Merge back the average life expectancy to the original DataFrame
+    #data = pd.merge(data, avg_life_expectancy, on='Age group', how='left', suffixes=('', '_avg'))
+
+    #return data[['Age group', 'Avg Life Expectancy', 'Sex']]
 
 def generate_combined_life_expectancy():
     '''
@@ -282,26 +301,24 @@ def generate_combined_life_expectancy():
     :return: a csv file that describes the average expected years of life by age group and sex.
     '''
 
-    data_male = pd.read_csv(ROOT_DIR + '/data/Life_table_male_2019_USA.csv', skiprows=2, skipfooter=3, engine='python')
-    processed_data_male = process_life_expectancy_data(data_male, 'Male')
+    LE_data_male = pd.read_csv(ROOT_DIR + '/data/Life_table_male_2019_USA.csv', skiprows=2, skipfooter=3, engine='python')
+    processed_LE_data_male = process_life_expectancy_data(LE_data_male, 'Male')
 
-    data_female = pd.read_csv(ROOT_DIR + '/data/Life_table_female_2019_USA.csv', skiprows=2, skipfooter=5)
-    processed_data_female = process_life_expectancy_data(data_female, 'Female')
+    LE_data_female = pd.read_csv(ROOT_DIR + '/data/Life_table_female_2019_USA.csv', skiprows=2, skipfooter=5)
+    processed_LE_data_female = process_life_expectancy_data(LE_data_female, 'Female')
 
     # Calculate average life expectancy by age group
-    combined_data = pd.concat([processed_data_male, processed_data_female])
-    average_expectation = combined_data.groupby(['Age group', 'Sex'])['Expectation of life at age x'].mean()
+    average_LE_data_by_age_group_and_sex = pd.concat([processed_LE_data_male, processed_LE_data_female])
 
-    # Reshape the data to have 'Age group' as index and 'Sex' as columns
-    reshaped_data = average_expectation.unstack(level='Sex')
-    reshaped_data.columns = ['Avg LE Male', 'Avg LE Female']
 
-    output_file_path = ROOT_DIR + '/csv_files/average_expected_years_of_life.csv'
-    reshaped_data.reset_index().to_csv(output_file_path, index=False)
 
-    return combined_data, average_expectation
+    print("average LE both sexes:", average_LE_data_by_age_group_and_sex)
 
-def extract_LE_and_prop_death_arrays(life_expectancy_data,prop_deaths_data):
+
+    return average_LE_data_by_age_group_and_sex
+
+
+def extract_LE_and_prop_death_arrays(average_LE_data_by_age_and_sex,prop_deaths_by_age_group_and_sex):
     '''
     This function generates the life expectancy and proportion of death arrays that could later serve as inputs for  Dirichlet.
 
@@ -310,22 +327,16 @@ def extract_LE_and_prop_death_arrays(life_expectancy_data,prop_deaths_data):
     :return:
     '''
 
-    # Merge life expectancy and proportion of deaths data
-    merged_data = pd.merge(life_expectancy_data, prop_deaths_data, on=['Age group'], how='inner')
 
-    # Save the combined data to CSV
-    combined_output_file_path = ROOT_DIR + '/csv_files/combined_data_with_prop_deaths.csv'
-    merged_data.to_csv(combined_output_file_path, index=False)
+   # Combine data by Age group and sex
+    combined_data = pd.merge(average_LE_data_by_age_and_sex, prop_deaths_by_age_group_and_sex, on=['Age group', 'Sex'], how='inner')
 
     # Sort the data by life expectancy
-    sorted_data = merged_data.sort_values(by='Avg LE Male')
+    sorted_data = combined_data.sort_values(by='Life Expectancy')
 
     # Extract arrays for life expectancy and proportion of deaths
-    life_expectancy_array = sorted_data[['Avg LE Male', 'Avg LE Female']].to_numpy().flatten()
-    prop_deaths_array = sorted_data[['Males: Proportion of Deaths', 'Females: Proportion of Deaths']].to_numpy().flatten()
-
+    life_expectancy_array = sorted_data['Life Expectancy'].to_numpy()
+    prop_deaths_array = sorted_data['Prop of Deaths'].to_numpy()
 
     return life_expectancy_array, prop_deaths_array
-
-
 
