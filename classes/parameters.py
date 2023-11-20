@@ -25,11 +25,11 @@ class ParameterGenerator:
 
         # parameters to calculate the QALY loss due to a case
         self.parameters['case_weight_symp'] = Beta(mean=0.43/365, st_dev=0.03/365)
-        self.parameters['case_prob_symp'] = Beta(mean=0.62, st_dev=0.07) # A REVOIR!
-        self.parameters['case_dur_symp'] = Gamma(mean=14/364, st_dev=2/364) # A REVOIR!
+        self.parameters['case_prob_symp'] = Beta(mean=0.62, st_dev=0.07) # SD based on 95% CI-- may need to be revised
+        self.parameters['case_dur_symp'] = Gamma(mean=10, st_dev=3) # Based on CDC isolation guidelines, can be replaced by exp decay function
 
         # parameters to calculate the QALY loss due to a hospitalizations
-        self.parameters['hosp_dur_stay'] = Gamma(mean=6., st_dev=1.25) # review SD
+        self.parameters['hosp_dur_stay'] = Gamma(mean=6, st_dev=4) # assuming SD = IQR/1.35
         self.parameters['hosp_weight'] = Beta(mean=0.5/365, st_dev=0.1/365)
 
         # parameters to calculate the QALY loss due to a death
