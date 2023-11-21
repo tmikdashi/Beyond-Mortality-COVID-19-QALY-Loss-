@@ -18,7 +18,7 @@ class ParameterValues:
 
 class ParameterGenerator:
 
-    def __init__(self):
+    def __init__(self, life_expectancy_array, nb_deaths_array):
 
         self.parameters = dict()
 
@@ -33,10 +33,10 @@ class ParameterGenerator:
 
         # parameters to calculate the QALY loss due to a death
         self.parameters['death_age_dist'] = Dirichlet(
-            par_ns=[10, 20, 30]) # this is the number of deaths in each age group
+            par_ns=nb_deaths_array) # this is the number of deaths in each age group
 
         self.parameters['death_weight_by_age'] = ConstantArray(
-            values=[80, 60, 40]) # this is the life-expectancy in each age group
+            values=life_expectancy_array) # this is the life-expectancy in each age group
 
     def generate(self, rng):
         """
