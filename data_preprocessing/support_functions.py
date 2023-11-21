@@ -196,6 +196,7 @@ def generate_prop_deaths_by_age_group_and_sex():
     """
 
     data = pd.read_csv(ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')
+    # TODO: is this step needed or could it go?
     data = data.rename(columns={'Age Group': 'Age group'})
 
     # Calculate the total number of deaths
@@ -205,13 +206,16 @@ def generate_prop_deaths_by_age_group_and_sex():
     # Calculate proportions of deaths associated with each age group and sex
     data['Prop of Deaths'] = data['COVID-19 Deaths'] / total_deaths
 
-
     # Select relevant columns
+    # TODO: I think it is a great idea to also produce prop deaths but remember that
+    #  the Dirichlet distribution requires the number of deaths in each age group.
+    #  So we need to also include a column to report the number of deaths
     prop_deaths_by_age_group_and_sex = data[['Age group', 'Sex', 'Prop of Deaths']]
 
-    output_file_path = ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv'
-    prop_deaths_by_age_group_and_sex.to_csv(output_file_path, index=False)
+    # save the data as a csv file
+    prop_deaths_by_age_group_and_sex.to_csv(ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv', index=False)
 
+    # TODO: not sure if we need to return anything here since we are saving the data as a csv file
     return prop_deaths_by_age_group_and_sex
 
 
@@ -235,8 +239,7 @@ def process_life_expectancy_data(data, sex):
     mask = data['Age (years)'] == '100 and over'
     data.loc[mask, 'Age (years)'] = 100  # Set 'Age (years)' to 100 for '100 and over'
 
-
-    # Creating age groups that match those above
+    # Creating age groups that match the ones from the proportion of deaths data
     age_cutoffs = [0, 1, 4, 14, 24, 34, 44, 54, 64, 74, 84, float('inf')]
     labels = ['Under 1 year', '1-4 years', '5-14 years', '15-24 years', '25-34 years',
               '35-44 years', '45-54 years', '55-64 years', '65-74 years', '75-84 years', '85 years and over']
@@ -254,37 +257,40 @@ def process_life_expectancy_data(data, sex):
     return avg_life_expectancy
 
 
-def generate_combined_life_expectancy():
+def generate_life_expectancy_by_sex_age():
     """
     This function creates a csv file that describes the average expected years of life by age group and sex.
-    2 csv files are analyzed(male and female) and the process_average_expected_years_of_life.csv is used to clean up the data.
+    2 csv files are analyzed(male and female) and the average_LE_by_age_and_sex.csv is used to clean up the data.
 
     :return: a csv file that describes the average expected years of life by age group and sex.
     """
 
-    LE_data_male = pd.read_csv(ROOT_DIR + '/data_deaths/Life_table_male_2019_USA.csv', skiprows=[0,2], skipfooter=2)
+    # Calculate life-expectancy for males by age group
+    le_data_male = pd.read_csv(
+        ROOT_DIR + '/data_deaths/Life_table_male_2019_USA.csv',
+        skiprows=[0, 2], skipfooter=2)
+
+    processed_le_data_male = process_life_expectancy_data(le_data_male, 'Male')
+
+    # Calculate life-expectancy for females by age group
+    le_data_female = pd.read_csv(
+        ROOT_DIR + '/data_deaths/Life_table_female_2019_USA.csv',
+        skiprows=[0, 2], skipfooter=4)
+
+    processed_le_data_female = process_life_expectancy_data(le_data_female, 'Female')
+
+    # Combine the male and female life expectancy by age group
+    average_le_data_by_age_group_and_sex = pd.concat([processed_le_data_male, processed_le_data_female])
+
+    # save to csv file
+    average_le_data_by_age_group_and_sex.to_csv(
+        ROOT_DIR + '/csv_files/average_LE_by_age_and_sex.csv', index=False)
+
+    # TODO: not sure if we need to return anything here since we are saving the data as a csv file
+    return average_le_data_by_age_group_and_sex
 
 
-    processed_LE_data_male = process_life_expectancy_data(LE_data_male, 'Male')
-
-    LE_data_female = pd.read_csv(ROOT_DIR + '/data_deaths/Life_table_female_2019_USA.csv', skiprows=[0,2], skipfooter=4)
-
-
-    processed_LE_data_female = process_life_expectancy_data(LE_data_female, 'Female')
-
-
-
-    # Calculate average life expectancy by age group
-    average_LE_data_by_age_group_and_sex = pd.concat([processed_LE_data_male, processed_LE_data_female])
-
-
-    output_file_path = ROOT_DIR + '/csv_files/average_LE_by_age_and_sex.csv'
-    average_LE_data_by_age_group_and_sex.to_csv(output_file_path, index=False)
-
-    return average_LE_data_by_age_group_and_sex
-
-
-def extract_LE_and_prop_death_arrays(average_LE_data_by_age_and_sex,prop_deaths_by_age_group_and_sex):
+def extract_LE_and_prop_death_arrays(average_le_data_by_age_and_sex, prop_deaths_by_age_group_and_sex):
     """
     This function generates the life expectancy and proportion of death arrays that could later serve as inputs for  Dirichlet.
     Specifically, because we are looking at data across age groups and sex, the array order is dictated by Life Expectancy values.
@@ -296,10 +302,13 @@ def extract_LE_and_prop_death_arrays(average_LE_data_by_age_and_sex,prop_deaths_
     :return: life expectancy and proportion of death arrays that could later serve as inputs for  Dirichlet
     """
 
+    # Combine data by Age group and sex
+    combined_data = pd.merge(
+        average_le_data_by_age_and_sex,
+        prop_deaths_by_age_group_and_sex,
+        on=['Age group', 'Sex'], how='inner')
 
-   # Combine data by Age group and sex
-    combined_data = pd.merge(average_LE_data_by_age_and_sex, prop_deaths_by_age_group_and_sex, on=['Age group', 'Sex'], how='inner')
-
+    # TODO: I am not sure if there is a reason to sort the data here.
     # Sort the data by life expectancy
     sorted_data = combined_data.sort_values(by='Life Expectancy')
 
