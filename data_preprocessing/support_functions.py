@@ -198,7 +198,7 @@ def generate_prop_deaths_by_age_group_and_sex():
     '''
 
 
-    rows = read_csv_rows(file_name=ROOT_DIR + '/data/Provisional_COVID-19_Deaths_by_Sex_and_Age (3).csv',
+    rows = read_csv_rows(file_name=ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age (3).csv',
                          if_ignore_first_row=True)
 
     # Create a DataFrame from the list of rows: Some formatting issues with columns so took extra step to rename some columns
@@ -275,10 +275,10 @@ def generate_combined_life_expectancy():
     :return: a csv file that describes the average expected years of life by age group and sex.
     '''
 
-    LE_data_male = pd.read_csv(ROOT_DIR + '/data/Life_table_male_2019_USA.csv', skiprows=2, skipfooter=3, engine='python')
+    LE_data_male = pd.read_csv(ROOT_DIR + '/data_deaths/Life_table_male_2019_USA.csv', skiprows=2, skipfooter=3, engine='python')
     processed_LE_data_male = process_life_expectancy_data(LE_data_male, 'Male')
 
-    LE_data_female = pd.read_csv(ROOT_DIR + '/data/Life_table_female_2019_USA.csv', skiprows=2, skipfooter=5)
+    LE_data_female = pd.read_csv(ROOT_DIR + '/data_deaths/Life_table_female_2019_USA.csv', skiprows=2, skipfooter=5)
     processed_LE_data_female = process_life_expectancy_data(LE_data_female, 'Female')
 
     # Calculate average life expectancy by age group
