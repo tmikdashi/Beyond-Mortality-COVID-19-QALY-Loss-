@@ -200,20 +200,14 @@ def generate_prop_deaths_by_age_group_and_sex():
 
     # Calculate the total number of deaths
     data['COVID-19 Deaths'] = pd.to_numeric(data['COVID-19 Deaths'], errors='coerce').fillna(0)
-    total_deaths = data['COVID-19 Deaths'].sum()
-
-    # Calculate proportions of deaths associated with each age group and sex
-    data['Prop of Deaths'] = data['COVID-19 Deaths'] / total_deaths
-    data['Number of Deaths'] = 978519.0800000009* data['Prop of Deaths']
-    # TODO: Once we integrate this with the model we can replace 978519.0800000009 with all_states.pandemicOutcomes.deaths.totalObs=978519.0800000009
 
     # Select relevant columns
-    prop_deaths_by_age_group_and_sex = data[['Age group', 'Sex', 'Number of Deaths']]
+    prop_deaths_by_age_group_and_sex = data[['Age group', 'Sex', 'COVID-19 Deaths']]
 
     # save the data as a csv file
     prop_deaths_by_age_group_and_sex.to_csv(ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv', index=False)
 
-    # TODO: not sure if we need to return anything here since we are saving the data as a csv file
+
     return prop_deaths_by_age_group_and_sex
 
 
@@ -309,7 +303,7 @@ def extract_LE_and_prop_death_arrays(average_le_data_by_age_and_sex, prop_deaths
 
     # Extract arrays for life expectancy and proportion of deaths
     life_expectancy_array = combined_data['Life Expectancy'].to_numpy()
-    nb_deaths_array = combined_data['Number of Deaths'].to_numpy()
+    nb_deaths_array = combined_data['COVID-19 Deaths'].to_numpy()
 
     print("\nLife Expectancy Array:")
     print(life_expectancy_array)
