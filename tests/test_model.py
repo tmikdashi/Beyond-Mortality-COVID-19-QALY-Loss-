@@ -46,4 +46,6 @@ all_states.plot_weekly_qaly_loss()
 all_states.plot_weekly_qaly_loss_by_outcome()
 all_states.plot_qaly_loss_by_state_and_by_outcome()
 
+print('total deaths:', all_states.pandemicOutcomes.deaths.totalObs)
+
 

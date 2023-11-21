@@ -196,8 +196,7 @@ def generate_prop_deaths_by_age_group_and_sex():
     """
 
     data = pd.read_csv(ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')
-    # TODO: is this step needed or could it go?
-    data = data.rename(columns={'Age Group': 'Age group'})
+    data = data.rename(columns={'Age Group': 'Age group'}) #needed for merging in extract_LE_and_prop_death_arrays
 
     # Calculate the total number of deaths
     data['COVID-19 Deaths'] = pd.to_numeric(data['COVID-19 Deaths'], errors='coerce').fillna(0)
@@ -205,12 +204,11 @@ def generate_prop_deaths_by_age_group_and_sex():
 
     # Calculate proportions of deaths associated with each age group and sex
     data['Prop of Deaths'] = data['COVID-19 Deaths'] / total_deaths
+    data['Number of Deaths'] = 978519.0800000009* data['Prop of Deaths']
+    # TODO: Once we integrate this with the model we can replace 978519.0800000009 with all_states.pandemicOutcomes.deaths.totalObs=978519.0800000009
 
     # Select relevant columns
-    # TODO: I think it is a great idea to also produce prop deaths but remember that
-    #  the Dirichlet distribution requires the number of deaths in each age group.
-    #  So we need to also include a column to report the number of deaths
-    prop_deaths_by_age_group_and_sex = data[['Age group', 'Sex', 'Prop of Deaths']]
+    prop_deaths_by_age_group_and_sex = data[['Age group', 'Sex', 'Number of Deaths']]
 
     # save the data as a csv file
     prop_deaths_by_age_group_and_sex.to_csv(ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv', index=False)
@@ -286,7 +284,7 @@ def generate_life_expectancy_by_sex_age():
     average_le_data_by_age_group_and_sex.to_csv(
         ROOT_DIR + '/csv_files/average_LE_by_age_and_sex.csv', index=False)
 
-    # TODO: not sure if we need to return anything here since we are saving the data as a csv file
+    # Returning to simplify calling extract_LE_and_prop_death_arrays
     return average_le_data_by_age_group_and_sex
 
 
@@ -298,8 +296,8 @@ def extract_LE_and_prop_death_arrays(average_le_data_by_age_and_sex, prop_deaths
     Note: the proportion of death arrays needs to be multiplied by the AllStates total death observations from the model
 
     :param life_expectancy_data: data on average expected years of life by age group and sex
-    :param prop_deaths_data: data on proportion of deaths by age group and sex
-    :return: life expectancy and proportion of death arrays that could later serve as inputs for  Dirichlet
+    :param pnb_deaths_data: data on number of deaths by age group and sex
+    :return: life expectancy and number of death arrays that could later serve as inputs for  Dirichlet
     """
 
     # Combine data by Age group and sex
@@ -308,19 +306,16 @@ def extract_LE_and_prop_death_arrays(average_le_data_by_age_and_sex, prop_deaths
         prop_deaths_by_age_group_and_sex,
         on=['Age group', 'Sex'], how='inner')
 
-    # TODO: I am not sure if there is a reason to sort the data here.
-    # Sort the data by life expectancy
-    sorted_data = combined_data.sort_values(by='Life Expectancy')
 
     # Extract arrays for life expectancy and proportion of deaths
-    life_expectancy_array = sorted_data['Life Expectancy'].to_numpy()
-    prop_deaths_array = sorted_data['Prop of Deaths'].to_numpy()
+    life_expectancy_array = combined_data['Life Expectancy'].to_numpy()
+    nb_deaths_array = combined_data['Number of Deaths'].to_numpy()
 
     print("\nLife Expectancy Array:")
     print(life_expectancy_array)
 
-    print("\nProportion of Deaths Array:")
-    print(prop_deaths_array)
+    print("\nNumber of Deaths Array:")
+    print(nb_deaths_array)
 
-    return life_expectancy_array, prop_deaths_array
+    return life_expectancy_array, nb_deaths_array
 
