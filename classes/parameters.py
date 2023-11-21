@@ -1,5 +1,4 @@
-
-from math import sumprod
+import numpy as np
 
 from deampy.parameters import Beta, Gamma, Dirichlet, ConstantArray
 
@@ -78,6 +77,6 @@ class ParameterGenerator:
                               * self.parameters['hosp_weight'].value)
 
     def _calculate_qaly_loss_due_to_death(self, param):
-        param.qWeightDeath = sumprod(
+        param.qWeightDeath = np.dot(
             self.parameters['death_age_dist'].value,
             self.parameters['death_weight_by_age'].value)
