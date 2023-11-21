@@ -195,18 +195,8 @@ def generate_prop_deaths_by_age_group_and_sex():
     Instead, all the values in the 'Prop of Deaths' column sum to 1 .
     """
 
-    # TODO: I think if you'd like to use panda dataframes to do the analysis here,
-    #  you can use the pandas read_csv function instead of the read_csv_rows function.
-    #  The read_csv function will automatically convert the data into a dataframe,
-    #  and I am not sure if you need to provide the list of column names.
-    rows = read_csv_rows(file_name=ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv',
-                         if_ignore_first_row=True)
-
-    # Create a DataFrame from the list of rows: Some formatting issues with columns so took extra step to rename some columns
-    data = pd.DataFrame(rows, columns=["Data As Of", "Start Date", "End Date", "Group", "Year", "Month", "State", "Sex",
-                                       "Age group", "COVID-19 Deaths", "Total Deaths", "Pneumonia Deaths",
-                                       "Pneumonia and COVID-19 Deaths", "Influenza Deaths",
-                                       "Pneumonia, Influenza, or COVID-19 Deaths", "Footnote"])
+    data = pd.read_csv(ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')
+    data = data.rename(columns={'Age Group': 'Age group'})
 
     # Calculate the total number of deaths
     data['COVID-19 Deaths'] = pd.to_numeric(data['COVID-19 Deaths'], errors='coerce').fillna(0)
@@ -215,11 +205,12 @@ def generate_prop_deaths_by_age_group_and_sex():
     # Calculate proportions of deaths associated with each age group and sex
     data['Prop of Deaths'] = data['COVID-19 Deaths'] / total_deaths
 
+
     # Select relevant columns
     prop_deaths_by_age_group_and_sex = data[['Age group', 'Sex', 'Prop of Deaths']]
 
-    # TODO: write_csv does not work with panda dataframes so you could use the panda's to_csv function instead.
-    write_csv(rows=prop_deaths_by_age_group_and_sex, file_name=ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv')
+    output_file_path = ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv'
+    prop_deaths_by_age_group_and_sex.to_csv(output_file_path, index=False)
 
     return prop_deaths_by_age_group_and_sex
 
@@ -237,22 +228,16 @@ def process_life_expectancy_data(data, sex):
     columns 'Age group', 'Sex' and 'Life Expectancy'
     """
 
-    header = ["Age (years)", "Probability of dying between ages x and x + 1",
-              "Number surviving to age x", "Number dying between ages x and x + 1",
-              "Person-years lived between ages x and x + 1", "Total number of person-years lived above age x",
-              "Expectation of life at age x"]
-    data.columns = header
-
     # Re-formatting age data: Age data is currently presented as 0?1 to designate life-expectancy at age 0
     data['Age (years)'] = data['Age (years)'].str.split('?').str[0]
     data['Age (years)'] = pd.to_numeric(data['Age (years)'], errors='coerce')
 
     mask = data['Age (years)'] == '100 and over'
     data.loc[mask, 'Age (years)'] = 100  # Set 'Age (years)' to 100 for '100 and over'
-    data['Age (years)'] = data['Age (years)'].astype(int)  # Convert 'Age (years)' to integer
+
 
     # Creating age groups that match those above
-    age_cutoffs = [0, 1, 5, 15, 25, 35, 45, 55, 65, 75, 85, float('inf')]
+    age_cutoffs = [0, 1, 4, 14, 24, 34, 44, 54, 64, 74, 84, float('inf')]
     labels = ['Under 1 year', '1-4 years', '5-14 years', '15-24 years', '25-34 years',
               '35-44 years', '45-54 years', '55-64 years', '65-74 years', '75-84 years', '85 years and over']
 
@@ -277,22 +262,24 @@ def generate_combined_life_expectancy():
     :return: a csv file that describes the average expected years of life by age group and sex.
     """
 
-    LE_data_male = pd.read_csv(ROOT_DIR + '/data_deaths/Life_table_male_2019_USA.csv', skiprows=2, skipfooter=3, engine='python')
+    LE_data_male = pd.read_csv(ROOT_DIR + '/data_deaths/Life_table_male_2019_USA.csv', skiprows=[0,2], skipfooter=2)
 
-    # TODO: Could you please double check that the results are correct?
-    #  for example, for male age group 1-4 years, the calculated life expectancy is 74.3, but if we
-    #  take the average LE for age 1-2, 2-3, and 3-4, we get (75.8 + 74.8 + 73.8)/3 = 74.8
-    #  Am I missing something?
+
     processed_LE_data_male = process_life_expectancy_data(LE_data_male, 'Male')
 
-    LE_data_female = pd.read_csv(ROOT_DIR + '/data_deaths/Life_table_female_2019_USA.csv', skiprows=2, skipfooter=5)
+    LE_data_female = pd.read_csv(ROOT_DIR + '/data_deaths/Life_table_female_2019_USA.csv', skiprows=[0,2], skipfooter=4)
+
+
     processed_LE_data_female = process_life_expectancy_data(LE_data_female, 'Female')
+
+
 
     # Calculate average life expectancy by age group
     average_LE_data_by_age_group_and_sex = pd.concat([processed_LE_data_male, processed_LE_data_female])
 
-    # TODO: write_csv does not work with panda dataframes so you could use the panda's to_csv function instead.
-    write_csv(rows=average_LE_data_by_age_group_and_sex, file_name=ROOT_DIR + '/csv_files/average_LE_by_age_and_sex.csv')
+
+    output_file_path = ROOT_DIR + '/csv_files/average_LE_by_age_and_sex.csv'
+    average_LE_data_by_age_group_and_sex.to_csv(output_file_path, index=False)
 
     return average_LE_data_by_age_group_and_sex
 
