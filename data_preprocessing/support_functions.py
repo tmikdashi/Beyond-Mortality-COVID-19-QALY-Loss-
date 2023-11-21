@@ -1,9 +1,7 @@
-from collections import defaultdict
-
 import numpy as np
 import pandas as pd
-from deampy.in_out_functions import write_csv, read_csv_rows
 
+from deampy.in_out_functions import write_csv, read_csv_rows
 from definitions import ROOT_DIR
 
 
@@ -187,7 +185,7 @@ def generate_combined_county_data_csv():
 
 
 def generate_prop_deaths_by_age_group_and_sex():
-    '''
+    """
     This function generate a csv containing information on the proportion of deaths associated with each age group and sex
 
     :return: creates a csv that describes the proportion of total COVID deaths come from each age group and sex.
@@ -195,10 +193,13 @@ def generate_prop_deaths_by_age_group_and_sex():
 
     Note: the proportion does not represent the proportion of deaths by age group among total male deaths or female deaths
     Instead, all the values in the 'Prop of Deaths' column sum to 1 .
-    '''
+    """
 
-
-    rows = read_csv_rows(file_name=ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age (3).csv',
+    # TODO: I think if you'd like to use panda dataframes to do the analysis here,
+    #  you can use the pandas read_csv function instead of the read_csv_rows function.
+    #  The read_csv function will automatically convert the data into a dataframe,
+    #  and I am not sure if you need to provide the list of column names.
+    rows = read_csv_rows(file_name=ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv',
                          if_ignore_first_row=True)
 
     # Create a DataFrame from the list of rows: Some formatting issues with columns so took extra step to rename some columns
@@ -206,7 +207,6 @@ def generate_prop_deaths_by_age_group_and_sex():
                                        "Age group", "COVID-19 Deaths", "Total Deaths", "Pneumonia Deaths",
                                        "Pneumonia and COVID-19 Deaths", "Influenza Deaths",
                                        "Pneumonia, Influenza, or COVID-19 Deaths", "Footnote"])
-
 
     # Calculate the total number of deaths
     data['COVID-19 Deaths'] = pd.to_numeric(data['COVID-19 Deaths'], errors='coerce').fillna(0)
@@ -217,13 +217,15 @@ def generate_prop_deaths_by_age_group_and_sex():
 
     # Select relevant columns
     prop_deaths_by_age_group_and_sex = data[['Age group', 'Sex', 'Prop of Deaths']]
+
+    # TODO: write_csv does not work with panda dataframes so you could use the panda's to_csv function instead.
     write_csv(rows=prop_deaths_by_age_group_and_sex, file_name=ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv')
 
     return prop_deaths_by_age_group_and_sex
 
 
 def process_life_expectancy_data(data, sex):
-    '''
+    """
     Because life expectancy data comes in separate but parallely-organized files for males and females,
     this function describes as general approach to processing life expectancy data and preparing it for later analysis.
     This processing step specifically consists of (1) reformatting the age data, (2) designating age groups
@@ -233,7 +235,7 @@ def process_life_expectancy_data(data, sex):
     :param sex: describes which sex the file is for
     :return: This function taken in data in the form of a csv file for a designated sex and transforms the data into 3
     columns 'Age group', 'Sex' and 'Life Expectancy'
-    '''
+    """
 
     header = ["Age (years)", "Probability of dying between ages x and x + 1",
               "Number surviving to age x", "Number dying between ages x and x + 1",
@@ -268,14 +270,19 @@ def process_life_expectancy_data(data, sex):
 
 
 def generate_combined_life_expectancy():
-    '''
+    """
     This function creates a csv file that describes the average expected years of life by age group and sex.
     2 csv files are analyzed(male and female) and the process_average_expected_years_of_life.csv is used to clean up the data.
 
     :return: a csv file that describes the average expected years of life by age group and sex.
-    '''
+    """
 
     LE_data_male = pd.read_csv(ROOT_DIR + '/data_deaths/Life_table_male_2019_USA.csv', skiprows=2, skipfooter=3, engine='python')
+
+    # TODO: Could you please double check that the results are correct?
+    #  for example, for male age group 1-4 years, the calculated life expectancy is 74.3, but if we
+    #  take the average LE for age 1-2, 2-3, and 3-4, we get (75.8 + 74.8 + 73.8)/3 = 74.8
+    #  Am I missing something?
     processed_LE_data_male = process_life_expectancy_data(LE_data_male, 'Male')
 
     LE_data_female = pd.read_csv(ROOT_DIR + '/data_deaths/Life_table_female_2019_USA.csv', skiprows=2, skipfooter=5)
@@ -283,13 +290,15 @@ def generate_combined_life_expectancy():
 
     # Calculate average life expectancy by age group
     average_LE_data_by_age_group_and_sex = pd.concat([processed_LE_data_male, processed_LE_data_female])
+
+    # TODO: write_csv does not work with panda dataframes so you could use the panda's to_csv function instead.
     write_csv(rows=average_LE_data_by_age_group_and_sex, file_name=ROOT_DIR + '/csv_files/average_LE_by_age_and_sex.csv')
 
     return average_LE_data_by_age_group_and_sex
 
 
 def extract_LE_and_prop_death_arrays(average_LE_data_by_age_and_sex,prop_deaths_by_age_group_and_sex):
-    '''
+    """
     This function generates the life expectancy and proportion of death arrays that could later serve as inputs for  Dirichlet.
     Specifically, because we are looking at data across age groups and sex, the array order is dictated by Life Expectancy values.
 
@@ -298,7 +307,7 @@ def extract_LE_and_prop_death_arrays(average_LE_data_by_age_and_sex,prop_deaths_
     :param life_expectancy_data: data on average expected years of life by age group and sex
     :param prop_deaths_data: data on proportion of deaths by age group and sex
     :return: life expectancy and proportion of death arrays that could later serve as inputs for  Dirichlet
-    '''
+    """
 
 
    # Combine data by Age group and sex
