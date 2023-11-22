@@ -1,6 +1,10 @@
 import numpy as np
+import pandas as pd
+
+from definitions import ROOT_DIR
 
 from deampy.parameters import Beta, Gamma, Dirichlet, ConstantArray
+
 
 
 class ParameterValues:
@@ -18,7 +22,7 @@ class ParameterValues:
 
 class ParameterGenerator:
 
-    def __init__(self, life_expectancy_array, nb_deaths_array):
+    def __init__(self):
 
         self.parameters = dict()
 
@@ -32,12 +36,10 @@ class ParameterGenerator:
         self.parameters['hosp_weight'] = Beta(mean=0.5/365, st_dev=0.1/365)
 
         # parameters to calculate the QALY loss due to a death
-        # TODO: to be consistent with how we have set up the other parameter above,
-        #  we should read the data to characterise the Dirichlet distribution here from the csv files
-        #  (instead of taking as an input).
-        self.parameters['death_age_dist'] = Dirichlet(par_ns=nb_deaths_array)
+        data=pd.read_csv(ROOT_DIR + '/csv_files/average_LE_and deaths_data_by_age_group_and_sex')
 
-        self.parameters['death_weight_by_age'] = ConstantArray(values=life_expectancy_array)
+        self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
+        self.parameters['death_weight_by_age'] =ConstantArray(values=data['Life Expectancy'])
 
     def generate(self, rng):
         """

@@ -179,7 +179,7 @@ def generate_combined_county_data_csv():
     write_csv(rows=[header_row] + combined_county_data_rows, file_name=output_file)
 
 
-def generate_prop_deaths_by_age_group_and_sex():
+def generate_deaths_by_age_group_and_sex():
     """
     This function generate a csv containing information on the number of deaths associated with each age group and sex
 
@@ -197,9 +197,8 @@ def generate_prop_deaths_by_age_group_and_sex():
     deaths_by_age_group_and_sex = data[['Age group', 'Sex', 'COVID-19 Deaths']]
 
     # save the data as a csv file
-    deaths_by_age_group_and_sex.to_csv(ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv', index=False)
+    deaths_by_age_group_and_sex.to_csv(ROOT_DIR + '/csv_files/deaths_by_age_and_sex.csv', index=False)
 
-    return deaths_by_age_group_and_sex
 
 
 def process_life_expectancy_data(data, sex):
@@ -269,33 +268,40 @@ def generate_life_expectancy_by_sex_age():
     average_le_data_by_age_group_and_sex.to_csv(
         ROOT_DIR + '/csv_files/average_LE_by_age_and_sex.csv', index=False)
 
-    # Returning to simplify calling extract_LE_and_prop_death_arrays
-    return average_le_data_by_age_group_and_sex
 
-
-def extract_LE_and_prop_death_arrays(average_le_data_by_age_and_sex, deaths_by_age_group_and_sex):
+def extract_LE_and_death_arrays():
     """
-    This function generates the life expectancy and number of deaths arrays that could later serve as inputs for  Dirichlet.
+    This function generates combines the life expectancy and number of deaths data in one csv file
+    to be able to easily extract the life expectancy and number of deaths arrays that could later serve as inputs for
+    Dirichlet.
 
-    :param average_le_data_by_age_and_sex: data on average expected years of life by age group and sex
-    :param deaths_by_age_group_and_sex: data on number of deaths by age group and sex
-    :return: life expectancy and number of death arrays that could later serve as inputs for  Dirichlet
+    :return: a csv file with combined data and life expectancy and number of death arrays that could later serve as
+    inputs for  Dirichlet
     """
 
     # Combine data by Age group and sex
+    average_LE_data_by_age_group_and_sex = pd.read_csv(ROOT_DIR + '/csv_files/average_LE_by_age_and_sex.csv')
+    deaths_by_age_group_and_sex = pd.read_csv(ROOT_DIR + '/csv_files/deaths_by_age_and_sex.csv')
+
     combined_data = pd.merge(
-        average_le_data_by_age_and_sex,
+        average_LE_data_by_age_group_and_sex,
         deaths_by_age_group_and_sex,
         on=['Age group', 'Sex'], how='inner')
+
 
     # Extract arrays for life expectancy and proportion of deaths
     life_expectancy_array = combined_data['Life Expectancy'].to_numpy()
     nb_deaths_array = combined_data['COVID-19 Deaths'].to_numpy()
 
-    print("\nLife Expectancy Array:")
-    print(life_expectancy_array)
+    combined_data.to_csv(
+        ROOT_DIR + '/csv_files/average_LE_and deaths_data_by_age_group_and_sex', index=False)
 
-    print("\nNumber of Deaths Array:")
-    print(nb_deaths_array)
+    # TODO: These many no longer be necessary
+    #return life_expectancy_array, nb_deaths_array
 
-    return life_expectancy_array, nb_deaths_array
+    #print("\nLife Expectancy Array:")
+    #print(life_expectancy_array)
+
+    #print("\nNumber of Deaths Array:")
+    #print(nb_deaths_array)
+
