@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
 
@@ -15,7 +17,6 @@ def get_dict_of_county_data_by_type(data_type):
 
     # Construct the file path based on the data type
     file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
-    #file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
@@ -56,7 +57,6 @@ def generate_county_data_csv(data_type='cases'):
         'deaths per 100,000': 18,
         'hospitalizations per 100,000': 22,
         'icu admissions per 100,000': 24,
-
     }
 
     # Ensure the specified data_type is valid
@@ -70,7 +70,6 @@ def generate_county_data_csv(data_type='cases'):
     rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
 
-
     # Creating a dictionary to store the time series of data for each county
     county_data_time_series = defaultdict(list)
     for row in rows:
@@ -80,7 +79,6 @@ def generate_county_data_csv(data_type='cases'):
         date = row[2]
         population = row[10]  # Add population to this section
         data_value = row[data_type_mapping[data_type]]
-
 
         # Specify abbreviation for Puerto Rico
         if state == 'NA':
@@ -122,9 +120,6 @@ def generate_county_data_csv(data_type='cases'):
 
     # Write into a CSV file using the write_csv function
     write_csv(rows=[header_row] + county_data_rows, file_name=ROOT_DIR + output_file)
-
-
-from collections import defaultdict
 
 
 def generate_combined_county_data_csv():
@@ -190,11 +185,10 @@ def generate_prop_deaths_by_age_group_and_sex():
 
     :return: creates a csv that describes the number total COVID deaths come from each age group and sex.
     The outputted csv is organized as 3 columns: Age Group, Sex and COVID-19 Deaths.
-
     """
 
     data = pd.read_csv(ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')
-    data = data.rename(columns={'Age Group': 'Age group'}) #needed for merging in extract_LE_and_prop_death_arrays
+    data = data.rename(columns={'Age Group': 'Age group'}) # needed for merging in extract_LE_and_prop_death_arrays
 
     # Calculate the total number of deaths
     data['COVID-19 Deaths'] = pd.to_numeric(data['COVID-19 Deaths'], errors='coerce').fillna(0)
@@ -204,7 +198,6 @@ def generate_prop_deaths_by_age_group_and_sex():
 
     # save the data as a csv file
     deaths_by_age_group_and_sex.to_csv(ROOT_DIR + '/csv_files/prop_deaths_by_age_and_sex.csv', index=False)
-
 
     return deaths_by_age_group_and_sex
 
@@ -284,8 +277,8 @@ def extract_LE_and_prop_death_arrays(average_le_data_by_age_and_sex, deaths_by_a
     """
     This function generates the life expectancy and number of deaths arrays that could later serve as inputs for  Dirichlet.
 
-    :param life_expectancy_data: data on average expected years of life by age group and sex
-    :param nb_deaths_data: data on number of deaths by age group and sex
+    :param average_le_data_by_age_and_sex: data on average expected years of life by age group and sex
+    :param deaths_by_age_group_and_sex: data on number of deaths by age group and sex
     :return: life expectancy and number of death arrays that could later serve as inputs for  Dirichlet
     """
 
@@ -294,7 +287,6 @@ def extract_LE_and_prop_death_arrays(average_le_data_by_age_and_sex, deaths_by_a
         average_le_data_by_age_and_sex,
         deaths_by_age_group_and_sex,
         on=['Age group', 'Sex'], how='inner')
-
 
     # Extract arrays for life expectancy and proportion of deaths
     life_expectancy_array = combined_data['Life Expectancy'].to_numpy()
@@ -307,4 +299,3 @@ def extract_LE_and_prop_death_arrays(average_le_data_by_age_and_sex, deaths_by_a
     print(nb_deaths_array)
 
     return life_expectancy_array, nb_deaths_array
-

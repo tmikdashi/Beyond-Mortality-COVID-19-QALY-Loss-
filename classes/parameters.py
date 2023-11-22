@@ -32,11 +32,12 @@ class ParameterGenerator:
         self.parameters['hosp_weight'] = Beta(mean=0.5/365, st_dev=0.1/365)
 
         # parameters to calculate the QALY loss due to a death
-        self.parameters['death_age_dist'] = Dirichlet(
-            par_ns=nb_deaths_array) # this is the number of deaths in each age group
+        # TODO: to be consistent with how we have set up the other parameter above,
+        #  we should read the data to characterise the Dirichlet distribution here from the csv files
+        #  (instead of taking as an input).
+        self.parameters['death_age_dist'] = Dirichlet(par_ns=nb_deaths_array)
 
-        self.parameters['death_weight_by_age'] = ConstantArray(
-            values=life_expectancy_array) # this is the life-expectancy in each age group
+        self.parameters['death_weight_by_age'] = ConstantArray(values=life_expectancy_array)
 
     def generate(self, rng):
         """
