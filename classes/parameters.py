@@ -3,7 +3,7 @@ import pandas as pd
 
 from definitions import ROOT_DIR
 
-from deampy.parameters import Beta, Gamma, Dirichlet, ConstantArray
+from deampy.parameters import Beta, Gamma, Dirichlet#, ConstantArray
 
 
 
@@ -39,7 +39,7 @@ class ParameterGenerator:
         data=pd.read_csv(ROOT_DIR + '/csv_files/average_LE_and deaths_data_by_age_group_and_sex')
 
         self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
-        self.parameters['death_weight_by_age'] =ConstantArray(values=data['Life Expectancy'])
+        self.parameters['death_weight_by_age'] =Dirichlet(par_ns=data['Life Expectancy'])
 
     def generate(self, rng):
         """

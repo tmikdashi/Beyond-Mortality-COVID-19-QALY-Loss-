@@ -17,6 +17,7 @@ def get_dict_of_county_data_by_type(data_type):
 
     # Construct the file path based on the data type
     file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
@@ -275,7 +276,7 @@ def extract_LE_and_death_arrays():
     to be able to easily extract the life expectancy and number of deaths arrays that could later serve as inputs for
     Dirichlet.
 
-    :return: a csv file with combined data and life expectancy and number of death arrays that could later serve as
+    :return: a csv file with combined data and life expectancy and number of death arrays  that could later serve as
     inputs for  Dirichlet
     """
 

@@ -1,10 +1,28 @@
 from classes.model import AllStates
+import numpy as np
 
 
 # create the model, populate it, and calculate the QALY loss
+from classes.parameters import ParameterValues, ParameterGenerator
+from data_preprocessing.support_functions import generate_deaths_by_age_group_and_sex, generate_life_expectancy_by_sex_age, extract_LE_and_death_arrays
+
+# generate death and life expectancy distribution by age and sex
+generate_deaths_by_age_group_and_sex()
+generate_life_expectancy_by_sex_age()
+extract_LE_and_death_arrays()
+
+# Generate parameter set
+rng = np.random.RandomState(1)
+param_gen = ParameterGenerator()
+param_values = param_gen.generate(rng)
+
+case_weight = param_values.qWeightCase
+hosp_weight = param_values.qWeightHosp
+death_weight = param_values.qWeightDeath
+
 all_states = AllStates()
 all_states.populate()
-all_states.calculate_qaly_loss(case_weight=0.1, hosp_weight=0.2, death_weight=0.3)
+all_states.calculate_qaly_loss(case_weight, hosp_weight, death_weight)
 
 print('Total US population: ', '{:,}'.format(all_states.population))
 print('Total US QALY loss: ', '{:,.0f}'.format(all_states.get_overall_qaly_loss()))
