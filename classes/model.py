@@ -7,7 +7,6 @@ import pandas as pd
 from deampy.plots.plot_support import output_figure
 
 from data_preprocessing.support_functions import get_dict_of_county_data_by_type
-from classes.parameters import ParameterValues
 from definitions import ROOT_DIR
 
 
@@ -194,7 +193,7 @@ class State:
 
 
 class AllStates:
-    def __init__(self):
+    def __init__(self,param_values):
         """
         Initialize an AllStates object.
         """
@@ -203,6 +202,7 @@ class AllStates:
         self.pandemicOutcomes = PandemicOutcomes()
         self.numWeeks = 0
         self.population = 0
+        self.param_values = param_values
 
     def populate(self):
         """
@@ -247,7 +247,7 @@ class AllStates:
             # add the new county to the state
             self.states[state].add_county(county)
 
-    def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
+    def calculate_qaly_loss(self):
         """
         calculates the QALY loss for all states and the nation
         :param case_weight:
@@ -258,11 +258,11 @@ class AllStates:
         # calculate QALY loss for each state
         for state in self.states.values():
             state.calculate_qaly_loss(
-                case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
+            case_weight=self.param_values.qWeightCase, hosp_weight=self.param_values.qWeightHosp, death_weight=self.param_values.qWeightDeath)
 
         # calculate QALY loss for the nation
         self.pandemicOutcomes.calculate_qaly_loss(
-            case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
+            case_weight=self.param_values.qWeightCase, hosp_weight=self.param_values.qWeightHosp, death_weight=self.param_values.qWeightDeath)
 
     def get_overall_qaly_loss(self):
         """
