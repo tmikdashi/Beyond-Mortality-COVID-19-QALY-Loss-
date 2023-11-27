@@ -17,7 +17,7 @@ def get_dict_of_county_data_by_type(data_type):
 
     # Construct the file path based on the data type
     file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
-    file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    #file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
@@ -289,20 +289,8 @@ def extract_LE_and_death_arrays():
         deaths_by_age_group_and_sex,
         on=['Age group', 'Sex'], how='inner')
 
-
-    # Extract arrays for life expectancy and proportion of deaths
-    life_expectancy_array = combined_data['Life Expectancy'].to_numpy()
-    nb_deaths_array = combined_data['COVID-19 Deaths'].to_numpy()
-
     combined_data.to_csv(
         ROOT_DIR + '/csv_files/average_LE_and deaths_data_by_age_group_and_sex', index=False)
 
-    # TODO: These many no longer be necessary
-    #return life_expectancy_array, nb_deaths_array
 
-    #print("\nLife Expectancy Array:")
-    #print(life_expectancy_array)
-
-    #print("\nNumber of Deaths Array:")
-    #print(nb_deaths_array)
 
