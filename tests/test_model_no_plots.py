@@ -49,12 +49,12 @@ for i in range(5):
 
 
 '''
-all_states = AllStates()
-all_states.populate()
-probabilistic_states=ProbabilisticAllStates()
-probabilistic_states.allStates =all_states
 
+probabilistic_states=ProbabilisticAllStates()
 
 probabilistic_states.simulate(5)
-
+probabilistic_states.get_overall_qaly_loss()
+probabilistic_states.get_weekly_qaly_loss()
+probabilistic_states.plot_weekly_qaly_loss()
+probabilistic_states.get_overall_qaly_loss_by_state()
 

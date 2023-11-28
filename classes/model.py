@@ -580,16 +580,14 @@ class AllStates:
 
 
 class ProbabilisticAllStates:
-    # TODO: after you address the other two TODOs, we can work on this new class to make the probabilistic analysis
-    #  more efficient.
-    #  we also need to create a new set of plots for the probabilistic analysis and we can do that all under here.
-    def __int__(self):
 
+    def __init__(self):
         self.allStates = AllStates()
         self.allStates.populate()
 
         self.overallQALYlosses = []
-        self.weeklyQALYlosses =[]
+        self.weeklyQALYlosses = []
+
 
 
     def simulate(self, n):
@@ -605,16 +603,16 @@ class ProbabilisticAllStates:
         for i in range(n):
             # generate a new set of parameters
             params = param_gen.generate(rng)
-            print(params)
 
             self.allStates.calculate_qaly_loss(params)
-            overall_QALY_loss=[self.allStates.get_overall_qaly_loss()]
-            print(overall_QALY_loss)
 
-        #self.overallQALYlosses += overall_QALY_loss
-        #print(self.overallQALYlosses)
+            overall_qaly_loss = self.allStates.get_overall_qaly_loss()
+            self.overallQALYlosses.append(overall_qaly_loss)
 
 
+            # Optionally, you can store the weekly QALY loss as well
+            weekly_qaly_loss = self.allStates.get_weekly_qaly_loss()
+            self.weeklyQALYlosses.append(weekly_qaly_loss)
 
 
 
@@ -623,6 +621,50 @@ class ProbabilisticAllStates:
         """
         :return: Overall QALY loss summed over all states.
         """
-        return  self.overalQALYlosses
+        print('Overall QALY Loss:', [self.overallQALYlosses])
+        print('Average QALY Loss across simulations', np.mean(self.overallQALYlosses))
+
+
+    def get_weekly_qaly_loss(self):
+        """
+        :return: Overall QALY loss summed over all states.
+        """
+        print('Weekly QALY Loss:', [self.weeklyQALYlosses])
+        print('Average Weekly QALY Loss across simulations:', np.mean(self.weeklyQALYlosses, axis=0))
+
+    def get_overall_qaly_loss_by_state(self):
+        overall_qaly_loss_by_state = self.allStates.get_overall_qaly_loss_by_state()
+        print('Overall QALY Loss by state:', [overall_qaly_loss_by_state])
+
+
+    def plot_weekly_qaly_loss(self):
+        """
+        Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
+        """
+        # Create a plot
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        # Plot the individual weekly QALY losses
+        for i, weekly_qaly_loss in enumerate(self.weeklyQALYlosses):
+            ax.plot(range(1, len(weekly_qaly_loss) + 1), weekly_qaly_loss, label=f'Simulation {i + 1}')
+
+        # Plot the average weekly QALY loss in bold
+        average_weekly_qaly_loss = np.mean(self.weeklyQALYlosses, axis=0)
+        ax.plot(range(1, len(average_weekly_qaly_loss) + 1), average_weekly_qaly_loss, label='Average', linewidth=3,
+                color='Black')
+
+        ax.set_title('National Weekly QALY Loss from Cases, Hospitalizations and Deaths')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('QALY Loss')
+        ax.grid(True)
+        plt.legend()
+
+        plt.xticks(rotation=90)
+        ax.tick_params(axis='x', labelsize=6.5)
+
+        plt.show()
+
+        output_figure(fig, filename=ROOT_DIR + '/figs/simulations_national_qaly_loss.png')
+
 
 
