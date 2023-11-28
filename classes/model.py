@@ -586,7 +586,9 @@ class ProbabilisticAllStates:
     def __int__(self):
         self.allStates = AllStates()
         self.allStates.populate()
+
         self.overalQALYlosses = []
+
 
     def simulate(self, n):
         """
