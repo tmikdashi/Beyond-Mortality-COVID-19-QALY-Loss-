@@ -51,10 +51,14 @@ for i in range(5):
 '''
 
 probabilistic_states=ProbabilisticAllStates()
-
 probabilistic_states.simulate(5)
+
+#KEY FUNCTIONS
 probabilistic_states.get_overall_qaly_loss()
 probabilistic_states.get_weekly_qaly_loss()
 probabilistic_states.plot_weekly_qaly_loss()
+
+#ADDITIONAL FUNCTIONS
 probabilistic_states.get_overall_qaly_loss_by_state()
+probabilistic_states.plot_weekly_qaly_loss_by_outcome()
 
