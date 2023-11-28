@@ -19,6 +19,7 @@ def get_dict_of_county_data_by_type(data_type):
     file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
     #file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
+
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
 
@@ -70,6 +71,8 @@ def generate_county_data_csv(data_type='cases'):
     # Read the data
     rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
+    #rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
+                          #if_ignore_first_row=True)
 
     # Creating a dictionary to store the time series of data for each county
     county_data_time_series = defaultdict(list)

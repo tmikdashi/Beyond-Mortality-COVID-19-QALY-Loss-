@@ -18,13 +18,11 @@ rng = np.random.RandomState(1)
 param_gen = ParameterGenerator()
 
 
-
 # Specify the base folder to save the figures
 output_base_folder = 'figs'
 
-# Create the base folder if it doesn't exist
-os.makedirs(output_base_folder, exist_ok=True)
-
+all_states = AllStates()
+all_states.populate()
 
 # loop to generate and analyze 10 sets of parameters
 for i in range(5):
@@ -33,9 +31,11 @@ for i in range(5):
     param_values = param_gen.generate(rng)
 
     # create the model, populate it, and calculate the QALY loss
-    all_states = AllStates(param_values)
-    all_states.populate()
-    all_states.calculate_qaly_loss()
+
+    case_weight = param_values.qWeightCase
+    hosp_weight = param_values.qWeightHosp
+    death_weight = param_values.qWeightDeath
+    all_states.calculate_qaly_loss(case_weight, hosp_weight, death_weight)
 
     # print results for each set
     print(f"\nResults for Parameter Set {i + 1}:\n")
