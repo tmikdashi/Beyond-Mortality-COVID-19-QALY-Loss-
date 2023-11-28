@@ -204,7 +204,7 @@ class AllStates:
         self.pandemicOutcomes = PandemicOutcomes()
         self.numWeeks = 0
         self.population = 0
-        #self.param_values = param_values
+
 
     def populate(self):
         """
@@ -584,10 +584,12 @@ class ProbabilisticAllStates:
     #  more efficient.
     #  we also need to create a new set of plots for the probabilistic analysis and we can do that all under here.
     def __int__(self):
+
         self.allStates = AllStates()
         self.allStates.populate()
 
-        self.overalQALYlosses = []
+        self.overallQALYlosses = []
+        self.weeklyQALYlosses =[]
 
 
     def simulate(self, n):
@@ -599,12 +601,28 @@ class ProbabilisticAllStates:
         rng = np.random.RandomState(1)
         param_gen = ParameterGenerator()
 
+
         for i in range(n):
             # generate a new set of parameters
             params = param_gen.generate(rng)
+            print(params)
 
             self.allStates.calculate_qaly_loss(params)
+            overall_QALY_loss=[self.allStates.get_overall_qaly_loss()]
+            print(overall_QALY_loss)
 
-            self.overalQALYlosses.append(self.allStates.get_overall_qaly_loss())
+        #self.overallQALYlosses += overall_QALY_loss
+        #print(self.overallQALYlosses)
+
+
+
+
+
+
+    def get_overall_qaly_loss(self):
+        """
+        :return: Overall QALY loss summed over all states.
+        """
+        return  self.overalQALYlosses
 
 

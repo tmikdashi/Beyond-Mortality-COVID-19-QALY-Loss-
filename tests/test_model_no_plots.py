@@ -4,7 +4,7 @@ from classes.model import AllStates,ProbabilisticAllStates
 from classes.parameters import ParameterGenerator
 
 
-
+'''
 # Generate parameter set
 rng = np.random.RandomState(1)
 param_gen = ParameterGenerator()
@@ -46,11 +46,15 @@ for i in range(5):
     # COUNTY-SPECIFIC DATA
     all_states.get_overall_qaly_loss_for_a_county("Autauga", "AL")
 
-'''
-all_states = AllStates()
-probabilistic_states=ProbabilisticAllStates()
-probabilistic_states.allStates =all_states
-probabilistic_states.overalQALYlosses = all_states.pandemicOutcomes.totalQALYLoss
-probabilistic_states.simulate(5)
+
 
 '''
+all_states = AllStates()
+all_states.populate()
+probabilistic_states=ProbabilisticAllStates()
+probabilistic_states.allStates =all_states
+
+
+probabilistic_states.simulate(5)
+
+
