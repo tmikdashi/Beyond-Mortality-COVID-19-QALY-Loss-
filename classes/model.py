@@ -4,9 +4,10 @@ import mapclassify as mc
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from deampy.plots.plot_support import output_figure
 
+from classes.parameters import ParameterGenerator
 from data_preprocessing.support_functions import get_dict_of_county_data_by_type
+from deampy.plots.plot_support import output_figure
 from definitions import ROOT_DIR
 
 
@@ -165,7 +166,7 @@ class State:
     def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
         """
         Calculates QALY loss for the State.
-        :param case_weight: : cases-specific weight to be applied to each case in calculating QALY loss.
+        :param case_weight: cases-specific weight to be applied to each case in calculating QALY loss.
         :param hosp_weight: hosp-specific weight to be applied to each hospitalization in calculating QALY loss.
         :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
         """
@@ -193,6 +194,7 @@ class State:
 
 
 class AllStates:
+
     def __init__(self,param_values):
         """
         Initialize an AllStates object.
@@ -375,7 +377,6 @@ class AllStates:
             county_obj = state_obj.counties.get(county_name)
             if county_obj:
                 print(f"Overall QALY Loss for {county_name},{state_name} : {county_obj.pandemicOutcomes.weeklyQALYLoss}")
-
 
     def plot_weekly_qaly_loss_by_state(self):
         """
@@ -576,3 +577,32 @@ class AllStates:
 
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
+
+
+class ProbabilisticAllStates:
+    # TODO: after you address the other two TODOs, we can work on this new class to make the probabilistic analysis
+    #  more efficient.
+    #  we also need to create a new set of plots for the probabilistic analysis and we can do that all under here.
+    def __int__(self):
+        self.allStates = AllStates()
+        self.allStates.populate()
+        self.overalQALYlosses = []
+
+    def simulate(self, n):
+        """
+        Simulates the model n times
+        :param n: (int) number of times parameters should be sampled and the model simulated
+        """
+
+        rng = np.random.RandomState(1)
+        param_gen = ParameterGenerator()
+
+        for i in range(n):
+            # generate a new set of parameters
+            params = param_gen.generate(rng)
+
+            self.allStates.calculate_qaly_loss(params)
+
+            self.overalQALYlosses.append(self.allStates.get_overall_qaly_loss())
+
+
