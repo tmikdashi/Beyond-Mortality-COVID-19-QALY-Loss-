@@ -249,7 +249,7 @@ class AllStates:
             # add the new county to the state
             self.states[state].add_county(county)
 
-    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
+    def calculate_qaly_loss(self, param_values):
         """
         calculates the QALY loss for all states and the nation
         :param case_weight:
@@ -260,11 +260,11 @@ class AllStates:
         # calculate QALY loss for each state
         for state in self.states.values():
             state.calculate_qaly_loss(
-            case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
+            case_weight=param_values.qWeightCase, hosp_weight=param_values.qWeightHosp, death_weight=param_values.qWeightDeath)
 
         # calculate QALY loss for the nation
         self.pandemicOutcomes.calculate_qaly_loss(
-            case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight)
+            case_weight=param_values.qWeightCase, hosp_weight=param_values.qWeightHosp, death_weight=param_values.qWeightDeath)
 
     def get_overall_qaly_loss(self):
         """

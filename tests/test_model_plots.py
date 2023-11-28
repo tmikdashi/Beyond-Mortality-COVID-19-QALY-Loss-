@@ -28,20 +28,17 @@ all_states.populate()
 for i in range(5):
     # generate a new set of parameters
     rng = np.random.RandomState(i)  # use different seeds for different sets
-    param_values = param_gen.generate(rng)
+    params = param_gen.generate(rng)
 
     # create the model, populate it, and calculate the QALY loss
 
-    case_weight = param_values.qWeightCase
-    hosp_weight = param_values.qWeightHosp
-    death_weight = param_values.qWeightDeath
-    all_states.calculate_qaly_loss(case_weight, hosp_weight, death_weight)
+    all_states.calculate_qaly_loss(params)
 
     # print results for each set
     print(f"\nResults for Parameter Set {i + 1}:\n")
-    print(f"case_weight = {param_values.qWeightCase}")
-    print(f"hosp_weight = {param_values.qWeightHosp}")
-    print(f"death_weight = {param_values.qWeightDeath}")
+    print(f"case_weight = {params.qWeightCase}")
+    print(f"hosp_weight = {params.qWeightHosp}")
+    print(f"death_weight = {params.qWeightDeath}")
 
     print('Total US QALY loss: ', '{:,.0f}'.format(all_states.get_overall_qaly_loss()))
 

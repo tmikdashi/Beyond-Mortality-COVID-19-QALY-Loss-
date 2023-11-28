@@ -1,7 +1,8 @@
 import numpy as np
 
-from classes.model import AllStates
+from classes.model import AllStates,ProbabilisticAllStates
 from classes.parameters import ParameterGenerator
+
 
 
 # Generate parameter set
@@ -14,19 +15,17 @@ all_states.populate()
 for i in range(5):
     # generate a new set of parameters
     rng = np.random.RandomState(i)  # use different seeds for different sets
-    param_values = param_gen.generate(rng)
+    params = param_gen.generate(rng)
 
     # Calculate the QALY loss
-    case_weight= param_values.qWeightCase
-    hosp_weight=param_values.qWeightHosp
-    death_weight=param_values.qWeightDeath
+    all_states.calculate_qaly_loss(params)
 
     # print results for each set
     print(f"\nResults for Parameter Set {i + 1}:\n")
-    print(f"case_weight = {param_values.qWeightCase}")
-    print(f"hosp_weight = {param_values.qWeightHosp}")
-    print(f"death_weight = {param_values.qWeightDeath}")
-    all_states.calculate_qaly_loss(case_weight, hosp_weight, death_weight)
+    print(f"case_weight = {params.qWeightCase}")
+    print(f"hosp_weight = {params.qWeightHosp}")
+    print(f"death_weight = {params.qWeightDeath}")
+
     print('Total US QALY loss: ', '{:,.0f}'.format(all_states.get_overall_qaly_loss()))
 
     # get and print QALY loss by outcome
@@ -47,4 +46,11 @@ for i in range(5):
     # COUNTY-SPECIFIC DATA
     all_states.get_overall_qaly_loss_for_a_county("Autauga", "AL")
 
+'''
+all_states = AllStates()
+probabilistic_states=ProbabilisticAllStates()
+probabilistic_states.allStates =all_states
+probabilistic_states.overalQALYlosses = all_states.pandemicOutcomes.totalQALYLoss
+probabilistic_states.simulate(5)
 
+'''
