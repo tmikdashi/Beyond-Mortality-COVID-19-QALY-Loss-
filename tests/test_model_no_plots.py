@@ -13,7 +13,7 @@ probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
 
 
 #ADDITIONAL FUNCTIONS
-# probabilisticModel.get_overall_qaly_loss_by_state()
+#probabilisticModel.get_overall_qaly_loss_by_state()
 # probabilisticModel.get_overall_qaly_loss_by_state()
 # probabilisticModel.plot_map_of_qaly_loss_by_county()
 
