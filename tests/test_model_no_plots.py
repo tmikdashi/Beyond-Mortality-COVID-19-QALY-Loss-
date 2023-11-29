@@ -1,7 +1,4 @@
-from classes.model import ProbabilisticAllStates
-
-from classes.model_2 import AllStates,ProbabilisticAllStates
-from classes.parameters import ParameterGenerator
+from classes.model_2 import ProbabilisticAllStates
 
 probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=5)
@@ -14,7 +11,7 @@ probabilisticModel.plot_weekly_qaly_loss()
 
 #ADDITIONAL FUNCTIONS
 probabilisticModel.get_overall_qaly_loss_by_state()
-probabilistic_states.get_overall_qaly_loss_by_state()
-probabilistic_states.plot_map_of_qaly_loss_by_county()
+probabilisticModel.get_overall_qaly_loss_by_state()
+probabilisticModel.plot_map_of_qaly_loss_by_county()
 
 
