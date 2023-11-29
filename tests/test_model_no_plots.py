@@ -1,18 +1,16 @@
-import numpy as np
-
-from classes.model import AllStates,ProbabilisticAllStates
-from classes.parameters import ParameterGenerator
+from classes.model import ProbabilisticAllStates
 
 
-probabilistic_states=ProbabilisticAllStates()
-probabilistic_states.simulate(5)
+probabilisticModel = ProbabilisticAllStates()
+probabilisticModel.simulate(n=5)
 
 #KEY FUNCTIONS
-probabilistic_states.get_overall_qaly_loss()
-probabilistic_states.get_weekly_qaly_loss()
-probabilistic_states.plot_weekly_qaly_loss()
+probabilisticModel.print_overall_qaly_loss()
+print(probabilisticModel.get_mean_ui_weekly_qaly_loss())
+# probabilisticModel.get_weekly_qaly_loss()
+probabilisticModel.plot_weekly_qaly_loss()
 
 #ADDITIONAL FUNCTIONS
-probabilistic_states.get_overall_qaly_loss_by_state()
+probabilisticModel.get_overall_qaly_loss_by_state()
 
 

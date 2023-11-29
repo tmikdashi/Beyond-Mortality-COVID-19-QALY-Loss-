@@ -8,6 +8,7 @@ import pandas as pd
 from classes.parameters import ParameterGenerator
 from data_preprocessing.support_functions import get_dict_of_county_data_by_type
 from deampy.plots.plot_support import output_figure
+from deampy.statistics import SummaryStat
 from definitions import ROOT_DIR
 
 
@@ -294,16 +295,14 @@ class AllStates:
     def get_overall_qaly_loss_by_state(self):
         """
         Print the overall QALY loss for each county.
-
         :return: Overall QALY loss summed across timepoints for each county
         """
 
         for state_name, state_obj in self.states.items():
             for county_name, county_obj in state_obj.counties.items():
-                    print(f"Overall QALY Loss for {county_name}, {state_name}: {county_obj.pandemicOutcomes.totalQALYLoss}")
+                print(f"Overall QALY Loss for {county_name}, {state_name}: {county_obj.pandemicOutcomes.totalQALYLoss}")
 
-
-    def get_overall_qaly_loss_by_state(self,print_results=False):
+    def get_overall_qaly_loss_by_state(self, print_results=False):
         """
         Print the overall QALY loss for each county.
 
@@ -586,17 +585,43 @@ class AllStates:
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
 
 
+# TODO: I created this class to summarize the outcomes we are interested in from doing the probabilistic analysis.
+#  See how it is used under the ProbabilisticAllStates class, function simulate.
+class SummaryOutcomes:
+
+    def __init__(self):
+
+        # Lists for the outcomes of interest to collect
+        self.overallQALYlosses = []
+        self.weeklyQALYlosses = []
+        self.overallQALYlossesByState = []
+
+        self.statOverallQALYLoss = None
+
+    def summarize(self):
+
+        # TODO: SummaryState is a class that is already defined in deampy.statistics.
+        #  We can use it to get the mean, confidence intervals, and uncertainty intervals. See below.
+        self.statOverallQALYLoss = SummaryStat(data=self.overallQALYlosses)
+
+    def get_mean_ci_ui_overall_qaly_loss(self):
+        """
+        :return: Mean, confidence interval, and uncertainty interval for overall QALY loss summed over all states.
+        """
+
+        return (self.statOverallQALYLoss.get_mean(),
+                self.statOverallQALYLoss.get_t_CI(alpha=0.05),
+                self.statOverallQALYLoss.get_PI(alpha=0.05))
+
+
 class ProbabilisticAllStates:
 
     def __init__(self):
+
+        # Create and populate an AllStates object
         self.allStates = AllStates()
         self.allStates.populate()
-
-        self.overallQALYlosses = []
-        self.weeklyQALYlosses = []
-
-        self.overallQALYlossesByState=[]
-
+        self.summaryOutcomes = SummaryOutcomes()
 
     def simulate(self, n):
         """
@@ -607,46 +632,64 @@ class ProbabilisticAllStates:
         rng = np.random.RandomState(1)
         param_gen = ParameterGenerator()
 
-
         for i in range(n):
-            # generate a new set of parameters
-            params = param_gen.generate(rng)
 
-            self.allStates.calculate_qaly_loss(params)
+            # Generate a new set of parameters
+            params = param_gen.generate(rng=rng)
 
-            overall_qaly_loss = self.allStates.get_overall_qaly_loss()
-            self.overallQALYlosses.append(overall_qaly_loss)
+            # Calculate the QALY loss for this set of parameters
+            self.allStates.calculate_qaly_loss(param_values=params)
 
-            weekly_qaly_loss = self.allStates.get_weekly_qaly_loss()
-            self.weeklyQALYlosses.append(weekly_qaly_loss)
+            # Store outcomes
+            self.summaryOutcomes.overallQALYlosses.append(self.allStates.get_overall_qaly_loss())
+            self.summaryOutcomes.weeklyQALYlosses.append(self.allStates.get_weekly_qaly_loss())
+            # TODO: It seems there are two .get_overall_qaly_loss_by_state functions.
+            #  So one should be deleted.
+            #  Also, it is a good practice to not have print statements in the function that returns a value.
+            #  If you would like to print the returned value, you could do that outside the function
+            self.summaryOutcomes.overallQALYlossesByState.append(self.allStates.get_overall_qaly_loss_by_state(False))
 
-            overall_qaly_loss_by_state= self.allStates.get_overall_qaly_loss_by_state(False) #False was added to prevent automatic printing
-            self.overallQALYlossesByState.append(overall_qaly_loss_by_state)
+        # Summarize the collected outcomes
+        self.summaryOutcomes.summarize()
 
-
-
-    def get_overall_qaly_loss(self):
+    def print_overall_qaly_loss(self):
         """
-        :return: Overall QALY loss summed over all states.
+        :return: Prints the mean, confidence interval, and the uncertainty interval for the overall QALY loss .
         """
-        print('Overall QALY Loss:', self.overallQALYlosses)
-        print('Average QALY Loss across simulations:', np.mean(self.overallQALYlosses))
 
+        mean, ci, ui = self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss()
+
+        print('Overall QALY loss:')
+        print('  Mean:', mean)
+        print('  95% Confidence Interval:', ci)
+        print('  95% Uncertainty Interval:', ui)
+
+    def get_mean_ui_weekly_qaly_loss(self, alpha=0.05):
+        """
+        :param alpha: (float) significance value for calculating uncertainty intervals
+        :return: mean and uncertainty interval for the weekly QALY loss.
+        """
+
+        # TODO: so for the figure we would like to show the mean and uncertainty interval of weekly
+        #  QALY loss across all simulations.
+        #  You are already showing the mean but instead of showing the curves of each simulation,
+        #  we would like to show the uncertainty intervals, which are calculated here.
+        mean = np.mean(self.summaryOutcomes.weeklyQALYlosses, axis=0)
+        ui = np.percentile(self.summaryOutcomes.weeklyQALYlosses, q=[alpha/2*100, 100-alpha/2*100], axis=0)
+        return mean, ui
 
     def get_weekly_qaly_loss(self):
         """
         :return: Overall QALY loss summed over all states.
         """
-        print('Weekly QALY Loss:', self.weeklyQALYlosses)
-        print('Average Weekly QALY Loss across simulations:', np.mean(self.weeklyQALYlosses, axis=0))
-
-
+        print('Weekly QALY Loss:', self.summaryOutcomes.weeklyQALYlosses)
+        print('Average Weekly QALY Loss across simulations:', np.mean(self.summaryOutcomes.weeklyQALYlosses, axis=0))
 
     def get_overall_qaly_loss_by_state(self):
 
         state_qaly_losses = {state_name: [] for state_name in self.allStates.states.keys()}
 
-        for i, qaly_losses_by_state in enumerate(self.overallQALYlossesByState):
+        for i, qaly_losses_by_state in enumerate(self.summaryOutcomes.overallQALYlossesByState):
             for state_name, qaly_loss in qaly_losses_by_state.items():
                 state_qaly_losses[state_name].append(qaly_loss)
 
@@ -656,8 +699,6 @@ class ProbabilisticAllStates:
         for state_name, qaly_losses in state_qaly_losses.items():
             print(f" Average QALY Loss across simulations in {state_name}:",np.mean(qaly_losses))
 
-
-
     def plot_weekly_qaly_loss(self):
         """
         Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
@@ -665,12 +706,15 @@ class ProbabilisticAllStates:
         # Create a plot
         fig, ax = plt.subplots(figsize=(12, 6))
 
+        # TODO: so instead of showing the curves of each simulation, we would like to show the uncertainty intervals,
+        #  which you can get by using the function self.get_mean_ui_weekly_qaly_loss()
+
         # Plot the individual weekly QALY losses
-        for i, weekly_qaly_loss in enumerate(self.weeklyQALYlosses):
+        for i, weekly_qaly_loss in enumerate(self.summaryOutcomes.weeklyQALYlosses):
             ax.plot(range(1, len(weekly_qaly_loss) + 1), weekly_qaly_loss, label=f'Simulation {i + 1}')
 
         # Plot the average weekly QALY loss in bold
-        average_weekly_qaly_loss = np.mean(self.weeklyQALYlosses, axis=0)
+        average_weekly_qaly_loss = np.mean(self.summaryOutcomes.weeklyQALYlosses, axis=0)
         ax.plot(range(1, len(average_weekly_qaly_loss) + 1), average_weekly_qaly_loss, label='Average across simulations', linewidth=3,
                 color='black')
 
@@ -682,7 +726,6 @@ class ProbabilisticAllStates:
 
         plt.xticks(rotation=90)
         ax.tick_params(axis='x', labelsize=6.5)
-
 
         output_figure(fig, filename=ROOT_DIR + '/figs/simulations_national_qaly_loss.png')
 
