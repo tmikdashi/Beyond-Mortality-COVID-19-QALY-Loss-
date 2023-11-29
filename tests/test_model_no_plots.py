@@ -8,6 +8,7 @@ probabilisticModel.print_overall_qaly_loss()
 print(probabilisticModel.get_mean_ui_weekly_qaly_loss())
 # probabilisticModel.get_weekly_qaly_loss()
 probabilisticModel.plot_weekly_qaly_loss()
+probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 
 #ADDITIONAL FUNCTIONS
 # probabilisticModel.get_overall_qaly_loss_by_state()
