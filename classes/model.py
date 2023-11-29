@@ -596,6 +596,7 @@ class SummaryOutcomes:
         self.overallQALYlosses = []
         self.weeklyQALYlosses = []
         self.overallQALYlossesByState = []
+        self.overallQALYlossesByCounty = []
 
         self.weeklyQALYlossesCases = []
         self.weeklyQALYlossesHosps = []
@@ -647,6 +648,7 @@ class ProbabilisticAllStates:
             self.summaryOutcomes.overallQALYlosses.append(self.allStates.get_overall_qaly_loss())
             self.summaryOutcomes.weeklyQALYlosses.append(self.allStates.get_weekly_qaly_loss())
             self.summaryOutcomes.overallQALYlossesByState.append(self.allStates.get_overall_qaly_loss_by_state())
+            self.summaryOutcomes.overallQALYlossesByCounty.append(self.allStates.get_overall_qaly_loss_by_county())
 
             self.summaryOutcomes.weeklyQALYlossesCases.append(self.allStates.pandemicOutcomes.cases.weeklyQALYLoss)
             self.summaryOutcomes.weeklyQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.weeklyQALYLoss)
@@ -774,5 +776,76 @@ class ProbabilisticAllStates:
         ax.tick_params(axis='x', labelsize=6.5)
 
         output_figure(fig, filename=ROOT_DIR + '/figs/simulations_national_qaly_loss_by_outcome.png')
+
+    def plot_map_of_avg_qaly_loss_by_county(self):
+        """
+        Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
+        """
+
+        county_qaly_loss_data = {
+            "COUNTY": [],
+            "FIPS": [],
+            "QALY Loss per 100K": []
+        }
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                # Calculate the QALY loss per 100,000 population
+                qaly_loss = np.mean(self.summaryOutcomes.overallQALYlossesByCounty, axis=0)
+                qaly_loss_per_100k = (qaly_loss / county.population) * 100000
+                # Append county data to the list
+                county_qaly_loss_data["COUNTY"].append(county.name)
+                county_qaly_loss_data["FIPS"].append(county.fips)
+                county_qaly_loss_data["QALY Loss per 100K"].append(qaly_loss_per_100k)
+
+
+        # Create a DataFrame from the county data
+        county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
+
+        # Merge the county QALY loss data with the geometry data
+        geoData = gpd.read_file(
+            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
+        )
+        geoData['STATE'] = geoData['STATE'].str.lstrip('0')
+        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
+        merged_geo_data = geoData.merge(county_qaly_loss_df, left_on='FIPS', right_on='FIPS', how='left')
+
+        # Remove counties where there is no data
+        merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss per 100K"])
+
+        # Remove Alaska, HI, Puerto Rico (to be plotted later)
+        stateToRemove = ["02", "15", "72"]
+        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
+
+        # Explode the MultiPolygon geometries into individual polygons
+        merged_geo_data_mainland = merged_geo_data_mainland.explode()
+
+        # Plot the map
+        fig, ax = plt.subplots(1, 1, figsize=(20, 20))
+        ax.set_aspect('equal')
+
+        if not merged_geo_data_mainland.empty:
+            scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=10)
+            gplt.choropleth(
+                merged_geo_data_mainland,
+                hue="QALY Loss per 100K",
+                linewidth=0.1,
+                scheme=scheme,
+                cmap="viridis",
+                legend=True,
+                legend_kwargs={'title': 'Cumulative QALY Loss per 100K'},
+                edgecolor="black",
+                ax=ax,
+            )
+            ax.set_xlim([-170.0, 60])
+            ax.set_ylim([25, 76])
+            plt.title("Cumulative County QALY Loss per 100K", fontsize=24)
+        else:
+            print("No data to plot")
+
+        plt.tight_layout()
+        output_figure(fig, filename=ROOT_DIR + '/figs/map_avg_county_qaly_loss_all_simulations.png')
+
+        return fig
 
 
