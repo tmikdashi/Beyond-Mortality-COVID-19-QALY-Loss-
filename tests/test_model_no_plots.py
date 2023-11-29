@@ -1,6 +1,6 @@
 import numpy as np
 
-from classes.model import AllStates,ProbabilisticAllStates
+from classes.model_2 import AllStates,ProbabilisticAllStates
 from classes.parameters import ParameterGenerator
 
 
@@ -14,5 +14,6 @@ probabilistic_states.plot_weekly_qaly_loss()
 
 #ADDITIONAL FUNCTIONS
 probabilistic_states.get_overall_qaly_loss_by_state()
+probabilistic_states.plot_map_of_qaly_loss_by_county()
 
 

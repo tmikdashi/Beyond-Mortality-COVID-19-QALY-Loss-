@@ -291,7 +291,7 @@ class AllStates:
 
         return dict_results
 
-    def get_overall_qaly_loss_by_state(self):
+    def get_overall_qaly_loss_by_county(self):
         """
         Print the overall QALY loss for each county.
 

@@ -291,16 +291,21 @@ class AllStates:
 
         return dict_results
 
-    def get_overall_qaly_loss_by_state(self):
+    def get_overall_qaly_loss_by_county(self, print_results):
         """
         Print the overall QALY loss for each county.
 
         :return: Overall QALY loss summed across timepoints for each county
         """
-
+        overall_qaly_loss_by_county = {}
         for state_name, state_obj in self.states.items():
             for county_name, county_obj in state_obj.counties.items():
+                overall_qaly_loss_by_county[county_name, state_name]=county_obj.pandemicOutcomes.totalQALYLoss
+        if print_results:
+            for state_name, state_obj in self.states.items():
+                for county_name, county_obj in state_obj.counties.items():
                     print(f"Overall QALY Loss for {county_name}, {state_name}: {county_obj.pandemicOutcomes.totalQALYLoss}")
+        return overall_qaly_loss_by_county
 
 
     def get_overall_qaly_loss_by_state(self,print_results=False):
@@ -602,6 +607,8 @@ class ProbabilisticAllStates:
         self.weeklyQALYlossesHosps = []
         self.weeklyQALYlossesDeaths = []
 
+        self.overallCountyQALYlosses = []
+
 
 
 
@@ -630,9 +637,9 @@ class ProbabilisticAllStates:
             overall_qaly_loss_by_state= self.allStates.get_overall_qaly_loss_by_state(False) #False was added to prevent automatic printing
             self.overallQALYlossesByState.append(overall_qaly_loss_by_state)
 
-            overall_qaly_loss_by_county = self.allStates.get_overall_qaly_loss_by_county()  # False was added to prevent automatic printing
+            overall_qaly_loss_by_county = self.allStates.get_overall_qaly_loss_by_county(False)  # False was added to prevent automatic printing
             self.overallQALYlossesByCounty.append(overall_qaly_loss_by_county)
-
+            print(self.overallQALYlossesByCounty)
 
             weekly_qaly_loss_cases = self.allStates.pandemicOutcomes.cases.weeklyQALYLoss
             self.weeklyQALYlossesCases.append(weekly_qaly_loss_cases)
@@ -643,9 +650,15 @@ class ProbabilisticAllStates:
             weekly_qaly_loss_deaths = self.allStates.pandemicOutcomes.deaths.weeklyQALYLoss
             self.weeklyQALYlossesDeaths.append(weekly_qaly_loss_deaths)
 
-            county_qaly_loss = self.allStates.county.pandemicOutcomes.totalQALYLoss
-            self.overallCountyQALYlosses.append(county_qaly_loss)
+            #county_qaly_loss = self.allStates.pandemicOutcomes.county.totalQALYLoss
+            #self.overallCountyQALYlosses.append(county_qaly_loss)
 
+            for state in self.allStates.states.values():
+                for county in state.counties.values():
+                    # Calculate the QALY loss per 100,000 population
+                    qaly_loss = county.pandemicOutcomes.totalQALYLoss
+                    self.overallCountyQALYlosses.append(qaly_loss)
+                    print('{county}:',self.overallCountyQALYlosses)
 
 
     def get_overall_qaly_loss(self):
@@ -679,6 +692,27 @@ class ProbabilisticAllStates:
         for state_name, qaly_losses in state_qaly_losses.items():
             print(f" Average QALY Loss across simulations in {state_name}:",np.mean(qaly_losses))
 
+
+    def get_overall_qaly_loss_by_county(self):
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                # Calculate the QALY loss per 100,000 population
+                qaly_loss = county.pandemicOutcomes.totalQALYLoss
+                self.overallCountyQALYlosses.append(qaly_loss)
+                print('{county}:', self.overallCountyQALYlosses)
+
+        county_qaly_losses = {state_name: [] for state_name in self.allStates.county.keys()}
+
+        for i, qaly_losses_by_county in enumerate(self.overallQALYlossesByCounty):
+            for state_name, qaly_loss in qaly_losses_by_state.items():
+                couty_qaly_losses[state_name].append(qaly_loss)
+
+        for state_name, qaly_losses in state_qaly_losses.items():
+            print(f" Overall QALY Loss in {state_name}: {', '.join(map(str, qaly_losses))}")
+
+        for state_name, qaly_losses in state_qaly_losses.items():
+            print(f" Average QALY Loss across simulations in {state_name}:",np.mean(qaly_losses))
 
 
 
@@ -749,6 +783,8 @@ class ProbabilisticAllStates:
         plt.show()
         #output_figure(fig, filename=ROOT_DIR + '/figs/national_weekly_qaly_loss_by_outcome.png')
 
+    #def get_county_qaly_loss (self):
+
     def plot_map_of_qaly_loss_by_county(self):
         """
         Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
@@ -769,6 +805,7 @@ class ProbabilisticAllStates:
                 county_qaly_loss_data["COUNTY"].append(county.name)
                 county_qaly_loss_data["FIPS"].append(county.fips)
                 county_qaly_loss_data["QALY Loss per 100K"].append(qaly_loss_per_100k)
+                print(county_qaly_loss_data)
 
         # Create a DataFrame from the county data
         county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
