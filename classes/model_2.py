@@ -596,6 +596,13 @@ class ProbabilisticAllStates:
         self.weeklyQALYlosses = []
 
         self.overallQALYlossesByState=[]
+        self.overallQALYlossesByCounty =[]
+
+        self.weeklyQALYlossesCases =[]
+        self.weeklyQALYlossesHosps = []
+        self.weeklyQALYlossesDeaths = []
+
+
 
 
     def simulate(self, n):
@@ -622,6 +629,22 @@ class ProbabilisticAllStates:
 
             overall_qaly_loss_by_state= self.allStates.get_overall_qaly_loss_by_state(False) #False was added to prevent automatic printing
             self.overallQALYlossesByState.append(overall_qaly_loss_by_state)
+
+            overall_qaly_loss_by_county = self.allStates.get_overall_qaly_loss_by_county()  # False was added to prevent automatic printing
+            self.overallQALYlossesByCounty.append(overall_qaly_loss_by_county)
+
+
+            weekly_qaly_loss_cases = self.allStates.pandemicOutcomes.cases.weeklyQALYLoss
+            self.weeklyQALYlossesCases.append(weekly_qaly_loss_cases)
+
+            weekly_qaly_loss_hosps = self.allStates.pandemicOutcomes.hosps.weeklyQALYLoss
+            self.weeklyQALYlossesHosps.append(weekly_qaly_loss_hosps)
+
+            weekly_qaly_loss_deaths = self.allStates.pandemicOutcomes.deaths.weeklyQALYLoss
+            self.weeklyQALYlossesDeaths.append(weekly_qaly_loss_deaths)
+
+            county_qaly_loss = self.allStates.county.pandemicOutcomes.totalQALYLoss
+            self.overallCountyQALYlosses.append(county_qaly_loss)
 
 
 
@@ -658,6 +681,9 @@ class ProbabilisticAllStates:
 
 
 
+
+
+
     def plot_weekly_qaly_loss(self):
         """
         Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
@@ -685,5 +711,115 @@ class ProbabilisticAllStates:
 
 
         output_figure(fig, filename=ROOT_DIR + '/figs/simulations_national_qaly_loss.png')
+
+
+    def plot_weekly_qaly_loss_by_outcome(self):
+        """
+        Plots national weekly QALY Loss across all states broken down by cases, hospitalizations and deaths.
+        """
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        # Plot the lines for each outcome
+        weeks = range(1, len(self.allStates.pandemicOutcomes.cases.weeklyQALYLoss) + 1)
+        for i, weekly_qaly_loss in enumerate(self.weeklyQALYlossesCases):
+            ax.plot(range(1, len(weekly_qaly_loss) + 1), weekly_qaly_loss,  color='blue', linewidth =0.5)
+        for i, weekly_qaly_loss in enumerate(self.weeklyQALYlossesHosps):
+            ax.plot(range(1, len(weekly_qaly_loss) + 1), weekly_qaly_loss,
+                    color= 'green',  linewidth =0.5)
+        for i, weekly_qaly_loss in enumerate(self.weeklyQALYlossesDeaths):
+            ax.plot(range(1, len(weekly_qaly_loss) + 1), weekly_qaly_loss,
+                    color='red',  linewidth =0.5)
+
+        ax.plot(weeks, np.mean( self.weeklyQALYlossesCases, axis=0), label='Cases average', color='blue', linewidth =3)
+        ax.plot(weeks,  np.mean(self.weeklyQALYlossesHosps, axis=0), label='Hospitalizations', color='green', linewidth =3)
+        ax.plot(weeks,  np.mean(self.weeklyQALYlossesDeaths, axis=0), label='Deaths', color='red', linewidth =3)
+
+        ax.set_title('Weekly National QALY Loss by Outcome ')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('QALY Loss ')
+        ax.grid(True)
+
+        plt.xticks(rotation=90)
+        ax.tick_params(axis='x', labelsize=6.5)
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=10)
+        plt.subplots_adjust(top=0.45)
+
+        plt.tight_layout()
+        plt.show()
+        #output_figure(fig, filename=ROOT_DIR + '/figs/national_weekly_qaly_loss_by_outcome.png')
+
+    def plot_map_of_qaly_loss_by_county(self):
+        """
+        Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
+        """
+
+        county_qaly_loss_data = {
+            "COUNTY": [],
+            "FIPS": [],
+            "QALY Loss per 100K": []
+        }
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                # Calculate the QALY loss per 100,000 population
+                qaly_loss = county.pandemicOutcomes.totalQALYLoss
+                qaly_loss_per_100k = (qaly_loss / county.population) * 100000
+                # Append county data to the list
+                county_qaly_loss_data["COUNTY"].append(county.name)
+                county_qaly_loss_data["FIPS"].append(county.fips)
+                county_qaly_loss_data["QALY Loss per 100K"].append(qaly_loss_per_100k)
+
+        # Create a DataFrame from the county data
+        county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
+
+        # Merge the county QALY loss data with the geometry data
+        geoData = gpd.read_file(
+            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
+        )
+        geoData['STATE'] = geoData['STATE'].str.lstrip('0')
+        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
+        merged_geo_data = geoData.merge(county_qaly_loss_df, left_on='FIPS', right_on='FIPS', how='left')
+
+        # Remove counties where there is no data
+        merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss per 100K"])
+
+        # Remove Alaska, HI, Puerto Rico (to be plotted later)
+        stateToRemove = ["02", "15", "72"]
+        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
+
+        # Explode the MultiPolygon geometries into individual polygons
+        merged_geo_data_mainland = merged_geo_data_mainland.explode()
+
+        # Plot the map
+        fig, ax = plt.subplots(1, 1, figsize=(20, 20))
+        ax.set_aspect('equal')
+
+        if not merged_geo_data_mainland.empty:
+            scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=10)
+            gplt.choropleth(
+                merged_geo_data_mainland,
+                hue="QALY Loss per 100K",
+                linewidth=0.1,
+                scheme=scheme,
+                cmap="viridis",
+                legend=True,
+                legend_kwargs={'title': 'Cumulative QALY Loss per 100K'},
+                edgecolor="black",
+                ax=ax,
+            )
+            ax.set_xlim([-170.0, 60])
+            ax.set_ylim([25, 76])
+            plt.title("Cumulative County QALY Loss per 100K", fontsize=24)
+        else:
+            print("No data to plot")
+
+        plt.tight_layout()
+        output_figure(fig, filename=ROOT_DIR + '/figs/avg_map_county_qaly_loss_all_simulations.png')
+
+        return fig
+
+
+
 
 
