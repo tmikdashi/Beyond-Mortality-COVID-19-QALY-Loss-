@@ -876,25 +876,13 @@ class ProbabilisticAllStates:
         output_folder = ROOT_DIR + '/figs/weekly_qaly_loss_by_state_plots/'
         os.makedirs(output_folder, exist_ok=True)
 
-        # Print the path to check if it's correct
-        print("Output folder path:", output_folder)
-
-        num_states = len(self.allStates.states)
-
         for i, (state_name, state_obj) in enumerate(self.allStates.states.items()):
             # Calculate the weekly QALY loss per 100,000 population
             mean, ui = self.get_mean_ui_weekly_qaly_loss_by_state(state_name, alpha=0.05)
 
             # Create a plot for the current state
             fig, ax = plt.subplots(figsize=(12, 6))
-            ax.plot(range(1, len(mean) + 1), mean, label=f'{state_name} - Avg. across simulations', linewidth=2,
-                    color='black')
-            ax.fill_between(range(1, len(ui[1]) + 1), ui[0], ui[1], color='lightgrey', alpha=0.5)
-
-            ax.set_title(f'Weekly QALY Loss for {state_name}')
-            ax.set_ylabel('QALY Loss per 100,000 Population')
-            ax.grid(True)
-            ax.legend()
+            self.format_weekly_qaly_plot(ax, state_name, mean, ui)
 
             # Set common labels and title
             ax.set_xlabel('Week')
@@ -904,7 +892,80 @@ class ProbabilisticAllStates:
             # Save the plot with the state name in the filename
             filename = f"{output_folder}/{state_name}_weekly_qaly_loss.png"
             plt.savefig(filename)
-            plt.close()  # Close the current figure to release resources
+
+
+    def format_weekly_qaly_plot(self, ax, state_name, mean, ui):
+        ax.plot(range(1, len(mean) + 1), mean, label=f'Average', linewidth=2,
+                color='black')
+        ax.fill_between(range(1, len(ui[1]) + 1), ui[0], ui[1], color='lightgrey', alpha=0.5)
+
+        ax.set_title(f'Weekly QALY Loss for {state_name}')
+        ax.set_ylabel('QALY Loss')
+        ax.grid(True)
+        ax.legend()
+
+    def subplot_weekly_qaly_loss_by_state_100K_pop(self):
+
+        num_states = len(self.allStates.states)
+
+        fig, axes =plt.subplots(nrows = 13, ncols = 4,figsize=(18,25))
+
+        axes = np.ravel(axes)
+
+        for i, (state_name, state_obj) in enumerate(self.allStates.states.items()):
+
+            # Calculate the weekly QALY loss per 100,000 population
+            mean, ui = self.get_mean_ui_weekly_qaly_loss_by_state(state_name, alpha=0.05)
+
+            mean_per_100K_pop = np.array(mean)/state_obj.population
+            ui_per_100K_pop = np.array(ui)/state_obj.population
+
+            self.format_weekly_qaly_plot(axes[i], state_name, mean_per_100K_pop, ui_per_100K_pop)
+
+
+        axes[-1].set_xlabel('Week')
+        axes[-1].tick_params(axis='x', labelsize =6.5)
+
+        plt.tight_layout()
+
+
+        # Save the plot with the state name in the filename
+        filename = ROOT_DIR + f"/figs/subplots_all_states_weekly_qaly_loss.png"
+        output_figure(fig, filename)
+
+    def plot_weekly_qaly_loss_by_state_100K_pop(self):
+
+        num_states = len(self.allStates.states)
+
+        fig, ax =plt.subplots(figsize=(18,10))
+
+        for i, (state_name, state_obj) in enumerate(self.allStates.states.items()):
+
+            state_color=plt.cm.tab20(i/num_states)
+
+            # Calculate the weekly QALY loss per 100,000 population
+            mean, ui = self.get_mean_ui_weekly_qaly_loss_by_state(state_name, alpha=0.05)
+
+            mean_per_100K_pop = np.array(mean)/state_obj.population
+            ui_per_100K_pop = np.array(ui)/state_obj.population
+
+            ax.plot(range(1, len(mean) + 1), mean_per_100K_pop, label=f'{state_name}', linewidth=2, color=state_color)
+
+            ax.fill_between(range(1, len(ui[1]) + 1), ui_per_100K_pop[0], ui_per_100K_pop[1], color=state_color, alpha=0.5)
+
+
+        ax.set_xlabel('Week')
+        ax.set_ylabel('QALY Loss per 100K Pop ')
+        ax.set_title('Weekly QALY Loss per 100k Pop')
+        ax.grid(True)
+        plt.tight_layout()
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=10)
+        plt.subplots_adjust(top=0.45)
+
+        # Save the plot with the state name in the filename
+        filename = ROOT_DIR + f"/figs/all_states_weekly_qaly_loss.png"
+        output_figure(fig, filename)
+
 
     def get_mean_ui_weekly_qaly_loss_by_state(self, state_name, alpha=0.05):
         """
