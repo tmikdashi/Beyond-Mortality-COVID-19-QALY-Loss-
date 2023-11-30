@@ -4,6 +4,7 @@ import mapclassify as mc
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import os
 
 from classes.parameters import ParameterGenerator
 from data_preprocessing.support_functions import get_dict_of_county_data_by_type
@@ -321,7 +322,7 @@ class AllStates:
         """
         weekly_qaly_loss_by_state ={}
         for state_name, state_obj in self.states.items():
-            weekly_qaly_loss_by_state[state_name] =state_obj.pandemicOutcomes.weeklyQALYLoss
+            weekly_qaly_loss_by_state[state_name]=state_obj.pandemicOutcomes.weeklyQALYLoss
         return weekly_qaly_loss_by_state
 
     def get_weekly_qaly_loss_by_county(self):
@@ -598,6 +599,8 @@ class SummaryOutcomes:
         self.overallQALYlossesByState = []
         self.overallQALYlossesByCounty = []
 
+        self.weeklyQALYlossesByState = []
+
         self.weeklyQALYlossesCases = []
         self.weeklyQALYlossesHosps = []
         self.weeklyQALYlossesDeaths = []
@@ -649,7 +652,7 @@ class ProbabilisticAllStates:
             self.summaryOutcomes.weeklyQALYlosses.append(self.allStates.get_weekly_qaly_loss())
 
             self.summaryOutcomes.overallQALYlossesByState.append(self.allStates.get_overall_qaly_loss_by_state())
-            self.summaryOutcomes.overallQALYlossesByState.append(self.allStates.get_weekly_qaly_loss_by_state())
+            self.summaryOutcomes.weeklyQALYlossesByState.append(self.allStates.get_weekly_qaly_loss_by_state())
             self.summaryOutcomes.overallQALYlossesByCounty.append(self.allStates.get_overall_qaly_loss_by_county())
 
 
@@ -869,27 +872,48 @@ class ProbabilisticAllStates:
         return fig
 
     def plot_weekly_qaly_loss_by_state(self):
-        """
-        Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
-        """
-        # Create a plot
-        for state in self.allStates.states.values():
+        # Create a folder to save individual state plots if it doesn't exist
+        output_folder = ROOT_DIR + '/figs/weekly_qaly_loss_by_state_plots/'
+        os.makedirs(output_folder, exist_ok=True)
+
+        # Print the path to check if it's correct
+        print("Output folder path:", output_folder)
+
+        num_states = len(self.allStates.states)
+
+        for i, (state_name, state_obj) in enumerate(self.allStates.states.items()):
+            # Calculate the weekly QALY loss per 100,000 population
+            mean, ui = self.get_mean_ui_weekly_qaly_loss_by_state(state_name, alpha=0.05)
+
+            # Create a plot for the current state
             fig, ax = plt.subplots(figsize=(12, 6))
-            [mean, ui] =self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
+            ax.plot(range(1, len(mean) + 1), mean, label=f'{state_name} - Avg. across simulations', linewidth=2,
+                    color='black')
+            ax.fill_between(range(1, len(ui[1]) + 1), ui[0], ui[1], color='lightgrey', alpha=0.5)
 
-            ax.plot(range(1, len(mean) + 1), mean, label='Average across simulations', linewidth=2, color='black')
-            ax.fill_between(range(1, len(ui[1]) + 1), ui[0],ui[1], color='lightblue', alpha=0.5)
-
-
-            ax.set_title(' Weekly QALY Loss in {state_name}')
-            ax.set_xlabel('Date')
-            ax.set_ylabel('QALY Loss')
+            ax.set_title(f'Weekly QALY Loss for {state_name}')
+            ax.set_ylabel('QALY Loss per 100,000 Population')
             ax.grid(True)
-            plt.legend()
+            ax.legend()
 
+            # Set common labels and title
+            ax.set_xlabel('Week')
             plt.xticks(rotation=90)
             ax.tick_params(axis='x', labelsize=6.5)
 
-            output_figure(fig, filename=ROOT_DIR + '/figs/{state_name}_weekly_qaly_loss.png')
+            # Save the plot with the state name in the filename
+            filename = f"{output_folder}/{state_name}_weekly_qaly_loss.png"
+            plt.savefig(filename)
+            plt.close()  # Close the current figure to release resources
 
+    def get_mean_ui_weekly_qaly_loss_by_state(self, state_name, alpha=0.05):
+        """
+        :param state_name: Name of the state.
+        :param alpha: (float) significance value for calculating uncertainty intervals
+        :return: mean and uncertainty interval for the weekly QALY loss for a specific state.
+        """
 
+        state_qaly_losses = np.array([qaly_losses[state_name] for qaly_losses in self.summaryOutcomes.weeklyQALYlossesByState])
+        mean = np.mean(state_qaly_losses, axis=0)
+        ui = np.percentile(state_qaly_losses, q=[alpha / 2 * 100, 100 - alpha / 2 * 100], axis=0)
+        return mean, ui
