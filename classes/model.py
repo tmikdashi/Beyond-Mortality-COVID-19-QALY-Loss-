@@ -986,7 +986,7 @@ class ProbabilisticAllStates:
         bar_positions = np.arange(num_states)
 
         # Set up the width for each state bar
-        bar_width = 0.8
+        bar_height = 0.8
 
         # Set up colors for each segment
         cases_color = 'blue'
@@ -1002,20 +1002,24 @@ class ProbabilisticAllStates:
             deaths_height = (mean_deaths / state_obj.population) * 100000
             hosps_height = (mean_hosps / state_obj.population) * 100000
 
+            cases_ui = (ui_cases / state_obj.population) * 100000
+            deaths_ui = (ui_deaths / state_obj.population) * 100000
+            hosps_ui = (ui_hosps / state_obj.population) * 100000
+
             # Plot the segments
-            ax.bar(i,cases_height, color=cases_color, width=bar_width, align='center', label='Cases' if i == 0 else "")
-            ax.bar(i,deaths_height, bottom=cases_height, color=deaths_color, width=bar_width, align='center',
+            ax.barh(i,cases_height, color=cases_color, xerr=cases_ui.T, height=bar_height, align='center', label='Cases' if i == 0 else "")
+            ax.barh(i,deaths_height, left=cases_height, xerr=deaths_ui.T, color=deaths_color, height=bar_height, align='center',
                    label='Deaths' if i == 0 else "")
-            ax.bar(i,hosps_height, bottom=cases_height + deaths_height, color=hosps_color, width=bar_width,
+            ax.barh(i,hosps_height, left=cases_height + deaths_height, xerr=hosps_ui.T, color=hosps_color, height=bar_height,
                    align='center', label='Hospitalizations' if i == 0 else "")
 
         # Set the labels for each state
-        ax.set_xticks(bar_positions)
-        ax.set_xticklabels([state_obj.name for state_obj in states_list], fontsize=8, rotation=45, ha='right')
+        ax.set_yticks(bar_positions)
+        ax.set_yticklabels([state_obj.name for state_obj in states_list], fontsize=8, rotation=0, ha='right')
 
         # Set the labels and title
-        ax.set_xlabel('States')
-        ax.set_ylabel('Total QALY Loss per 100,000')
+        ax.set_ylabel('States')
+        ax.set_xlabel('Total QALY Loss per 100,000')
         ax.set_title('Total QALY Loss by State and Outcome')
 
         # Show the legend with unique labels
