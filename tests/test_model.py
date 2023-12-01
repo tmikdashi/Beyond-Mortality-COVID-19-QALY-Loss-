@@ -1,4 +1,5 @@
-from classes.model import ProbabilisticAllStates
+from classes.model import ProbabilisticAllStates, AllStates
+import numpy as np
 
 probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=5)
@@ -10,9 +11,11 @@ print(probabilisticModel.get_mean_ui_weekly_qaly_loss())
 #PLOTS
 probabilisticModel.plot_weekly_qaly_loss()
 probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+#print(np.mean(probabilisticModel.summaryOutcomes.overallQALYlossesByCounty))
 probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
 
 
+'''
 # QALY LOSS BY STATE: FORMATTING ALTERNATIVE
 #Creates a folder with separate plots for each state
 probabilisticModel.plot_weekly_qaly_loss_by_state()
@@ -22,6 +25,10 @@ probabilisticModel.plot_weekly_qaly_loss_by_state_100K_pop()
 
 # Creates subplots for each state
 probabilisticModel.subplot_weekly_qaly_loss_by_state_100K_pop()
+'''
 
 
+
+
+#
 
