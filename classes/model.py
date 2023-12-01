@@ -1,12 +1,14 @@
+import os
+
 import geopandas as gpd
 import geoplot as gplt
 import mapclassify as mc
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import os
 
 from classes.parameters import ParameterGenerator
+from classes.support import get_mean_ui_of_a_time_series
 from data_preprocessing.support_functions import get_dict_of_county_data_by_type
 from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
@@ -207,7 +209,6 @@ class AllStates:
         self.numWeeks = 0
         self.population = 0
 
-
     def populate(self):
         """
         Populates the AllStates object with county case data.
@@ -254,39 +255,38 @@ class AllStates:
     def calculate_qaly_loss(self, param_values):
         """
         calculates the QALY loss for all states and the nation
-        :param case_weight:
-        :param death_weight:
-        :param hosp_weight:
+        :param param_values: Parameter values to be used in calculating QALY loss.
         """
 
         # calculate QALY loss for each state
         for state in self.states.values():
             state.calculate_qaly_loss(
-            case_weight=param_values.qWeightCase, hosp_weight=param_values.qWeightHosp, death_weight=param_values.qWeightDeath)
+                case_weight=param_values.qWeightCase,
+                hosp_weight=param_values.qWeightHosp,
+                death_weight=param_values.qWeightDeath)
 
         # calculate QALY loss for the nation
         self.pandemicOutcomes.calculate_qaly_loss(
-            case_weight=param_values.qWeightCase, hosp_weight=param_values.qWeightHosp, death_weight=param_values.qWeightDeath)
+            case_weight=param_values.qWeightCase,
+            hosp_weight=param_values.qWeightHosp,
+            death_weight=param_values.qWeightDeath)
 
     def get_overall_qaly_loss(self):
         """
         :return: Overall QALY loss summed over all states.
         """
-
         return self.pandemicOutcomes.totalQALYLoss
 
     def get_weekly_qaly_loss(self):
         """
         :return: Weekly QALY losses across all states as numpy array
         """
-
         return self.pandemicOutcomes.weeklyQALYLoss
 
     def get_qaly_loss_by_outcome(self):
         """
         :return: (dictionary) of QALY loss by outcome with keys 'cases', 'hosps', 'deaths'
         """
-
         dict_results = {'cases': self.pandemicOutcomes.cases.totalQALYLoss,
                         'hosps': self.pandemicOutcomes.hosps.totalQALYLoss,
                         'deaths': self.pandemicOutcomes.deaths.totalQALYLoss}
@@ -298,31 +298,28 @@ class AllStates:
         Print the overall QALY loss for each county.
         :return: Overall QALY loss summed across timepoints for each county
         """
-
+        # TODO: this doesn't return what you intend it to return.
+        #  You are using the right approach in the next function (get_overall_qaly_loss_by_state)
         for state_name, state_obj in self.states.items():
             for county_name, county_obj in state_obj.counties.items():
                 return county_obj.pandemicOutcomes.totalQALYLoss
 
     def get_overall_qaly_loss_by_state(self):
         """
-        Print the overall QALY loss for each county.
-
-        :return: Overall QALY loss by states summed across all timepoints.
+        :return: (dictionary) Overall QALY loss by states (as dictionary key)
         """
         overall_qaly_loss_by_state = {}
         for state_name, state_obj in self.states.items():
-            overall_qaly_loss_by_state[state_name]=state_obj.pandemicOutcomes.totalQALYLoss
+            overall_qaly_loss_by_state[state_name] = state_obj.pandemicOutcomes.totalQALYLoss
         return overall_qaly_loss_by_state
 
     def get_weekly_qaly_loss_by_state(self):
         """
-        Calculate and return the weekly QALY loss for each state.
-
-        :return: A dictionary where keys are state names and values are the weekly QALY losses as numpy arrays.
+        :return: (dictionary) The weekly QALY losses by states (as dictionary key)
         """
         weekly_qaly_loss_by_state ={}
         for state_name, state_obj in self.states.items():
-            weekly_qaly_loss_by_state[state_name]=state_obj.pandemicOutcomes.weeklyQALYLoss
+            weekly_qaly_loss_by_state[state_name] = state_obj.pandemicOutcomes.weeklyQALYLoss
         return weekly_qaly_loss_by_state
 
     def get_weekly_qaly_loss_by_county(self):
@@ -345,11 +342,15 @@ class AllStates:
         :param state_name: Name of the state.
         :return: Overall QALY loss for the specified county, summed over all timepoints
         """
+
+        # TODO: is there a reason why we don't do
+        #  return self.states[state_name].counties[county_name].pandemicOutcomes.totalQALYLoss
+
         state_obj = self.states.get(state_name)
         if state_obj:
             county_obj = state_obj.counties.get(county_name)
             if county_obj:
-                 return county_obj.pandemicOutcomes.totalQALYLoss
+                return county_obj.pandemicOutcomes.totalQALYLoss
         return None
 
     def get_overall_qaly_loss_for_a_state(self, state_name):
@@ -359,6 +360,9 @@ class AllStates:
         :param state_name: Name of the state.
         :return: Overall QALY loss for the specified state, summed over all timepoints.
         """
+        # TODO: could we do
+        #  return self.states[state_name].pandemicOutcomes.totalQALYLoss
+
         state_obj = self.states.get(state_name)
         return state_obj.pandemicOutcomes.totalQALYLoss
 
@@ -369,6 +373,7 @@ class AllStates:
         :param state_name: Name of the state.
         :return: Weekly QALY loss for the specified state.
         """
+        # TODO: same comment as above
         state_obj = self.states.get(state_name)
         return state_obj.pandemicOutcomes.weeklyQALYLoss
 
@@ -380,6 +385,7 @@ class AllStates:
         :param state_name: Name of the state.
         :return: Weekly QALY loss for the specified county.
         """
+        # TODO: same comment as above
         state_obj = self.states.get(state_name)
         if state_obj:
             county_obj = state_obj.counties.get(county_name)
@@ -588,17 +594,16 @@ class AllStates:
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
 
 
-
 class SummaryOutcomes:
 
     def __init__(self):
 
         # Lists for the outcomes of interest to collect
         self.overallQALYlosses = []
-        self.weeklyQALYlosses = []
         self.overallQALYlossesByState = []
         self.overallQALYlossesByCounty = []
 
+        self.weeklyQALYlosses = []
         self.weeklyQALYlossesByState = []
 
         self.weeklyQALYlossesCases = []
@@ -615,7 +620,6 @@ class SummaryOutcomes:
         """
         :return: Mean, confidence interval, and uncertainty interval for overall QALY loss summed over all states.
         """
-
         return (self.statOverallQALYLoss.get_mean(),
                 self.statOverallQALYLoss.get_t_CI(alpha=0.05),
                 self.statOverallQALYLoss.get_PI(alpha=0.05))
@@ -649,17 +653,15 @@ class ProbabilisticAllStates:
 
             # Store outcomes
             self.summaryOutcomes.overallQALYlosses.append(self.allStates.get_overall_qaly_loss())
-            self.summaryOutcomes.weeklyQALYlosses.append(self.allStates.get_weekly_qaly_loss())
-
             self.summaryOutcomes.overallQALYlossesByState.append(self.allStates.get_overall_qaly_loss_by_state())
-            self.summaryOutcomes.weeklyQALYlossesByState.append(self.allStates.get_weekly_qaly_loss_by_state())
             self.summaryOutcomes.overallQALYlossesByCounty.append(self.allStates.get_overall_qaly_loss_by_county())
 
+            self.summaryOutcomes.weeklyQALYlosses.append(self.allStates.get_weekly_qaly_loss())
+            self.summaryOutcomes.weeklyQALYlossesByState.append(self.allStates.get_weekly_qaly_loss_by_state())
 
             self.summaryOutcomes.weeklyQALYlossesCases.append(self.allStates.pandemicOutcomes.cases.weeklyQALYLoss)
             self.summaryOutcomes.weeklyQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.weeklyQALYLoss)
             self.summaryOutcomes.weeklyQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.weeklyQALYLoss)
-
 
         # Summarize the collected outcomes
         self.summaryOutcomes.summarize()
@@ -682,8 +684,15 @@ class ProbabilisticAllStates:
         :return: mean and uncertainty interval for the weekly QALY loss.
         """
 
+        # TODO: since we are going to calculate the mean and UI for time-series a lot,
+        #  I created a function under classes.support.get_mean_ui_of_a_time_series:
+        mean, ui = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlosses, alpha=alpha)
+
+        # TODO: these two lines could go now. And you can update the function get_mean_ui_weekly_qaly_loss_by_outcome
+        #  (and in other places) to use get_mean_ui_of_a_time_series.
         mean = np.mean(self.summaryOutcomes.weeklyQALYlosses, axis=0)
         ui = np.percentile(self.summaryOutcomes.weeklyQALYlosses, q=[alpha/2*100, 100-alpha/2*100], axis=0)
+
         return mean, ui
 
     def get_weekly_qaly_loss(self):

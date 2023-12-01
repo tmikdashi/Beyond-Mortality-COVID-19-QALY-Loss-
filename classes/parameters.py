@@ -1,10 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from deampy.parameters import Beta, Gamma, Dirichlet
 from definitions import ROOT_DIR
-
-from deampy.parameters import Beta, Gamma, Dirichlet#, ConstantArray
-
 
 
 class ParameterValues:
