@@ -700,31 +700,6 @@ class ProbabilisticAllStates:
         return mean, ui
 
 
-    def plot_weekly_qaly_loss(self):
-        '''
-        :return:  Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
-        '''
-
-        # Create a plot
-        fig, ax = plt.subplots(figsize=(12, 6))
-
-        [mean, ui] =self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
-
-        ax.plot(range(1, len(mean) + 1), mean, label='Average across simulations', linewidth=2, color='black')
-        ax.fill_between(range(1, len(ui[1]) + 1), ui[0],ui[1], color='lightblue', alpha=0.5)
-
-
-        ax.set_title('National Weekly QALY Loss from Cases, Hospitalizations and Deaths')
-        ax.set_xlabel('Date')
-        ax.set_ylabel('QALY Loss')
-        ax.grid(True)
-        plt.legend()
-
-        plt.xticks(rotation=90)
-        ax.tick_params(axis='x', labelsize=6.5)
-
-        output_figure(fig, filename=ROOT_DIR + '/figs/simulations_national_qaly_loss.png')
-
     def plot_weekly_qaly_loss_by_outcome(self):
         '''
         :return: Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
@@ -734,14 +709,19 @@ class ProbabilisticAllStates:
 
         [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths] =self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05)
 
-        ax.plot(range(1, len(mean_cases) + 1), mean_cases, label='QALY Loss Cases', linewidth=2, color='black')
-        ax.fill_between(range(1, len(ui_cases[1]) + 1), ui_cases[0],ui_cases[1], color='grey', alpha=0.5)
+        ax.plot(range(1, len(mean_cases) + 1), mean_cases, label='QALY Loss Cases', linewidth=2, color='blue')
+        ax.fill_between(range(1, len(ui_cases[1]) + 1), ui_cases[0],ui_cases[1], color='lightblue', alpha=0.5)
 
-        ax.plot(range(1, len(mean_hosps) + 1), mean_hosps, label='QALY Loss Hosps', linewidth=2, color='blue')
-        ax.fill_between(range(1, len(ui_hosps[1]) + 1), ui_hosps[0], ui_hosps[1], color='lightblue', alpha=0.5)
+        ax.plot(range(1, len(mean_hosps) + 1), mean_hosps, label='QALY Loss Hosps', linewidth=2, color='green')
+        ax.fill_between(range(1, len(ui_hosps[1]) + 1), ui_hosps[0], ui_hosps[1], color='lightgreen', alpha=0.5)
 
         ax.plot(range(1, len(mean_deaths) + 1), mean_deaths, label='QALY Loss Deaths', linewidth=2, color='red')
         ax.fill_between(range(1, len(ui_deaths[1]) + 1), ui_deaths[0], ui_deaths[1], color='orange', alpha=0.1)
+
+        [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
+
+        ax.plot(range(1, len(mean) + 1), mean, label='All outcomes', linewidth=2, color='black')
+        ax.fill_between(range(1, len(ui[1]) + 1), ui[0], ui[1], color='grey', alpha=0.5)
 
         ax.set_title('National Weekly QALY Loss by Outcome')
         ax.set_xlabel('Date')
@@ -1002,6 +982,7 @@ class ProbabilisticAllStates:
             deaths_height = (mean_deaths / state_obj.population) * 100000
             hosps_height = (mean_hosps / state_obj.population) * 100000
 
+            # STILL NEED TO SORT OUT ERROR BARS
             cases_ui = (ui_cases / state_obj.population) * 100000
             deaths_ui = (ui_deaths / state_obj.population) * 100000
             hosps_ui = (ui_hosps / state_obj.population) * 100000
