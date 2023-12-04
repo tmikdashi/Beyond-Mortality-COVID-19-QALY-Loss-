@@ -1006,12 +1006,14 @@ class ProbabilisticAllStates:
             deaths_ui = (ui_deaths / state_obj.population) * 100000
             hosps_ui = (ui_hosps / state_obj.population) * 100000
 
-            # Plot the segments
-            ax.barh(i,cases_height, color=cases_color, xerr=cases_ui.T, height=bar_height, align='center', label='Cases' if i == 0 else "")
-            ax.barh(i,deaths_height, left=cases_height, xerr=deaths_ui.T, color=deaths_color, height=bar_height, align='center',
-                   label='Deaths' if i == 0 else "")
-            ax.barh(i,hosps_height, left=cases_height + deaths_height, xerr=hosps_ui.T, color=hosps_color, height=bar_height,
-                   align='center', label='Hospitalizations' if i == 0 else "")
+            ax.barh(i, cases_height, color=cases_color, height=bar_height,
+                    align='center',
+                    label='Cases' if i == 0 else "")
+            ax.barh(i, deaths_height, left=cases_height, color=deaths_color,
+                    height=bar_height, align='center', label='Deaths' if i == 0 else "")
+            ax.barh(i, hosps_height, left=cases_height + deaths_height,
+                    color=hosps_color,
+                    height=bar_height, align='center', label='Hospitalizations' if i == 0 else "")
 
         # Set the labels for each state
         ax.set_yticks(bar_positions)
