@@ -828,6 +828,17 @@ class ProbabilisticAllStates:
         mean,ui = get_overall_mean_ui(county_qaly_losses, 0.05)
         return mean, ui
 
+    def get_mean_ui_overall_qaly_loss_by_state(self, state_name, alpha=0.05):
+        """
+        :param state_name: Name of the state.
+        :param alpha: (float) significance value for calculating uncertainty intervals
+        :return: mean and uncertainty interval for the weekly QALY loss for a specific state.
+        """
+
+        state_qaly_losses = [qaly_losses[state_name] for qaly_losses in self.summaryOutcomes.overallQALYlossesByState]
+        mean,ui = get_overall_mean_ui(state_qaly_losses, 0.05)
+        return mean, ui
+
     def plot_weekly_qaly_loss_by_state(self):
         '''
         :return: Folder containing independent plots of the weekly QALY loss for each state
@@ -958,12 +969,13 @@ class ProbabilisticAllStates:
 
         num_states = len(self.allStates.states)
         states_list = list(self.allStates.states.values())
+        sorted_states = sorted(states_list, key=lambda state_obj: (self.get_mean_ui_overall_qaly_loss_by_state(state_name=state_obj.name, alpha=0.05)[0]/state_obj.population)*100000)
 
         # Set up the figure and axis
         fig, ax = plt.subplots(figsize=(12, 6))
 
         # Set up the positions for the bars
-        bar_positions = np.arange(num_states)
+        y_pos = (range(len(sorted_states)))
 
         # Set up the width for each state bar
         bar_height = 0.8
@@ -972,32 +984,46 @@ class ProbabilisticAllStates:
         cases_color = 'blue'
         deaths_color = 'red'
         hosps_color = 'green'
+        total_color = 'black'
 
         # Iterate through each state
 
-        for i, state_obj in enumerate(states_list):
+        for i, state_obj in enumerate(sorted_states):
             # Calculate the heights for each segment
             mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths=self.get_mean_ui_overall_qaly_loss_by_outcome_and_by_state(state_name=state_obj.name, alpha=0.05)
+            mean_total, ui_total = self.get_mean_ui_overall_qaly_loss_by_state(state_obj.name, alpha=0.05)
             cases_height = (mean_cases / state_obj.population) * 100000
             deaths_height = (mean_deaths / state_obj.population) * 100000
             hosps_height = (mean_hosps / state_obj.population) * 100000
+            total_height = (mean_total/ state_obj.population)*100000
 
             # STILL NEED TO SORT OUT ERROR BARS
             cases_ui = (ui_cases / state_obj.population) * 100000
             deaths_ui = (ui_deaths / state_obj.population) * 100000
             hosps_ui = (ui_hosps / state_obj.population) * 100000
+            total_ui = (ui_total/state_obj.population)*100000
 
-            ax.barh(i, cases_height, color=cases_color, height=bar_height,
-                    align='center',
-                    label='Cases' if i == 0 else "")
-            ax.barh(i, deaths_height, left=cases_height, color=deaths_color,
-                    height=bar_height, align='center', label='Deaths' if i == 0 else "")
-            ax.barh(i, hosps_height, left=cases_height + deaths_height,
-                    color=hosps_color,
-                    height=bar_height, align='center', label='Hospitalizations' if i == 0 else "")
+            xterr_cases = [[cases_height-cases_ui[0]], [cases_ui[1]-cases_height]]
+            xterr_deaths = [[deaths_height-deaths_ui[0]], [deaths_ui[1]-deaths_height]]
+            xterr_hosps = [[hosps_height-hosps_ui[0]], [hosps_ui[1]-hosps_height]]
+            xterr_total = [[total_height-total_ui[0]], [total_ui[1]-total_height]]
+
+
+            ax.scatter(cases_height, [state_obj.name],marker='o', color= cases_color, label = 'cases')
+            ax.errorbar(cases_height, [state_obj.name], xerr=xterr_cases, fmt='none', color= cases_color,capsize =5)
+            ax.scatter(hosps_height, [state_obj.name], marker='o', color=hosps_color, label='hosps')
+            ax.errorbar(hosps_height, [state_obj.name], xerr=xterr_hosps, fmt='none',
+                        color=hosps_color, capsize=5)
+            ax.scatter(deaths_height, [state_obj.name], marker='o', color=deaths_color, label='deaths')
+            ax.errorbar(deaths_height, [state_obj.name], xerr=xterr_deaths, fmt='none',
+                        color=deaths_color, capsize=5)
+
+            ax.scatter(total_height, [state_obj.name], marker='o', color=total_color, label='deaths')
+            ax.errorbar(total_height, [state_obj.name], xerr=xterr_total, fmt='none',
+                        color=total_color, capsize=5)
 
         # Set the labels for each state
-        ax.set_yticks(bar_positions)
+        ax.set_yticks(y_pos)
         ax.set_yticklabels([state_obj.name for state_obj in states_list], fontsize=8, rotation=0, ha='right')
 
         # Set the labels and title
@@ -1006,7 +1032,7 @@ class ProbabilisticAllStates:
         ax.set_title('Total QALY Loss by State and Outcome')
 
         # Show the legend with unique labels
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Cases', 'Deaths', 'Hospitalizations'])
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Cases', 'Deaths', 'Hospitalizations', 'Total'])
 
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
@@ -1027,6 +1053,4 @@ class ProbabilisticAllStates:
         mean_deaths, ui_deaths = get_overall_mean_ui(state_deaths_qaly_losses, alpha=alpha)
 
         return mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths
-
-
 
