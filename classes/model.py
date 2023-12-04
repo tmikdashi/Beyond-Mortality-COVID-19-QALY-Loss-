@@ -997,7 +997,7 @@ class ProbabilisticAllStates:
             hosps_height = (mean_hosps / state_obj.population) * 100000
             total_height = (mean_total/ state_obj.population)*100000
 
-            # STILL NEED TO SORT OUT ERROR BARS
+            #Converting UI into error bars
             cases_ui = (ui_cases / state_obj.population) * 100000
             deaths_ui = (ui_deaths / state_obj.population) * 100000
             hosps_ui = (ui_hosps / state_obj.population) * 100000
