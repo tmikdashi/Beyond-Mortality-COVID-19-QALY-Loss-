@@ -17,6 +17,7 @@ probabilisticModel.print_overall_qaly_loss()
 #PLOTS
 probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
+probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
 probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
 

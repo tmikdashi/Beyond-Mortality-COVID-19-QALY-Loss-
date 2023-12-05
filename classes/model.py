@@ -13,6 +13,7 @@ from data_preprocessing.support_functions import get_dict_of_county_data_by_type
 from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
 from definitions import ROOT_DIR
+from shapely.geometry import Polygon
 
 
 class AnOutcome:
@@ -219,6 +220,7 @@ class AllStates:
         county_hosp_data, dates = get_dict_of_county_data_by_type('hospitalizations')
 
         self.numWeeks = len(dates)
+        self.dates=dates
 
         for (county_name, state, fips, population), case_values in county_case_data.items():
 
@@ -637,6 +639,8 @@ class ProbabilisticAllStates:
         self.allStates.populate()
         self.summaryOutcomes = SummaryOutcomes()
 
+
+
     def simulate(self, n):
         """
         Simulates the model n times
@@ -704,40 +708,35 @@ class ProbabilisticAllStates:
         [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths] = (
             self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
 
-        ax.plot(range(1, len(mean_cases) + 1), mean_cases,
+        ax.plot(self.allStates.dates, mean_cases,
                 label='QALY Loss Cases', linewidth=2, color='blue')
-        ax.fill_between(range(1, len(ui_cases[1]) + 1), ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
+        ax.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
 
-        ax.plot(range(1, len(mean_hosps) + 1), mean_hosps,
+        ax.plot(self.allStates.dates, mean_hosps,
                 label='QALY Loss Hospitalizations', linewidth=2, color='green')
-        ax.fill_between(range(1, len(ui_hosps[1]) + 1), ui_hosps[0], ui_hosps[1], color='lightgreen', alpha=0.25)
+        ax.fill_between(self.allStates.dates, ui_hosps[0], ui_hosps[1], color='lightgreen', alpha=0.25)
 
-        ax.plot(range(1, len(mean_deaths) + 1), mean_deaths,
+        ax.plot(self.allStates.dates, mean_deaths,
                 label='QALY Loss Deaths', linewidth=2, color='red')
-        ax.fill_between(range(1, len(ui_deaths[1]) + 1), ui_deaths[0], ui_deaths[1], color='orange', alpha=0.25)
+        ax.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='orange', alpha=0.25)
 
         [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
 
-        ax.plot(range(1, len(mean) + 1), mean,
+        ax.plot(self.allStates.dates, mean,
                 label='All outcomes', linewidth=2, color='black')
-        ax.fill_between(range(1, len(ui[1]) + 1), ui[0], ui[1], color='grey', alpha=0.25)
-
-        # TODO: could we mark the period where delta and omicran were dominant? Rachel has the data
-        #  and you could use a shaded box to represent the periods (no need to add them to the legend,
-        #  we can explain them in the caption of the figure).
+        ax.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
+        ax.axvspan("2021-06-30","2021-10-27",alpha=0.2,color="lightblue")
+        ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")
 
         ax.set_title('National Weekly QALY Loss by Outcome')
-        # TODO: could we should either dates on the x-axis or label the x-axis as
-        #  'Weeks since [the start date of the date set]'
         ax.set_xlabel('Date')
         ax.set_ylabel('QALY Loss')
-        ax.grid(True) # TODO: I think this could go to simplify the figure?
         ax.legend()
 
-        # TODO: this adds thousand ',' separators to the y-axis labels to make it easier to read
         vals_y = ax.get_yticks()
         ax.set_yticklabels(['{:,.{prec}f}'.format(x, prec=0) for x in vals_y])
-
+        # To label every other tick on the x-axis
+        [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
         plt.xticks(rotation=90)
         ax.tick_params(axis='x', labelsize=6.5)
 
@@ -1066,3 +1065,170 @@ class ProbabilisticAllStates:
 
         return mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths
 
+    def plot_map_of_avg_qaly_loss_by_county_alt(self):
+        """
+        Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
+        """
+
+        # TODO: is it possible to format the legends so that the numbers in the legend are whole numbers?
+
+        county_qaly_loss_data = {
+            "COUNTY": [],
+            "FIPS": [],
+            "QALY Loss per 100K": []
+        }
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                # Calculate the QALY loss per 100,000 population
+                mean,ui = self.get_mean_ui_overall_qaly_loss_by_county(state.name, county.name)
+                qaly_loss = mean
+                qaly_loss_per_100k = (qaly_loss / county.population) * 100000
+                # Append county data to the list
+                county_qaly_loss_data["COUNTY"].append(county.name)
+                county_qaly_loss_data["FIPS"].append(county.fips)
+                county_qaly_loss_data["QALY Loss per 100K"].append(qaly_loss_per_100k)
+
+
+        # Create a DataFrame from the county data
+        county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
+
+        # Merge the county QALY loss data with the geometry data
+        geoData = gpd.read_file(
+            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
+        )
+        geoData['STATE'] = geoData['STATE'].str.lstrip('0')
+        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
+        merged_geo_data = geoData.merge(county_qaly_loss_df, left_on='FIPS', right_on='FIPS', how='left')
+
+        # Remove counties where there is no data
+        merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss per 100K"])
+
+        # Remove Alaska, HI, Puerto Rico (to be plotted later)
+        stateToRemove = ["2", "15", "72"]
+        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
+
+        # Explode the MultiPolygon geometries into individual polygons
+        merged_geo_data_mainland = merged_geo_data_mainland.explode()
+
+        # Plot the map
+        fig, ax = plt.subplots(1, 1, figsize=(20, 20))
+
+        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=10)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="QALY Loss per 100K",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Cumulative QALY Loss per 100K'},
+            edgecolor="black",
+            #legend_kwds=dict(fmt='{:.0f}', interval=True),
+            ax=ax
+        )
+        plt.tight_layout()
+        '''
+        ## Alaska ##
+        stateToInclude = ["2"]
+        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
+
+        # Explode the MultiPolygon geometries into individual polygons
+        merged_geo_data_AK = merged_geo_data_AK.explode()
+
+        # Basic plot with just county outlines
+        gplt.polyplot(merged_geo_data_AK, figsize=(20, 4))
+        fig_AK, ax = plt.subplots(1, 1, figsize=(16, 12))
+
+        # Set up the color sheme:
+        scheme = mc.Quantiles(merged_geo_data_AK["QALY Loss per 100K"], k=2)
+
+
+        gplt.choropleth(
+            merged_geo_data_AK,
+            hue="QALY Loss per 100K",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=ax,
+        )
+
+        ## Hawai'i ##
+        fig_Hi, ax = plt.subplots(1, 1, figsize=(16, 12))
+        stateToInclude = ["15"]
+        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
+
+        # Explode the MultiPolygon geometries into individual polygons
+        merged_geo_data_HI = merged_geo_data_HI.explode()
+        # Set up the color sheme:
+        scheme = mc.Quantiles(merged_geo_data_HI["QALY Loss per 100K"], k=2)
+
+        gplt.choropleth(
+            merged_geo_data_HI,
+            hue="QALY Loss per 100K",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=ax,
+        )
+
+        plt.title("Cumulative County QALY Loss per 100K, averaged across simulations", fontsize=24)
+
+        akax = fig.add_axes([0.1, 0.17, 0.2, 0.19])
+        akax.axis('off')
+        polygon = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
+        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
+        scheme = mc.Quantiles(merged_geo_data_AK["QALY Loss per 100K"], k=2)
+        merged_geo_data_AK.clip(polygon).plot(gplt.choropleth(
+            merged_geo_data_AK,
+            hue="QALY Loss per 100K",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=ax,
+        ))
+
+
+
+        gplt.choropleth(
+            merged_geo_data_AK,
+            hue="QALY Loss per 100K",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=ax,
+        )
+
+
+
+        hiax = fig.add_axes([.28, 0.20, 0.1, 0.1])
+        hiax.axis('off')
+        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
+        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
+        merged_geo_data_HI.clip(hipolygon).plot()
+
+        scheme = mc.Quantiles(merged_geo_data_HI["QALY Loss per 100K"], k=2)
+
+        gplt.choropleth(
+            merged_geo_data_HI,
+            hue="QALY Loss per 100K",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=ax,
+        )
+        '''
+        output_figure(fig, filename=ROOT_DIR + '/figs/map_avg_county_qaly_loss_all_simulations_alt.png')
+
+        return fig
