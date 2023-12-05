@@ -759,6 +759,8 @@ class ProbabilisticAllStates:
         Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
         """
 
+        # TODO: is it possible to format the legends so that the numbers in the legend are whole numbers?
+
         county_qaly_loss_data = {
             "COUNTY": [],
             "FIPS": [],
