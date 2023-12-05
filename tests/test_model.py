@@ -12,6 +12,7 @@ probabilisticModel.simulate(n=5)
 probabilisticModel.print_overall_qaly_loss()
 # print(probabilisticModel.get_mean_ui_weekly_qaly_loss())
 
+probabilisticModel.get_proportion_of_overall_qaly_loss_by_outcome()
 
 
 #PLOTS

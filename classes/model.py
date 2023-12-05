@@ -611,6 +611,10 @@ class SummaryOutcomes:
         self.weeklyQALYlossesHosps = []
         self.weeklyQALYlossesDeaths = []
 
+        self.overallQALYlossesOutcomes = []
+        #self.overallQALYlossesHosps = []
+        #self.overallQALYlossesDeaths = []
+
         self.overallQALYlossesCasesByState = []
         self.overallQALYlossesHospsByState = []
         self.overallQALYlossesDeathsByState = []
@@ -629,6 +633,19 @@ class SummaryOutcomes:
                 self.statOverallQALYLoss.get_t_CI(alpha=0.05),
                 self.statOverallQALYLoss.get_PI(alpha=0.05))
 
+    def summarize_Cases(self):
+
+        self.statOverallQALYLossCases = SummaryStat(data=self.overallQALYlossesCases)
+
+    def get_mean_ci_ui_overall_qaly_loss_by_outcome(self):
+        """
+        :return: Mean, confidence interval, and uncertainty interval for overall QALY loss summed over all states.
+        """
+        return (self.statOverallQALYLossCases.get_mean(),
+                self.statOverallQALYLossCases.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossCases.get_PI(alpha=0.05)
+                )
+
 
 class ProbabilisticAllStates:
 
@@ -638,6 +655,7 @@ class ProbabilisticAllStates:
         self.allStates = AllStates()
         self.allStates.populate()
         self.summaryOutcomes = SummaryOutcomes()
+
 
 
 
@@ -662,6 +680,7 @@ class ProbabilisticAllStates:
             self.summaryOutcomes.overallQALYlosses.append(self.allStates.get_overall_qaly_loss())
             self.summaryOutcomes.overallQALYlossesByState.append(self.allStates.get_overall_qaly_loss_by_state())
             self.summaryOutcomes.overallQALYlossesByCounty.append(self.allStates.get_overall_qaly_loss_by_county())
+            self.summaryOutcomes.overallQALYlossesOutcomes.append(self.allStates.get_qaly_loss_by_outcome())
 
             self.summaryOutcomes.weeklyQALYlosses.append(self.allStates.get_weekly_qaly_loss())
             self.summaryOutcomes.weeklyQALYlossesByState.append(self.allStates.get_weekly_qaly_loss_by_state())
@@ -669,6 +688,10 @@ class ProbabilisticAllStates:
             self.summaryOutcomes.weeklyQALYlossesCases.append(self.allStates.pandemicOutcomes.cases.weeklyQALYLoss)
             self.summaryOutcomes.weeklyQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.weeklyQALYLoss)
             self.summaryOutcomes.weeklyQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.weeklyQALYLoss)
+
+            #self.summaryOutcomes.overallQALYlossesCases.append(self.allStates.pandemicOutcomes.cases.overallQALYLoss)
+            #self.summaryOutcomes.overallQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.overallQALYLoss)
+            #self.summaryOutcomes.overallQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.overallQALYLoss)
 
             self.summaryOutcomes.overallQALYlossesCasesByState.append(self.allStates.get_overall_qaly_loss_by_state_cases())
             self.summaryOutcomes.overallQALYlossesHospsByState.append(self.allStates.get_overall_qaly_loss_by_state_hosps())
@@ -688,6 +711,25 @@ class ProbabilisticAllStates:
         print('  Mean:', mean)
         print('  95% Confidence Interval:', ci)
         print('  95% Uncertainty Interval:', ui)
+
+    def print_overall_qaly_loss_by_outcome(self):
+        """
+        :return: Prints the mean, confidence interval, and the uncertainty interval for the overall QALY loss by outcome.
+        """
+
+        mean_cases, ci_cases, ui_cases,= self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss_by_outcome()
+
+        print('Cases: ')
+        print('  Mean:', mean_cases)
+        print('  95% Confidence Interval:', ci_cases)
+        print('  95% Uncertainty Interval:', ui_cases)
+
+    def get_proportion_of_overall_qaly_loss_by_outcome(self):
+        mean_cases, ci_cases, ui_cases = self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss_by_outcome()
+        mean, ci, ui = self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss()
+
+        print('Cases proportion:', mean_cases/mean)
+
 
     def get_mean_ui_weekly_qaly_loss(self, alpha=0.05):
         """
