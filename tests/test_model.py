@@ -1,16 +1,16 @@
-from classes.model import ProbabilisticAllStates, AllStates
-import numpy as np
+from classes.model import ProbabilisticAllStates
 
 probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=5)
-print("QALY Loss Cases by State:", probabilisticModel.summaryOutcomes.overallQALYlossesCasesByState)
-print("QALY Loss Hosps by State:", probabilisticModel.summaryOutcomes.overallQALYlossesHospsByState)
-print("QALY Loss Deathss by State:", probabilisticModel.summaryOutcomes.overallQALYlossesDeathsByState)
-print(probabilisticModel.summaryOutcomes.overallQALYlossesByState)
+
+# print("QALY Loss Cases by State:", probabilisticModel.summaryOutcomes.overallQALYlossesCasesByState)
+# print("QALY Loss Hosps by State:", probabilisticModel.summaryOutcomes.overallQALYlossesHospsByState)
+# print("QALY Loss Deathss by State:", probabilisticModel.summaryOutcomes.overallQALYlossesDeathsByState)
+# print(probabilisticModel.summaryOutcomes.overallQALYlossesByState)
 
 
 probabilisticModel.print_overall_qaly_loss()
-print(probabilisticModel.get_mean_ui_weekly_qaly_loss())
+# print(probabilisticModel.get_mean_ui_weekly_qaly_loss())
 
 
 
