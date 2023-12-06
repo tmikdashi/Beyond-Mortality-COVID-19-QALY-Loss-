@@ -611,19 +611,22 @@ class SummaryOutcomes:
         self.weeklyQALYlossesHosps = []
         self.weeklyQALYlossesDeaths = []
 
-        self.overallQALYlossesOutcomes = []
-        #self.overallQALYlossesHosps = []
-        #self.overallQALYlossesDeaths = []
-
         self.overallQALYlossesCasesByState = []
         self.overallQALYlossesHospsByState = []
         self.overallQALYlossesDeathsByState = []
+
+        self.overallQALYlossesCases = []
+        self.overallQALYlossesHosps = []
+        self.overallQALYlossesDeaths =[]
 
         self.statOverallQALYLoss = None
 
     def summarize(self):
 
         self.statOverallQALYLoss = SummaryStat(data=self.overallQALYlosses)
+        self.statOverallQALYLossCases = SummaryStat(data=self.overallQALYlossesCases)
+        self.statOverallQALYLossHosps = SummaryStat(data=self.overallQALYlossesHosps)
+        self.statOverallQALYLossDeaths = SummaryStat(data=self.overallQALYlossesDeaths)
 
     def get_mean_ci_ui_overall_qaly_loss(self):
         """
@@ -633,19 +636,51 @@ class SummaryOutcomes:
                 self.statOverallQALYLoss.get_t_CI(alpha=0.05),
                 self.statOverallQALYLoss.get_PI(alpha=0.05))
 
-    def summarize_Cases(self):
-
-        self.statOverallQALYLossCases = SummaryStat(data=self.overallQALYlossesCases)
-
-    def get_mean_ci_ui_overall_qaly_loss_by_outcome(self):
+    def get_mean_ci_ui_overall_qaly_loss_by_outcome(self, outcome):
         """
-        :return: Mean, confidence interval, and uncertainty interval for overall QALY loss summed over all states.
+        :param outcome: Outcome class ('cases', 'hosps', 'deaths')
+        :return: Mean, confidence interval, and uncertainty interval for overall QALY loss by outcome class.
         """
-        return (self.statOverallQALYLossCases.get_mean(),
-                self.statOverallQALYLossCases.get_t_CI(alpha=0.05),
-                self.statOverallQALYLossCases.get_PI(alpha=0.05)
-                )
+        if outcome == 'cases':
+            stat = self.statOverallQALYLossCases
+            qaly_losses = self.overallQALYlossesCases
+        elif outcome == 'hosps':
+            stat = self.statOverallQALYLossHosps
+            qaly_losses = self.overallQALYlossesHosps
+        elif outcome == 'deaths':
+            stat = self.statOverallQALYLossDeaths
+            qaly_losses = self.overallQALYlossesDeaths
+        else:
+            raise ValueError("Invalid outcome class")
 
+        return stat.get_mean(), stat.get_t_CI(alpha=0.05), stat.get_PI(alpha=0.05)
+
+    def print_overall_qaly_loss_by_outcome(self):
+        """
+        Print the mean, confidence interval, and uncertainty interval for overall QALY loss by outcome class.
+        """
+        outcomes = ['cases', 'hosps', 'deaths']
+
+        for outcome in outcomes:
+            mean, ci, ui = self.get_mean_ci_ui_overall_qaly_loss_by_outcome(outcome)
+
+            print(f'Overall QALY loss for {outcome.capitalize()}:')
+            print('  Mean:', mean)
+            print('  95% Confidence Interval:', ci)
+            print('  95% Uncertainty Interval:', ui)
+
+    def print_proportion_overall_qaly_loss_by_outcome(self):
+        """
+        Print the mean, confidence interval, and uncertainty interval for overall QALY loss by outcome class.
+        """
+        mean_all_outcomes, ci_all_outcomes, ui_all_outcomes = self.get_mean_ci_ui_overall_qaly_loss()
+
+        outcomes = ['cases', 'hosps', 'deaths']
+
+        for outcome in outcomes:
+            mean, ci, ui = self.get_mean_ci_ui_overall_qaly_loss_by_outcome(outcome)
+            print(f'Overall QALY loss for {outcome.capitalize()}:')
+            print('  Proportion:', (mean/mean_all_outcomes))
 
 class ProbabilisticAllStates:
 
@@ -655,7 +690,6 @@ class ProbabilisticAllStates:
         self.allStates = AllStates()
         self.allStates.populate()
         self.summaryOutcomes = SummaryOutcomes()
-
 
 
 
@@ -680,7 +714,6 @@ class ProbabilisticAllStates:
             self.summaryOutcomes.overallQALYlosses.append(self.allStates.get_overall_qaly_loss())
             self.summaryOutcomes.overallQALYlossesByState.append(self.allStates.get_overall_qaly_loss_by_state())
             self.summaryOutcomes.overallQALYlossesByCounty.append(self.allStates.get_overall_qaly_loss_by_county())
-            self.summaryOutcomes.overallQALYlossesOutcomes.append(self.allStates.get_qaly_loss_by_outcome())
 
             self.summaryOutcomes.weeklyQALYlosses.append(self.allStates.get_weekly_qaly_loss())
             self.summaryOutcomes.weeklyQALYlossesByState.append(self.allStates.get_weekly_qaly_loss_by_state())
@@ -689,13 +722,13 @@ class ProbabilisticAllStates:
             self.summaryOutcomes.weeklyQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.weeklyQALYLoss)
             self.summaryOutcomes.weeklyQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.weeklyQALYLoss)
 
-            #self.summaryOutcomes.overallQALYlossesCases.append(self.allStates.pandemicOutcomes.cases.overallQALYLoss)
-            #self.summaryOutcomes.overallQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.overallQALYLoss)
-            #self.summaryOutcomes.overallQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.overallQALYLoss)
-
             self.summaryOutcomes.overallQALYlossesCasesByState.append(self.allStates.get_overall_qaly_loss_by_state_cases())
             self.summaryOutcomes.overallQALYlossesHospsByState.append(self.allStates.get_overall_qaly_loss_by_state_hosps())
             self.summaryOutcomes.overallQALYlossesDeathsByState.append(self.allStates.get_overall_qaly_loss_by_state_deaths())
+
+            self.summaryOutcomes.overallQALYlossesCases.append(self.allStates.pandemicOutcomes.cases.totalQALYLoss)
+            self.summaryOutcomes.overallQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.totalQALYLoss)
+            self.summaryOutcomes.overallQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.totalQALYLoss)
 
         # Summarize the collected outcomes
         self.summaryOutcomes.summarize()
@@ -711,25 +744,6 @@ class ProbabilisticAllStates:
         print('  Mean:', mean)
         print('  95% Confidence Interval:', ci)
         print('  95% Uncertainty Interval:', ui)
-
-    def print_overall_qaly_loss_by_outcome(self):
-        """
-        :return: Prints the mean, confidence interval, and the uncertainty interval for the overall QALY loss by outcome.
-        """
-
-        mean_cases, ci_cases, ui_cases,= self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss_by_outcome()
-
-        print('Cases: ')
-        print('  Mean:', mean_cases)
-        print('  95% Confidence Interval:', ci_cases)
-        print('  95% Uncertainty Interval:', ui_cases)
-
-    def get_proportion_of_overall_qaly_loss_by_outcome(self):
-        mean_cases, ci_cases, ui_cases = self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss_by_outcome()
-        mean, ci, ui = self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss()
-
-        print('Cases proportion:', mean_cases/mean)
-
 
     def get_mean_ui_weekly_qaly_loss(self, alpha=0.05):
         """
@@ -794,6 +808,7 @@ class ProbabilisticAllStates:
         mean_deaths, ui_deaths = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesDeaths, alpha=alpha)
 
         return mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths
+
 
     def plot_map_of_avg_qaly_loss_by_county(self):
         """
@@ -1171,7 +1186,7 @@ class ProbabilisticAllStates:
             ax=ax
         )
         plt.tight_layout()
-        '''
+
         ## Alaska ##
         stateToInclude = ["2"]
         merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
@@ -1181,96 +1196,81 @@ class ProbabilisticAllStates:
 
         # Basic plot with just county outlines
         gplt.polyplot(merged_geo_data_AK, figsize=(20, 4))
-        fig_AK, ax = plt.subplots(1, 1, figsize=(16, 12))
+        fig_AK, ax_AK = plt.subplots(1, 1, figsize=(16, 12))
 
-        # Set up the color sheme:
-        scheme = mc.Quantiles(merged_geo_data_AK["QALY Loss per 100K"], k=2)
-
+        # Set up the color scheme:
+        scheme_AK = mc.Quantiles(merged_geo_data_AK["QALY Loss per 100K"], k=2)
 
         gplt.choropleth(
             merged_geo_data_AK,
             hue="QALY Loss per 100K",
             linewidth=0.1,
-            scheme=scheme,
+            scheme=scheme_AK,
             cmap="viridis",
             legend=True,
             edgecolor="black",
-            ax=ax,
+            ax=ax_AK,
         )
 
         ## Hawai'i ##
-        fig_Hi, ax = plt.subplots(1, 1, figsize=(16, 12))
-        stateToInclude = ["15"]
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
+        fig_HI, ax_HI = plt.subplots(1, 1, figsize=(16, 12))
+        stateToInclude_HI = ["15"]
+        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
 
         # Explode the MultiPolygon geometries into individual polygons
         merged_geo_data_HI = merged_geo_data_HI.explode()
-        # Set up the color sheme:
-        scheme = mc.Quantiles(merged_geo_data_HI["QALY Loss per 100K"], k=2)
+        # Set up the color scheme:
+        scheme_HI = mc.Quantiles(merged_geo_data_HI["QALY Loss per 100K"], k=2)
 
         gplt.choropleth(
             merged_geo_data_HI,
             hue="QALY Loss per 100K",
             linewidth=0.1,
-            scheme=scheme,
+            scheme=scheme_HI,
             cmap="viridis",
             legend=True,
             edgecolor="black",
-            ax=ax,
+            ax=ax_HI,
         )
 
         plt.title("Cumulative County QALY Loss per 100K, averaged across simulations", fontsize=24)
 
         akax = fig.add_axes([0.1, 0.17, 0.2, 0.19])
         akax.axis('off')
-        polygon = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
-        scheme = mc.Quantiles(merged_geo_data_AK["QALY Loss per 100K"], k=2)
-        merged_geo_data_AK.clip(polygon).plot(gplt.choropleth(
-            merged_geo_data_AK,
-            hue="QALY Loss per 100K",
-            linewidth=0.1,
-            scheme=scheme,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=ax,
-        ))
+        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
+        scheme_AK = mc.Quantiles(merged_geo_data_AK["QALY Loss per 100K"], k=2)
 
-
-
+        clipped_AK = merged_geo_data_AK.clip(polygon_AK)
+        #merged_geo_data_AK.clip(polygon_AK).plot(
         gplt.choropleth(
-            merged_geo_data_AK,
+            clipped_AK,
             hue="QALY Loss per 100K",
             linewidth=0.1,
-            scheme=scheme,
+            scheme=scheme_AK,
             cmap="viridis",
             legend=True,
             edgecolor="black",
             ax=ax,
         )
 
-
-
         hiax = fig.add_axes([.28, 0.20, 0.1, 0.1])
         hiax.axis('off')
         hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
         merged_geo_data_HI.clip(hipolygon).plot()
 
-        scheme = mc.Quantiles(merged_geo_data_HI["QALY Loss per 100K"], k=2)
+        scheme_HI = mc.Quantiles(merged_geo_data_HI["QALY Loss per 100K"], k=2)
 
         gplt.choropleth(
             merged_geo_data_HI,
             hue="QALY Loss per 100K",
             linewidth=0.1,
-            scheme=scheme,
+            scheme=scheme_HI,
             cmap="viridis",
             legend=True,
             edgecolor="black",
             ax=ax,
         )
-        '''
+
         output_figure(fig, filename=ROOT_DIR + '/figs/map_avg_county_qaly_loss_all_simulations_alt.png')
 
         return fig
