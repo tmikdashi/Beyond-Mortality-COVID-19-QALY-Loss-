@@ -855,6 +855,8 @@ class ProbabilisticAllStates:
         fig, ax = plt.subplots(1, 1, figsize=(18, 14))
 
         ax.axis = ('off')
+
+
         ax.set_title('Cumulative County QALY Loss per 100K', fontsize=42)
 
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=10)
@@ -868,9 +870,10 @@ class ProbabilisticAllStates:
             legend=True,
             legend_kwargs={'title': 'Cumulative QALY Loss per 100K', 'bbox_to_anchor': (1, 0.5)},
             edgecolor="black",
-            # legend_kwds=dict(fmt='{:.0f}', interval=True),
             ax=ax
         )
+
+
         plt.tight_layout()
 
         ## Alaska ##
