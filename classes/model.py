@@ -613,39 +613,33 @@ class AllStates:
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
 
-    def get_overall_qaly_loss_by_state_and_outcome(self):
-        """
-        :return: (dictionary) Overall QALY loss by states (as dictionary key)
-        """
-
-        overall_qaly_loss_cases_by_state_alt = {}
-        overall_qaly_loss_hosps_by_state_alt = {}
-        overall_qaly_loss_deaths_by_state_alt = {}
-        for state_name, state_obj in self.states.items():
-            overall_qaly_loss_cases_by_state_alt[state_name] = state_obj.pandemicOutcomes.cases.totalQALYLoss
-            overall_qaly_loss_hosps_by_state_alt[state_name] = state_obj.pandemicOutcomes.hosps.totalQALYLoss
-            overall_qaly_loss_deaths_by_state_alt[state_name] = state_obj.pandemicOutcomes.deaths.totalQALYLoss
-
-        return overall_qaly_loss_cases_by_state_alt, overall_qaly_loss_hosps_by_state_alt,overall_qaly_loss_deaths_by_state_alt
 
     def get_overall_qaly_loss_by_state_cases(self):
         """
-        :return: (dictionary) Overall QALY loss by states (as dictionary key)
+        :return: (dictionary) Overall QALY loss from cases by states (as dictionary key)
         """
-
         overall_qaly_loss_cases_by_state = {}
         for state_name, state_obj in self.states.items():
             overall_qaly_loss_cases_by_state[state_name] = state_obj.pandemicOutcomes.cases.totalQALYLoss
         return overall_qaly_loss_cases_by_state
 
     def get_overall_qaly_loss_by_state_hosps(self):
+        """
+        :return: (dictionary) Overall QALY loss from hosps by states (as dictionary key)
+        """
         overall_qaly_loss_hosps_by_state = {}
-
         for state_name, state_obj in self.states.items():
             overall_qaly_loss_hosps_by_state[state_name] = state_obj.pandemicOutcomes.hosps.totalQALYLoss
-
         return overall_qaly_loss_hosps_by_state
 
+    def get_overall_qaly_loss_by_state_deaths(self):
+        """
+        :return: (dictionary) Overall QALY loss from deaths by states (as dictionary key)
+        """
+        overall_qaly_loss_deaths_by_state = {}
+        for state_name, state_obj in self.states.items():
+            overall_qaly_loss_deaths_by_state[state_name] = state_obj.pandemicOutcomes.deaths.totalQALYLoss
+        return overall_qaly_loss_deaths_by_state
 
 class SummaryOutcomes:
 
@@ -676,13 +670,7 @@ class SummaryOutcomes:
     def summarize(self):
 
         self.statOverallQALYLoss = SummaryStat(data=self.overallQALYlosses)
-        # TODO: review this-- currently not included !
-        self.statOverallQALYLossCases = SummaryStat(data=self.overallQALYlossesCases)
-        self.statOverallQALYLossHosps = SummaryStat(data=self.overallQALYlossesHosps)
-        self.statOverallQALYLossDeaths = SummaryStat(data=self.overallQALYlossesDeaths)
 
-       #TODO: why can't we also fo this:
-    # self.statOverallbyState= SummaryStat(data=self.overallQALYlossesByState)
 
     def get_mean_ci_ui_overall_qaly_loss(self):
         """
@@ -692,41 +680,6 @@ class SummaryOutcomes:
                 self.statOverallQALYLoss.get_t_CI(alpha=0.05),
                 self.statOverallQALYLoss.get_PI(alpha=0.05))
 
-    # TODO: review this-- currently not included !
-    def get_mean_ci_ui_overall_qaly_loss_by_outcome(self, outcome):
-        """
-        :param outcome: Outcome class ('cases', 'hosps', 'deaths')
-        :return: Mean, confidence interval, and uncertainty interval for overall QALY loss by outcome class.
-        """
-        if outcome == 'cases':
-            stat = self.statOverallQALYLossCases
-            qaly_losses = self.overallQALYlossesCases
-        elif outcome == 'hosps':
-            stat = self.statOverallQALYLossHosps
-            qaly_losses = self.overallQALYlossesHosps
-        elif outcome == 'deaths':
-            stat = self.statOverallQALYLossDeaths
-            qaly_losses = self.overallQALYlossesDeaths
-        else:
-            raise ValueError("Invalid outcome class")
-
-        return stat.get_mean(), stat.get_t_CI(alpha=0.05), stat.get_PI(alpha=0.05)
-
-    # TODO: review this-- currently not included !
-    def print_proportion_overall_qaly_loss_by_outcome(self):
-        """
-        Prints the proportion of overall QALY losss (accumulated over time) that is attributed to each outcome.
-        """
-        mean_all_outcomes, ci_all_outcomes, ui_all_outcomes = self.get_mean_ci_ui_overall_qaly_loss()
-
-        outcomes = ['cases', 'hosps', 'deaths']
-
-        for outcome in outcomes:
-            mean, ci, ui = self.get_mean_ci_ui_overall_qaly_loss_by_outcome(outcome)
-            print(f'Overall QALY loss for {outcome.capitalize()}:')
-            print('  Proportion:', (mean/mean_all_outcomes))
-
-
 class ProbabilisticAllStates:
 
     def __init__(self):
@@ -735,7 +688,6 @@ class ProbabilisticAllStates:
         self.allStates = AllStates()
         self.allStates.populate()
         self.summaryOutcomes = SummaryOutcomes()
-
 
     def simulate(self, n):
         """
@@ -766,21 +718,15 @@ class ProbabilisticAllStates:
             self.summaryOutcomes.weeklyQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.weeklyQALYLoss)
             self.summaryOutcomes.weeklyQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.weeklyQALYLoss)
 
-            #TODO: review this-- currently not included !
-            #self.summaryOutcomes.overallQALYlossesbyStateandOutcome.append(self.allStates.get_overall_qaly_loss_by_state_and_outcome)
-            self.summaryOutcomes.overallQALYlossessByStateandOutcome.append(self.allStates.get_overall_qaly_loss_by_state_and_outcome[0])
-            print(self.summaryOutcomes.overallQALYlossessByStateandOutcome)
-            self.summaryOutcomes.overallQALYlossesCasesByState.append(self.allStates.get_overall_qaly_loss_by_state_cases())
-            print(self.summaryOutcomes.overallQALYlossesCasesByState)
-            self.summaryOutcomes.overallQALYlossesHospsByState.append(self.allStates.get_overall_qaly_loss_by_state_hosps())
-            print(self.summaryOutcomes.overallQALYlossesHospsByState)
-            #self.summaryOutcomes.overallQALYlossesDeathsByState.append(self.allStates.get_overall_qaly_loss_by_state_deaths())
-
             self.summaryOutcomes.overallQALYlossesCases.append(self.allStates.pandemicOutcomes.cases.totalQALYLoss)
             self.summaryOutcomes.overallQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.totalQALYLoss)
             self.summaryOutcomes.overallQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.totalQALYLoss)
 
-        # Summarize the collected outcomes
+
+            self.summaryOutcomes.overallQALYlossesCasesByState.append(self.allStates.get_overall_qaly_loss_by_state_cases())
+            self.summaryOutcomes.overallQALYlossesHospsByState.append(self.allStates.get_overall_qaly_loss_by_state_hosps())
+            self.summaryOutcomes.overallQALYlossesDeathsByState.append(self.allStates.get_overall_qaly_loss_by_state_deaths())
+
         self.summaryOutcomes.summarize()
 
     def print_overall_qaly_loss(self):
@@ -848,6 +794,7 @@ class ProbabilisticAllStates:
 
         output_figure(fig, filename=ROOT_DIR + '/figs/simulations_national_qaly_loss_by_outcome.png')
 
+
     def get_mean_ui_weekly_qaly_loss_by_outcome(self, alpha=0.05):
         """
         :param alpha: (float) significance value for calculating uncertainty intervals
@@ -858,7 +805,6 @@ class ProbabilisticAllStates:
         mean_deaths, ui_deaths = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesDeaths, alpha=alpha)
 
         return mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths
-
 
     def plot_map_of_avg_qaly_loss_by_county(self):
         """
@@ -989,17 +935,6 @@ class ProbabilisticAllStates:
         mean,ui = get_overall_mean_ui(county_qaly_losses, 0.05)
         return mean, ui
 
-    def get_mean_ui_overall_qaly_loss_by_state(self, state_name, alpha=0.05):
-        """
-        :param state_name: Name of the state.
-        :param alpha: (float) significance value for calculating uncertainty intervals
-        :return: mean and uncertainty interval for the weekly QALY loss for a specific state.
-        """
-
-        state_qaly_losses = [qaly_losses[state_name] for qaly_losses in self.summaryOutcomes.overallQALYlossesByState]
-        mean,ui = get_overall_mean_ui(state_qaly_losses, 0.05)
-        return mean, ui
-
     def plot_weekly_qaly_loss_by_state(self):
         """
         :return: Folder containing independent plots of the weekly QALY loss for each state
@@ -1025,22 +960,6 @@ class ProbabilisticAllStates:
             # Save the plot with the state name in the filename
             filename = f"{output_folder}/{state_name}_weekly_qaly_loss.png"
             plt.savefig(filename)
-
-    def format_weekly_qaly_plot(self, ax, state_name, mean, ui):
-        """
-        :param ax: ax object encapsulates elements of a plot in a figure
-        :param mean: array of weekly mean values of QALY loss across simulations
-        :param ui: 2 arrays of uncertainty intervals of the weekly values of QALY loss across simulations
-        :return: Standardizes the formatting of plots of weekly QALY loss
-        """
-        ax.plot(range(1, len(mean) + 1), mean, label=f'Average', linewidth=2,
-                color='black')
-        ax.fill_between(range(1, len(ui[1]) + 1), ui[0], ui[1], color='lightgrey', alpha=0.5)
-
-        ax.set_title(f'Weekly QALY Loss for {state_name}')
-        ax.set_ylabel('QALY Loss')
-        ax.grid(True)
-        ax.legend()
 
     def subplot_weekly_qaly_loss_by_state_100K_pop(self):
         """
@@ -1071,42 +990,6 @@ class ProbabilisticAllStates:
         filename = ROOT_DIR + f"/figs/subplots_all_states_weekly_qaly_loss.png"
         output_figure(fig, filename)
 
-    def plot_weekly_qaly_loss_by_state_100K_pop(self): #TODO: not currently in the updated code, needs to be moved to playground
-        """
-        :return: Plot of weekly QALY loss per 100K population by state, with each state represented as a uniquely
-        colored line
-        """
-
-        num_states = len(self.allStates.states)
-
-        fig, ax =plt.subplots(figsize=(18,10))
-
-        for i, (state_name, state_obj) in enumerate(self.allStates.states.items()):
-
-            state_color=plt.cm.tab20(i/num_states)
-
-            # Calculate the weekly QALY loss per 100,000 population
-            mean, ui = self.get_mean_ui_weekly_qaly_loss_by_state(state_name, alpha=0.05)
-
-            mean_per_100K_pop = np.array(mean)/state_obj.population
-            ui_per_100K_pop = np.array(ui)/state_obj.population
-
-            ax.plot(range(1, len(mean) + 1), mean_per_100K_pop, label=f'{state_name}', linewidth=2, color=state_color)
-
-            ax.fill_between(range(1, len(ui[1]) + 1), ui_per_100K_pop[0], ui_per_100K_pop[1], color=state_color, alpha=0.5)
-
-        ax.set_xlabel('Week')
-        ax.set_ylabel('QALY Loss per 100K Pop ')
-        ax.set_title('Weekly QALY Loss per 100k Pop')
-        ax.grid(True)
-        plt.tight_layout()
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=10)
-        plt.subplots_adjust(top=0.45)
-
-        # Save the plot with the state name in the filename
-        filename = ROOT_DIR + f"/figs/all_states_weekly_qaly_loss.png"
-        output_figure(fig, filename)
-
     def get_mean_ui_weekly_qaly_loss_by_state(self, state_name, alpha=0.05):
         """
         :param state_name: Name of the state.
@@ -1114,10 +997,28 @@ class ProbabilisticAllStates:
         :return: mean and uncertainty interval for the weekly QALY loss for a specific state.
         """
 
-        state_qaly_losses = np.array([qaly_losses[state_name] for qaly_losses in self.summaryOutcomes.weeklyQALYlossesByState])
+        state_qaly_losses = np.array(
+            [qaly_losses[state_name] for qaly_losses in self.summaryOutcomes.weeklyQALYlossesByState])
         mean = np.mean(state_qaly_losses, axis=0)
         ui = np.percentile(state_qaly_losses, q=[alpha / 2 * 100, 100 - alpha / 2 * 100], axis=0)
         return mean, ui
+
+    def format_weekly_qaly_plot(self, ax, state_name, mean, ui):
+        """
+        :param ax: ax object encapsulates elements of a plot in a figure
+        :param mean: array of weekly mean values of QALY loss across simulations
+        :param ui: 2 arrays of uncertainty intervals of the weekly values of QALY loss across simulations
+        :return: Standardizes the formatting of plots of weekly QALY loss
+        """
+        ax.plot(range(1, len(mean) + 1), mean, label=f'Average', linewidth=2,
+                color='black')
+        ax.fill_between(range(1, len(ui[1]) + 1), ui[0], ui[1], color='lightgrey', alpha=0.5)
+
+        ax.set_title(f'Weekly QALY Loss for {state_name}')
+        ax.set_ylabel('QALY Loss')
+        ax.grid(True)
+        ax.legend()
+
 
     def plot_qaly_loss_by_state_and_by_outcome(self):
         """
@@ -1125,8 +1026,8 @@ class ProbabilisticAllStates:
         represented in a different color.
         """
 
-        num_states = len(self.allStates.states)
         states_list = list(self.allStates.states.values())
+        # To sort states by overall QALY loss
         sorted_states = sorted(
             states_list,
             key=lambda state_obj: (self.get_mean_ui_overall_qaly_loss_by_state(
@@ -1139,14 +1040,6 @@ class ProbabilisticAllStates:
         y_pos = (range(len(sorted_states)))
         ax.set_ylim([-1, len(sorted_states)])
 
-        # Set up the width for each state bar
-        bar_height = 0.8
-
-        # Set up colors for each segment
-        cases_color = 'blue'
-        deaths_color = 'red'
-        hosps_color = 'green'
-        total_color = 'black'
 
         # Iterate through each state
 
@@ -1171,19 +1064,15 @@ class ProbabilisticAllStates:
             xterr_hosps = [[hosps_height-hosps_ui[0]], [hosps_ui[1]-hosps_height]]
             xterr_total = [[total_height-total_ui[0]], [total_ui[1]-total_height]]
 
-            alpha = 0.4
-            ax.scatter(cases_height, [state_obj.name], marker='o', color=cases_color, label='cases')
-            ax.errorbar(cases_height, [state_obj.name],
-                        xerr=xterr_cases, fmt='none', color=cases_color, capsize=0, alpha=alpha)
-            ax.scatter(hosps_height, [state_obj.name], marker='o', color=hosps_color, label='hosps')
-            ax.errorbar(hosps_height, [state_obj.name],
-                        xerr=xterr_hosps, fmt='none', color=hosps_color, capsize=0, alpha=alpha)
+
+            ax.scatter(cases_height, [state_obj.name], marker='o', color='blue', label='cases')
+            ax.errorbar(cases_height, [state_obj.name], xerr=xterr_cases, fmt='none', color='blue', capsize=0, alpha=0.4)
+            ax.scatter(hosps_height, [state_obj.name], marker='o', color='green', label='hosps')
+            ax.errorbar(hosps_height, [state_obj.name],xerr=xterr_hosps, fmt='none', color='green', capsize=0, alpha=0.4)
             ax.scatter(deaths_height, [state_obj.name], marker='o', color='red', label='deaths')
-            ax.errorbar(deaths_height, [state_obj.name],
-                        xerr=xterr_deaths, fmt='none', color='red', capsize=0, alpha=alpha)
-            ax.scatter(total_height, [state_obj.name], marker='o', color=total_color, label='deaths')
-            ax.errorbar(total_height, [state_obj.name],
-                        xerr=xterr_total, fmt='none', color=total_color, capsize=0, alpha=alpha)
+            ax.errorbar(deaths_height, [state_obj.name],xerr=xterr_deaths, fmt='none', color='red', capsize=0, alpha=0.4)
+            ax.scatter(total_height, [state_obj.name], marker='o', color='black', label='total')
+            ax.errorbar(total_height, [state_obj.name],xerr=xterr_total, fmt='none', color='black', capsize=0, alpha=0.4)
 
         # Set the labels for each state
         ax.set_yticks(y_pos)
@@ -1200,12 +1089,23 @@ class ProbabilisticAllStates:
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
 
+
+    def get_mean_ui_overall_qaly_loss_by_state(self, state_name, alpha=0.05):
+        """
+        :param state_name: Name of the state.
+        :param alpha: (float) significance value for calculating uncertainty intervals
+        :return: mean and uncertainty interval for the weekly QALY loss for a specific state.
+        """
+
+        state_qaly_losses = [qaly_losses[state_name] for qaly_losses in self.summaryOutcomes.overallQALYlossesByState]
+        mean,ui = get_overall_mean_ui(state_qaly_losses, 0.05)
+        return mean, ui
+
     def get_mean_ui_overall_qaly_loss_by_outcome_and_by_state(self, state_name, alpha=0.05):
         """
         :param alpha: (float) significance value for calculating uncertainty intervals
         :return: mean and uncertainty interval for the weekly QALY loss.
         """
-
         state_cases_qaly_losses = [qaly_loss[state_name] for qaly_loss in self.summaryOutcomes.overallQALYlossesCasesByState]
         state_hosps_qaly_losses = [qaly_losses[state_name] for qaly_losses in self.summaryOutcomes.overallQALYlossesHospsByState]
         state_deaths_qaly_losses = [qaly_losses[state_name] for qaly_losses in self.summaryOutcomes.overallQALYlossesDeathsByState]
@@ -1216,173 +1116,3 @@ class ProbabilisticAllStates:
 
         return mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths
 
-
-
-
-    def plot_map_of_avg_qaly_loss_by_county_raw(self):
-        """
-        Plots a map of the QALY loss for each county, considering cases, deaths, and hospitalizations.
-        """
-
-        # TODO: is it possible to format the legends so that the numbers in the legend are whole numbers?
-
-        county_qaly_loss_data = {
-            "COUNTY": [],
-            "FIPS": [],
-            "QALY Loss": []
-        }
-
-        for state in self.allStates.states.values():
-            for county in state.counties.values():
-                # Calculate the QALY loss per 100,000 population
-                mean,ui = self.get_mean_ui_overall_qaly_loss_by_county(state.name, county.name)
-                qaly_loss = mean
-                #qaly_loss_per_100k = (qaly_loss / county.population) * 100000
-                # Append county data to the list
-                county_qaly_loss_data["COUNTY"].append(county.name)
-                county_qaly_loss_data["FIPS"].append(county.fips)
-                county_qaly_loss_data["QALY Loss"].append(qaly_loss)
-
-
-        # Create a DataFrame from the county data
-        county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
-
-        # Merge the county QALY loss data with the geometry data
-        geoData = gpd.read_file(
-            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
-        )
-        geoData['STATE'] = geoData['STATE'].str.lstrip('0')
-        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
-        merged_geo_data = geoData.merge(county_qaly_loss_df, left_on='FIPS', right_on='FIPS', how='left')
-
-        # Remove counties where there is no data
-        merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss"])
-
-        # Remove Alaska, HI, Puerto Rico (to be plotted later)
-        stateToRemove = ["2", "15", "72"]
-        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
-
-        # Explode the MultiPolygon geometries into individual polygons
-        merged_geo_data_mainland = merged_geo_data_mainland.explode()
-
-        # Plot the map
-        fig, ax = plt.subplots(1, 1, figsize=(18, 14))
-
-        ax.axis=('off')
-        ax.set_title('Cumulative County QALY Loss ', fontsize =35)
-
-        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=10)
-
-        gplt.choropleth(
-            merged_geo_data_mainland,
-            hue="QALY Loss",
-            linewidth=0.1,
-            scheme=scheme,
-            cmap="viridis",
-            legend=True,
-            legend_kwargs={'title': 'Cumulative QALY Loss', 'bbox_to_anchor' :(1,0.5)},
-            edgecolor="black",
-            #legend_kwds=dict(fmt='{:.0f}', interval=True),
-            ax=ax
-        )
-        plt.tight_layout()
-
-        ## Alaska ##
-        stateToInclude = ["2"]
-        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
-        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
-        akax = fig.add_axes([0.1, 0.17, 0.2, 0.19])
-        akax.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["QALY Loss"], k=2)
-
-
-
-        gplt.choropleth(
-            merged_geo_data_AK_exploded,
-            hue="QALY Loss",
-            linewidth=0.1,
-            scheme=scheme_AK,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=akax,
-            extent=(-180,-90,50,75)
-        )
-
-        akax.get_legend().remove()
-
-        ## Hawai'i ##
-        #fig_HI, ax_HI = plt.subplots(1, 1, figsize=(16, 12))
-        stateToInclude_HI = ["15"]
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
-        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
-        hiax = fig.add_axes([.28, 0.20, 0.1, 0.1])
-        hiax.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["QALY Loss"], k=2)
-
-
-        gplt.choropleth(
-            merged_geo_data_HI_exploded,
-            hue="QALY Loss",
-            linewidth=0.1,
-            scheme=scheme_HI,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=hiax,
-        )
-
-        hiax.get_legend().remove()
-
-
-        output_figure(fig, filename=ROOT_DIR + '/figs/map_avg_county_qaly_loss_all_simulations_raw.png')
-
-        return fig
-
-    def plot_weekly_proportion_qaly_loss_by_outcome(self):
-        """
-        :return: Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
-        """
-        # Create a plot
-        fig, ax = plt.subplots(figsize=(12, 6))
-
-        [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths] = (
-            self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
-
-        [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
-
-        ax.plot(self.allStates.dates, mean_cases/mean,
-                label='QALY Loss Cases', linewidth=2, color='blue')
-        #ax.fill_between(self.allStates.dates, ui_cases[0]/ui[0], ui_cases[1]/ui[1], color='lightblue', alpha=0.25)
-
-        ax.plot(self.allStates.dates, mean_hosps/mean,
-                label='QALY Loss Hospitalizations', linewidth=2, color='green')
-        #ax.fill_between(self.allStates.dates, ui_hosps[0]/ui[0], ui_hosps[1]/ui[1], color='lightgreen', alpha=0.25)
-
-        ax.plot(self.allStates.dates, mean_deaths/mean,
-                label='QALY Loss Deaths', linewidth=2, color='red')
-        #ax.fill_between(self.allStates.dates, ui_deaths[0]/ui[0], ui_deaths[1]/ui[1], color='orange', alpha=0.25)
-
-        ax.plot(self.allStates.dates, mean / mean,
-                label="Overall QALY Loss", linewidth=2, color='black')
-
-        ax.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")
-        ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")
-        ax.axvline("2021-08-04", color='grey', linestyle='dotted')
-
-        ax.set_title('Proportion of Overall National Weekly QALY Loss by Outcome')
-        ax.set_xlabel('Date')
-        ax.set_ylabel('Proportion of QALY Loss')
-        ax.legend()
-
-        #vals_y = ax.get_yticks()
-        #ax.set_yticklabels(['{:,.{prec}f}'.format(x, prec=0) for x in vals_y])
-        # To label every other tick on the x-axis
-        [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
-        plt.xticks(rotation=90)
-        ax.tick_params(axis='x', labelsize=6.5)
-
-        output_figure(fig, filename=ROOT_DIR + '/figs/simulations_proportion_national_qaly_loss_by_outcome.png')
