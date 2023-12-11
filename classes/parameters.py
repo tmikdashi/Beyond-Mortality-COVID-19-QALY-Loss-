@@ -77,7 +77,10 @@ class ParameterGenerator:
         param.qWeightHosp = (self.parameters['hosp_dur_stay'].value
                               * self.parameters['hosp_weight'].value)
 
+
     def _calculate_qaly_loss_due_to_death(self, param):
         param.qWeightDeath = np.dot(
             self.parameters['death_age_dist'].value,
             self.parameters['death_weight_by_age'].value)
+
+

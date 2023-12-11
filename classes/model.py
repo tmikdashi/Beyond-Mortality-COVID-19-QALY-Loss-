@@ -703,6 +703,7 @@ class ProbabilisticAllStates:
             # Generate a new set of parameters
             params = param_gen.generate(rng=rng)
 
+
             # Calculate the QALY loss for this set of parameters
             self.allStates.calculate_qaly_loss(param_values=params)
 
@@ -740,6 +741,8 @@ class ProbabilisticAllStates:
         print('  Mean:', mean)
         print('  95% Confidence Interval:', ci)
         print('  95% Uncertainty Interval:', ui)
+
+
 
     def get_mean_ui_weekly_qaly_loss(self, alpha=0.05):
         """
@@ -937,6 +940,7 @@ class ProbabilisticAllStates:
         county_qaly_losses = [qaly_losses[state_name, county_name] for qaly_losses in self.summaryOutcomes.overallQALYlossesByCounty]
         mean,ui = get_overall_mean_ui(county_qaly_losses, 0.05)
         return mean, ui
+
 
     def plot_weekly_qaly_loss_by_state(self):
         """
