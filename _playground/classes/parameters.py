@@ -85,3 +85,25 @@ class ParameterGenerator:
             self.parameters['death_age_dist'].value,
             self.parameters['death_weight_by_age'].value)
 
+
+rng = np.random.RandomState(1)
+param_gen = ParameterGenerator()
+for i in range(2):
+    # Generate a new set of parameters
+    params = param_gen.generate(rng=rng)
+    print("Symptoms probability:", param_gen.parameters['case_prob_symp'].value)
+    print("Symptomtic cases weight:", param_gen.parameters['case_weight_symp'].value)
+    print("Duration of symptoms:", param_gen.parameters['case_dur_symp'].value)
+    print("Multiplication QALY Loss per case ( in years):", param_gen.parameters['case_prob_symp'].value*param_gen.parameters['case_weight_symp'].value*param_gen.parameters['case_dur_symp'].value)
+    print("QALY Loss per case ( in years):",params.qWeightCase )
+    print("QALY Loss per case (in days):" , params.qWeightCase*365)
+
+    print("Hospitalization weight:", param_gen.parameters['hosp_weight'].value)
+    print("Duration of hosp:", param_gen.parameters['hosp_dur_stay'].value)
+    print("Multiplication QALY Loss per hosp ( in years):",
+          param_gen.parameters['hosp_weight'].value * param_gen.parameters['hosp_dur_stay'].value)
+    print("QALY Loss per hosp ( in years):", params.qWeightHosp)
+    print("QALY Loss per hosp (in days):", params.qWeightHosp * 365)
+
+    print("QALY Loss per death( in years):", params.qWeightDeath)
+    print("QALY Loss per death (in days):", params.qWeightDeath * 365)
