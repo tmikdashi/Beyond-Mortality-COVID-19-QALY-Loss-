@@ -6,14 +6,15 @@ import mapclassify as mc
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from shapely.geometry import Polygon
 
 from classes.parameters import ParameterGenerator
 from classes.support import get_mean_ui_of_a_time_series, get_overall_mean_ui
 from data_preprocessing.support_functions import get_dict_of_county_data_by_type
+from deampy.format_functions import format_interval
 from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
 from definitions import ROOT_DIR
-from shapely.geometry import Polygon
 
 
 class AnOutcome:
@@ -209,6 +210,7 @@ class AllStates:
         self.pandemicOutcomes = PandemicOutcomes()
         self.numWeeks = 0
         self.population = 0
+        self.dates = []
 
     def populate(self):
         """
@@ -220,7 +222,7 @@ class AllStates:
         county_hosp_data, dates = get_dict_of_county_data_by_type('hospitalizations')
 
         self.numWeeks = len(dates)
-        self.dates=dates
+        self.dates = dates
 
         for (county_name, state, fips, population), case_values in county_case_data.items():
 
@@ -534,7 +536,6 @@ class AllStates:
 
         return fig
 
-
     def plot_weekly_qaly_loss_by_outcome(self):
         """
         Plots national weekly QALY Loss across all states broken down by cases, hospitalizations and deaths.
@@ -613,7 +614,6 @@ class AllStates:
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
 
-
     def get_overall_qaly_loss_by_state_cases(self):
         """
         :return: (dictionary) Overall QALY loss from cases by states (as dictionary key)
@@ -640,6 +640,7 @@ class AllStates:
         for state_name, state_obj in self.states.items():
             overall_qaly_loss_deaths_by_state[state_name] = state_obj.pandemicOutcomes.deaths.totalQALYLoss
         return overall_qaly_loss_deaths_by_state
+
 
 class SummaryOutcomes:
 
@@ -671,7 +672,6 @@ class SummaryOutcomes:
 
         self.statOverallQALYLoss = SummaryStat(data=self.overallQALYlosses)
 
-
     def get_mean_ci_ui_overall_qaly_loss(self):
         """
         :return: Mean, confidence interval, and uncertainty interval for overall QALY loss summed over all states.
@@ -679,6 +679,7 @@ class SummaryOutcomes:
         return (self.statOverallQALYLoss.get_mean(),
                 self.statOverallQALYLoss.get_t_CI(alpha=0.05),
                 self.statOverallQALYLoss.get_PI(alpha=0.05))
+
 
 class ProbabilisticAllStates:
 
@@ -722,24 +723,32 @@ class ProbabilisticAllStates:
             self.summaryOutcomes.overallQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.totalQALYLoss)
             self.summaryOutcomes.overallQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.totalQALYLoss)
 
-
             self.summaryOutcomes.overallQALYlossesCasesByState.append(self.allStates.get_overall_qaly_loss_by_state_cases())
             self.summaryOutcomes.overallQALYlossesHospsByState.append(self.allStates.get_overall_qaly_loss_by_state_hosps())
             self.summaryOutcomes.overallQALYlossesDeathsByState.append(self.allStates.get_overall_qaly_loss_by_state_deaths())
 
         self.summaryOutcomes.summarize()
 
-    def print_overall_qaly_loss(self):
+    def print_overall_outcomes_and_qaly_loss(self):
         """
         :return: Prints the mean, confidence interval, and the uncertainty interval for the overall QALY loss .
         """
 
+        mean_cases = self.allStates.pandemicOutcomes.cases.totalObs
+        mean_hosps = self.allStates.pandemicOutcomes.hosps.totalObs
+        mean_deaths = self.allStates.pandemicOutcomes.deaths.totalObs
+
+        print('Overall Outcomes:')
+        print('  Mean Cases: {:,.0f}'.format(mean_cases))
+        print('  Mean Hospitalizations: {:,.0f}'.format(mean_hosps))
+        print('  Mean Deaths: {:,.0f}'.format(mean_deaths))
+
         mean, ci, ui = self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss()
 
         print('Overall QALY loss:')
-        print('  Mean:', mean)
-        print('  95% Confidence Interval:', ci)
-        print('  95% Uncertainty Interval:', ui)
+        print('  Mean: {:,.0f}'.format(mean))
+        print('  95% Confidence Interval:', format_interval(ci, deci=0, format=','))
+        print('  95% Uncertainty Interval:', format_interval(ui, deci=0, format=','))
 
     def get_mean_ui_weekly_qaly_loss(self, alpha=0.05):
         """
@@ -793,7 +802,6 @@ class ProbabilisticAllStates:
         ax.tick_params(axis='x', labelsize=6.5)
 
         output_figure(fig, filename=ROOT_DIR + '/figs/simulations_national_qaly_loss_by_outcome.png')
-
 
     def get_mean_ui_weekly_qaly_loss_by_outcome(self, alpha=0.05):
         """
@@ -1022,7 +1030,6 @@ class ProbabilisticAllStates:
         ax.grid(True)
         ax.legend()
 
-
     def plot_qaly_loss_by_state_and_by_outcome(self):
         """
         Generate a bar graph of the total QALY loss per 100,000 pop for each state, with each outcome's contribution
@@ -1091,7 +1098,6 @@ class ProbabilisticAllStates:
 
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
-
 
     def get_mean_ui_overall_qaly_loss_by_state(self, state_name, alpha=0.05):
         """
