@@ -668,6 +668,27 @@ class SummaryOutcomes:
 
         self.statOverallQALYLoss = None
 
+    def extract_outcomes(self, simulated_model):
+
+        self.overallQALYlosses.append(simulated_model.get_overall_qaly_loss())
+        self.overallQALYlossesByState.append(simulated_model.get_overall_qaly_loss_by_state())
+        self.overallQALYlossesByCounty.append(simulated_model.get_overall_qaly_loss_by_county())
+
+        self.weeklyQALYlosses.append(simulated_model.get_weekly_qaly_loss())
+        self.weeklyQALYlossesByState.append(simulated_model.get_weekly_qaly_loss_by_state())
+
+        self.weeklyQALYlossesCases.append(simulated_model.pandemicOutcomes.cases.weeklyQALYLoss)
+        self.weeklyQALYlossesHosps.append(simulated_model.pandemicOutcomes.hosps.weeklyQALYLoss)
+        self.weeklyQALYlossesDeaths.append(simulated_model.pandemicOutcomes.deaths.weeklyQALYLoss)
+
+        self.overallQALYlossesCases.append(simulated_model.pandemicOutcomes.cases.totalQALYLoss)
+        self.overallQALYlossesHosps.append(simulated_model.pandemicOutcomes.hosps.totalQALYLoss)
+        self.overallQALYlossesDeaths.append(simulated_model.pandemicOutcomes.deaths.totalQALYLoss)
+
+        self.overallQALYlossesCasesByState.append(simulated_model.get_overall_qaly_loss_by_state_cases())
+        self.overallQALYlossesHospsByState.append(simulated_model.get_overall_qaly_loss_by_state_hosps())
+        self.overallQALYlossesDeathsByState.append(simulated_model.get_overall_qaly_loss_by_state_deaths())
+
     def summarize(self):
 
         self.statOverallQALYLoss = SummaryStat(data=self.overallQALYlosses)
@@ -707,25 +728,8 @@ class ProbabilisticAllStates:
             # Calculate the QALY loss for this set of parameters
             self.allStates.calculate_qaly_loss(param_values=params)
 
-            # Store outcomes
-            self.summaryOutcomes.overallQALYlosses.append(self.allStates.get_overall_qaly_loss())
-            self.summaryOutcomes.overallQALYlossesByState.append(self.allStates.get_overall_qaly_loss_by_state())
-            self.summaryOutcomes.overallQALYlossesByCounty.append(self.allStates.get_overall_qaly_loss_by_county())
-
-            self.summaryOutcomes.weeklyQALYlosses.append(self.allStates.get_weekly_qaly_loss())
-            self.summaryOutcomes.weeklyQALYlossesByState.append(self.allStates.get_weekly_qaly_loss_by_state())
-
-            self.summaryOutcomes.weeklyQALYlossesCases.append(self.allStates.pandemicOutcomes.cases.weeklyQALYLoss)
-            self.summaryOutcomes.weeklyQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.weeklyQALYLoss)
-            self.summaryOutcomes.weeklyQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.weeklyQALYLoss)
-
-            self.summaryOutcomes.overallQALYlossesCases.append(self.allStates.pandemicOutcomes.cases.totalQALYLoss)
-            self.summaryOutcomes.overallQALYlossesHosps.append(self.allStates.pandemicOutcomes.hosps.totalQALYLoss)
-            self.summaryOutcomes.overallQALYlossesDeaths.append(self.allStates.pandemicOutcomes.deaths.totalQALYLoss)
-
-            self.summaryOutcomes.overallQALYlossesCasesByState.append(self.allStates.get_overall_qaly_loss_by_state_cases())
-            self.summaryOutcomes.overallQALYlossesHospsByState.append(self.allStates.get_overall_qaly_loss_by_state_hosps())
-            self.summaryOutcomes.overallQALYlossesDeathsByState.append(self.allStates.get_overall_qaly_loss_by_state_deaths())
+            # extract outcomes from the simulated all states
+            self.summaryOutcomes.extract_outcomes(simulated_model=self.allStates)
 
         self.summaryOutcomes.summarize()
 

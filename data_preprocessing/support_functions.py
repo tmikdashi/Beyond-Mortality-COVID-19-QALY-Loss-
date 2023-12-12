@@ -19,7 +19,6 @@ def get_dict_of_county_data_by_type(data_type):
     file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
     #file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
-
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
 
@@ -202,7 +201,6 @@ def generate_deaths_by_age_group_and_sex():
 
     # save the data as a csv file
     deaths_by_age_group_and_sex.to_csv(ROOT_DIR + '/csv_files/deaths_by_age_and_sex.csv', index=False)
-
 
 
 def process_life_expectancy_data(data, sex):

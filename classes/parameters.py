@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from deampy.parameters import Beta, Gamma, Dirichlet
+from deampy.parameters import Beta, Gamma, Dirichlet, ConstantArray
 from definitions import ROOT_DIR
 
 
@@ -9,9 +9,9 @@ class ParameterValues:
 
     def __init__(self):
 
-        self.qWeightCase = 0.1
-        self.qWeightHosp = 0.3
-        self.qWeightDeath = 10
+        self.qWeightCase = None
+        self.qWeightHosp = None
+        self.qWeightDeath = None
 
     def __str__(self):
         return "qWeightCase: {:.4f}, qWeightHosp: {:.4f}, qWeightDeath: {:.4f}".format(
@@ -27,18 +27,19 @@ class ParameterGenerator:
         # parameters to calculate the QALY loss due to a case
         self.parameters['case_prob_symp'] = Beta(mean=0.62, st_dev=0.07)  # SD based on 95% CI-- may need to be revised
         self.parameters['case_weight_symp'] = Beta(mean=0.43, st_dev=0.03)
-        self.parameters['case_dur_symp'] = Gamma(mean=10/365, st_dev=3/365) # Based on CDC isolation guidelines, can be replaced by exp decay function
+        self.parameters['case_dur_symp'] = Gamma(mean=10/365, st_dev=2/365) # Based on CDC isolation guidelines, can be replaced by exp decay function
 
         # parameters to calculate the QALY loss due to a hospitalizations
-        self.parameters['hosp_dur_stay'] = Gamma(mean=6/365, st_dev=4/365) # assuming SD = IQR/1.35
+        self.parameters['hosp_dur_stay'] = Gamma(mean=6/365, st_dev=1.5/365) # assuming SD = IQR/1.35
         self.parameters['hosp_weight'] = Beta(mean=0.5, st_dev=0.1)
 
         # parameters to calculate the QALY loss due to a death
-        data=pd.read_csv(ROOT_DIR + '/csv_files/average_LE_and deaths_data_by_age_group_and_sex')
+        data = pd.read_csv(ROOT_DIR + '/csv_files/average_LE_and deaths_data_by_age_group_and_sex')
 
         self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
-        self.parameters['death_weight_by_age'] =Dirichlet(par_ns=(data['Life Expectancy']))
-
+        # TODO: the issue was here. We needed the actual life expectancy, but Drichlet was used here, which would
+        #  return probabilities.
+        self.parameters['death_weight_by_age'] = ConstantArray(values=data['Life Expectancy'])
 
     def generate(self, rng):
         """
@@ -53,9 +54,7 @@ class ParameterGenerator:
         param = ParameterValues()
 
         # calculate QALY loss due to a case
-        self._calculate_qaly_loss_due_to_case(param=param)
-        self._calculate_qaly_loss_due_to_hosp(param=param)
-        self._calculate_qaly_loss_due_to_death(param=param)
+        self._update_param_values(param=param)
 
         return param
 
@@ -67,21 +66,15 @@ class ParameterGenerator:
         for par in self.parameters.values():
             par.sample(rng)
 
-    def _calculate_qaly_loss_due_to_case(self, param):
+    def _update_param_values(self, param):
 
         param.qWeightCase = (self.parameters['case_weight_symp'].value
                              * self.parameters['case_prob_symp'].value
                              * self.parameters['case_dur_symp'].value)
 
-    def _calculate_qaly_loss_due_to_hosp(self, param):
-
         param.qWeightHosp = (self.parameters['hosp_dur_stay'].value
-                              * self.parameters['hosp_weight'].value)
+                             * self.parameters['hosp_weight'].value)
 
-
-    def _calculate_qaly_loss_due_to_death(self, param):
-
-         param.qWeightDeath = np.dot(
+        param.qWeightDeath = np.dot(
             self.parameters['death_age_dist'].value,
             self.parameters['death_weight_by_age'].value)
-
