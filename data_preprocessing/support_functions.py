@@ -68,10 +68,10 @@ def generate_county_data_csv(data_type='cases'):
             "'deaths per 100,000', 'hospitalizations per 100,000', 'icu admissions per 100,000'.")
 
     # Read the data
-    rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
-                         if_ignore_first_row=True)
-    #rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
+    #rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
                          #if_ignore_first_row=True)
+    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
+                         if_ignore_first_row=True)
 
     # Creating a dictionary to store the time series of data for each county
     county_data_time_series = defaultdict(list)
@@ -83,9 +83,9 @@ def generate_county_data_csv(data_type='cases'):
         population = row[10]  # Add population to this section
         data_value = row[data_type_mapping[data_type]]
 
-        # Specify abbreviation for Puerto Rico
+        # Removing PR from analysis
         if state == 'NA':
-            state = 'PR'
+            data_value = np.nan
         # Check if data_value is empty or 'NA' and assign np.nan
         if data_value == '' or data_value == 'NA':
             data_value = np.nan
@@ -119,7 +119,12 @@ def generate_county_data_csv(data_type='cases'):
             if not found:
                 # If data is missing for a date, fill with np.nan
                 data.append(np.nan)
-        county_data_rows.append([key[0], key[1], key[2], key[3]] + data)
+        # Check if the state name is 'NA' and skip adding the row
+        if key[1] != 'NA':
+            county_data_rows.append([key[0], key[1], key[2], key[3]] + data)
+
+        #  county_data_rows.append([key[0], key[1], key[2], key[3]] + data)
+
 
     # Write into a CSV file using the write_csv function
     write_csv(rows=[header_row] + county_data_rows, file_name=ROOT_DIR + output_file)
