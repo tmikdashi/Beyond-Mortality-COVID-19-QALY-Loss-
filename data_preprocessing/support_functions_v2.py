@@ -199,8 +199,29 @@ def generate_deaths_by_age_group_and_sex():
     data = data.rename(columns={'Age Group': 'Age group'}) # needed for merging in extract_LE_and_prop_death_arrays
 
     age_bands = ['0-9', '10-19', '20-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80-90', '90-100']
-    deaths_by_age =  data.groupby(['Age group'])['COVID-19 Deaths'].sum().reset_index()
-    deaths_by_age_band = deaths_by_age
+    deaths_by_age = data.groupby(['Age group', 'Sex'])['COVID-19 Deaths'].sum().reset_index()
+    age_band_mapping = {
+        '0-9': ['Under 1 year', '1-4 years', '5-14 years'],
+        '10-19': ['15-24 years', '25-34 years'],
+        '20-29': ['35-44 years', '45-54 years'],
+        '30-39': ['55-64 years', '65-74 years'],
+        '40-49': ['75-84 years', '85 years and over']
+    }
+
+    new_age_data = {'Age Band': [], 'Sex': [], 'COVID-19 deaths': []}
+
+    for age_band, age_groups in age_band_mapping.items():
+        for sex in ['Male', 'Female']:
+            total_deaths = sum(deaths_by_age[(deaths_by_age['Age Group'].isin(age_groups)) & (deaths_by_age['Sex'] == sex)][
+                                   'COVID-19 Deaths'])
+            if age_band != '90-100':  # Exclude division by 2 for '90-100' age band
+                total_deaths /= 2
+            new_age_data['Age Band'].append(age_band)
+            new_age_data['Sex'].append(sex)
+            new_age_data['COVID-19 Deaths'].append(total_deaths)
+
+    # Create a DataFrame for the new age bands
+    new_age_df = pd.DataFrame(new_age_data)
 
     # Calculate the total number of deaths
     data['COVID-19 Deaths'] = pd.to_numeric(data['COVID-19 Deaths'], errors='coerce').fillna(0)
