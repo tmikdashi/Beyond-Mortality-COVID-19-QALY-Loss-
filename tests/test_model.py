@@ -1,4 +1,4 @@
-from classes.model import ProbabilisticAllStates
+from classes.model_v2 import ProbabilisticAllStates
 
 
 probabilisticModel = ProbabilisticAllStates()
