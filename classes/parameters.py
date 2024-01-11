@@ -37,8 +37,6 @@ class ParameterGenerator:
         data = pd.read_csv(ROOT_DIR + '/csv_files/average_LE_and deaths_data_by_age_group_and_sex')
 
         self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
-        # TODO: the issue was here. We needed the actual life expectancy, but Drichlet was used here, which would
-        #  return probabilities.
         self.parameters['death_weight_by_age'] = ConstantArray(values=data['Life Expectancy'])
 
     def generate(self, rng):

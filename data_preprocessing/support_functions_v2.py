@@ -198,6 +198,10 @@ def generate_deaths_by_age_group_and_sex():
     data = pd.read_csv(ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')
     data = data.rename(columns={'Age Group': 'Age group'}) # needed for merging in extract_LE_and_prop_death_arrays
 
+    age_bands = ['0-9', '10-19', '20-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80-90', '90-100']
+    deaths_by_age =  data.groupby(['Age group'])['COVID-19 Deaths'].sum().reset_index()
+    deaths_by_age_band = deaths_by_age
+
     # Calculate the total number of deaths
     data['COVID-19 Deaths'] = pd.to_numeric(data['COVID-19 Deaths'], errors='coerce').fillna(0)
 
