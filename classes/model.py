@@ -642,7 +642,6 @@ class AllStates:
         overall_qaly_loss_deaths_by_state = {}
         for state_name, state_obj in self.states.items():
             overall_qaly_loss_deaths_by_state[state_name] = state_obj.pandemicOutcomes.deaths.totalQALYLoss
-            #TODO: #print(state_name, state_obj.pandemicOutcomes.deaths.totalQALYLoss)
         return overall_qaly_loss_deaths_by_state
 
 
@@ -1183,9 +1182,9 @@ class ProbabilisticAllStates:
         return mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths
 
 
-    def plot_map_of_avg_qaly_loss_by_county_alt(self):
+    def plot_map_of_avg_qaly_loss_by_county_raw(self):
         """
-        Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
+        Plots a map of the QALY loss for each county, considering cases, deaths, and hospitalizations.
         """
 
         # TODO: is it possible to format the legends so that the numbers in the legend are whole numbers?
@@ -1198,7 +1197,7 @@ class ProbabilisticAllStates:
 
         for state in self.allStates.states.values():
             for county in state.counties.values():
-                # Calculate the QALY loss per 100,000 population
+                # Calculate the QALY loss
                 mean, ui = self.get_mean_ui_overall_qaly_loss_by_county(state.name, county.name)
                 qaly_loss = mean
 
@@ -1305,14 +1304,11 @@ class ProbabilisticAllStates:
         return fig
 
 
-    # TODO: Additional functions for analysing the data (raw cases, hosps and deaths)
-
     def plot_map_of_deaths_by_county_per_100K(self):
         """
         Plots a map of outcomes per 100,000 population for each county, considering cases, deaths, and hospitalizations.
         """
 
-        # TODO: is it possible to format the legends so that the numbers in the legend are whole numbers?
 
         county_qaly_loss_data = {
             "COUNTY": [],
@@ -1324,7 +1320,7 @@ class ProbabilisticAllStates:
             for county in state.counties.values():
                 # Calculate the QALY loss per 100,000 population
                 #mean, ui = self.get_mean_ui_overall_qaly_loss_by_county(state.name, county.name)
-                qaly_loss = county.pandemicOutcomes.deaths.totalObs # TODO: a revoir
+                qaly_loss = county.pandemicOutcomes.deaths.totalObs
                 qaly_loss_per_100k = (qaly_loss / county.population) * 100000
                 # Append county data to the list
                 county_qaly_loss_data["COUNTY"].append(county.name)

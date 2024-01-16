@@ -34,10 +34,10 @@ class ParameterGenerator:
         self.parameters['hosp_weight'] = Beta(mean=0.5, st_dev=0.1)
 
         # parameters to calculate the QALY loss due to a death
-        data = pd.read_csv(ROOT_DIR + '/csv_files/average_LE_and deaths_data_by_age_group_and_sex')
+        data = pd.read_csv(ROOT_DIR + '/csv_files/average_LE_and deaths_data_by_age_group')
 
         self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
-        self.parameters['death_weight_by_age'] = ConstantArray(values=data['Life Expectancy'])
+        self.parameters['death_weight_by_age'] = ConstantArray(values=[24.52, 22.38, 20.24, 17.93, 15.21, 12.25, 9.22, 5.93, 3.30, 1.54])
 
     def generate(self, rng):
         """

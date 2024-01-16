@@ -1,4 +1,4 @@
-from classes.model_v2 import ProbabilisticAllStates
+from classes.model import ProbabilisticAllStates
 
 
 probabilisticModel = ProbabilisticAllStates()
@@ -12,8 +12,8 @@ probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
 probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
-probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
-probabilisticModel.plot_map_of_hosps_by_county_per_100K()
+probabilisticModel.plot_map_of_avg_qaly_loss_by_county_raw()
+
 
 probabilisticModel.plot_weekly_qaly_loss_by_state()
 probabilisticModel.subplot_weekly_qaly_loss_by_state_100K_pop()
@@ -22,10 +22,6 @@ probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
 
-print(probabilisticModel.allStates.pandemicOutcomes.cases.totalQALYLoss)
-print(probabilisticModel.allStates.pandemicOutcomes.hosps.totalQALYLoss)
-print(probabilisticModel.allStates.pandemicOutcomes.deaths.totalQALYLoss)
-print(probabilisticModel.allStates.pandemicOutcomes.cases.totalQALYLoss+probabilisticModel.allStates.pandemicOutcomes.hosps.totalQALYLoss+probabilisticModel.allStates.pandemicOutcomes.deaths.totalQALYLoss)
 
 
 
@@ -38,7 +34,7 @@ probabilisticModel.subplot_weekly_deaths_by_state_100K_pop()
 probabilisticModel.subplot_weekly_cases_by_state_100K_pop()
 probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
-probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
+probabilisticModel.plot_map_of_avg_qaly_loss_by_county_raw()
 probabilisticModel.plot_map_of_hosps_by_county_per_100K()
 
 probabilisticModel.plot_weekly_qaly_loss_by_state()
