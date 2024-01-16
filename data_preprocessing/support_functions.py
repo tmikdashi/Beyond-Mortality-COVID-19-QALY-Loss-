@@ -121,8 +121,6 @@ def generate_county_data_csv(data_type='cases'):
         if key[1] != 'NA':
             county_data_rows.append([key[0], key[1], key[2], key[3]] + data)
 
-        #  county_data_rows.append([key[0], key[1], key[2], key[3]] + data)
-
 
     # Write into a CSV file using the write_csv function
     write_csv(rows=[header_row] + county_data_rows, file_name=ROOT_DIR + output_file)
