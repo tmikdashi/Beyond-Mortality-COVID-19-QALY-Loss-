@@ -1101,8 +1101,10 @@ class ProbabilisticAllStates:
 
 
         y_pos = (range(len(sorted_states)))
-        #ax.set_ylim([-1, len(sorted_states)])
 
+        democratic_states = ['AZ','CA','CO','CT','DE','HI','IL','KS','KY','ME','MD','MA','MI','MN','NJ','NM','NY','NC','OR','PA','RI','WA','WI']  # Replace with your actual list of democratic states
+        republican_states = ['AL', 'AK', 'AR', 'FL', 'GA', 'ID', 'IN','IA', 'LA','MI','MS','MO','MT','NE','NH','NV','ND','OH','OK','SC','SD','TN','TX',
+                             'UT','VT','VA','WV','WY']  # Replace with your actual list of republican states
 
         # Iterate through each state
 
@@ -1140,7 +1142,8 @@ class ProbabilisticAllStates:
 
         # Set the labels for each state
         ax.set_yticks(y_pos)
-        ax.set_yticklabels([state_obj.name for state_obj in sorted_states], fontsize=8, rotation=0, ha='right')
+        y_tick_colors = ['blue' if state_obj.name in democratic_states else 'red' for state_obj in sorted_states]
+        ax.set_yticklabels([state_obj.name for state_obj in sorted_states], colors=y_tick_colors,fontsize=8, rotation=0, ha='right')
 
         # Set the labels and title
         ax.set_ylabel('States')
