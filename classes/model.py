@@ -11,6 +11,7 @@ from shapely.geometry import Polygon
 from classes.parameters import ParameterGenerator
 from classes.support import get_mean_ui_of_a_time_series, get_overall_mean_ui
 from data_preprocessing.support_functions import get_dict_of_county_data_by_type
+from deampy.in_out_functions import write_csv, read_csv_rows
 from deampy.format_functions import format_interval
 from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
@@ -1311,34 +1312,36 @@ class ProbabilisticAllStates:
         return fig
 
 
-    def plot_map_of_deaths_by_county_per_100K(self):
+    def plot_map_of_outcomes_by_county_per_100K(self):
         """
         Plots a map of outcomes per 100,000 population for each county, considering cases, deaths, and hospitalizations.
         """
 
-
-        county_qaly_loss_data = {
+        county_outcomes_data = {
             "COUNTY": [],
             "FIPS": [],
+            "Cases per 100K": [],
+            "Hosps per 100K": [],
             "Deaths per 100K": []
         }
 
         for state in self.allStates.states.values():
             for county in state.counties.values():
-                # Calculate the QALY loss per 100,000 population
-                #mean, ui = self.get_mean_ui_overall_qaly_loss_by_county(state.name, county.name)
-                qaly_loss = county.pandemicOutcomes.deaths.totalObs
-                qaly_loss_per_100k = (qaly_loss / county.population) * 100000
+                # Calculate the number of outcomes per 100,000 population
+                cases_per_100k = (county.pandemicOutcomes.cases.totalObs / county.population) * 100000
+                hosps_per_100k = (county.pandemicOutcomes.hosps.totalObs / county.population) * 100000
+                deaths_per_100k = (county.pandemicOutcomes.deaths.totalObs / county.population) * 100000
                 # Append county data to the list
-                county_qaly_loss_data["COUNTY"].append(county.name)
-                county_qaly_loss_data["FIPS"].append(county.fips)
-                county_qaly_loss_data["Deaths per 100K"].append(qaly_loss_per_100k)
+                county_outcomes_data["COUNTY"].append(county.name)
+                county_outcomes_data["FIPS"].append(county.fips)
+                county_outcomes_data["Cases per 100K"].append(cases_per_100k)
+                county_outcomes_data["Hosps per 100K"].append(hosps_per_100k)
+                county_outcomes_data["Deaths per 100K"].append(deaths_per_100k)
 
         # Create a DataFrame from the county data
-        county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
+        county_outcomes_df = pd.DataFrame(county_outcomes_data)
 
-
-        county_qaly_loss_df.to_csv(ROOT_DIR + '/csv_files/county_qaly_loss.csv', index=False)
+        county_outcomes_df.to_csv(ROOT_DIR + '/csv_files/county_outcomes.csv', index=False)
 
         # Merge the county QALY loss data with the geometry data
         geoData = gpd.read_file(
@@ -1346,7 +1349,7 @@ class ProbabilisticAllStates:
         )
         geoData['STATE'] = geoData['STATE'].str.lstrip('0')
         geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
-        merged_geo_data = geoData.merge(county_qaly_loss_df, left_on='FIPS', right_on='FIPS', how='left')
+        merged_geo_data = geoData.merge(county_outcomes_df, left_on='FIPS', right_on='FIPS', how='left')
 
         # Remove counties where there is no data
         merged_geo_data = merged_geo_data.dropna(subset=["Deaths per 100K"])
@@ -1359,12 +1362,10 @@ class ProbabilisticAllStates:
         merged_geo_data_mainland = merged_geo_data_mainland.explode()
 
         # Plot the map
-        fig, ax = plt.subplots(1, 1, figsize=(18, 14))
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 6))
 
-        ax.axis = ('off')
-
-
-        ax.set_title('Deaths per 100K', fontsize=42)
+        ax3.axis('off')
+        ax3.set_title('Deaths per 100K', fontsize=15)
 
         scheme = mc.Quantiles(merged_geo_data_mainland["Deaths per 100K"], k=10)
 
@@ -1375,66 +1376,56 @@ class ProbabilisticAllStates:
             scheme=scheme,
             cmap="viridis",
             legend=True,
-            legend_kwargs={'title': 'Deaths per 100K', 'bbox_to_anchor': (1, 0.5)},
+            legend_kwargs={'title': 'Deaths per 100K', 'fontsize': 8, 'bbox_to_anchor': (0.95, 0.5),
+                           'loc': 'center left'},
+            legend_labels=None,
             edgecolor="black",
-            ax=ax
+            ax=ax3
         )
 
+        ax1.axis('off')
+        ax1.set_title('Cases per 100K', fontsize=15)
+
+        scheme_cases = mc.Quantiles(merged_geo_data_mainland["Cases per 100K"], k=10)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="Cases per 100K",
+            linewidth=0.1,
+            scheme=scheme_cases,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Cases per 100K', 'fontsize': 8, 'bbox_to_anchor': (0.95, 0.5),
+                           'loc': 'center left'},
+            legend_labels=None,
+            edgecolor="black",
+            ax=ax1
+        )
+
+        ax2.axis('off')
+        ax2.set_title('Hosps per 100K', fontsize=15)
+
+        scheme_hosps = mc.Quantiles(merged_geo_data_mainland["Hosps per 100K"], k=10)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="Hosps per 100K",
+            linewidth=0.1,
+            scheme=scheme_hosps,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Hosps per 100K', 'fontsize': 8, 'bbox_to_anchor': (0.95, 0.5),
+                           'loc': 'center left'},
+            legend_labels=None,
+            edgecolor="black",
+            ax=ax2
+        )
 
         plt.tight_layout()
 
-        ## Alaska ##
-        stateToInclude = ["2"]
-        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
-        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
-        akax = fig.add_axes([0.1, 0.17, 0.2, 0.19])
-        akax.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["Deaths per 100K"], k=2)
-
-        gplt.choropleth(
-            merged_geo_data_AK_exploded,
-            hue="Deaths per 100K",
-            linewidth=0.1,
-            scheme=scheme_AK,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=akax,
-            extent=(-180, -90, 50, 75)
-        )
-
-        akax.get_legend().remove()
-
-        ## Hawai'i ##
-        # fig_HI, ax_HI = plt.subplots(1, 1, figsize=(16, 12))
-        stateToInclude_HI = ["15"]
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
-        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
-        hiax = fig.add_axes([.28, 0.20, 0.1, 0.1])
-        hiax.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["Deaths per 100K"], k=2)
-
-        gplt.choropleth(
-            merged_geo_data_HI_exploded,
-            hue="Deaths per 100K",
-            linewidth=0.1,
-            scheme=scheme_HI,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=hiax,
-        )
-
-        hiax.get_legend().remove()
-
-        output_figure(fig, filename=ROOT_DIR + '/figs/map_avg_county_deaths.png')
+        output_figure(fig, filename=ROOT_DIR + '/figs/map_county_outcomes_per_100K.png')
 
         return fig
-
-
 
     def plot_weekly_outcomes(self):
         """
@@ -1447,17 +1438,20 @@ class ProbabilisticAllStates:
         hosps = self.allStates.pandemicOutcomes.hosps.weeklyObs
         deaths = self.allStates.pandemicOutcomes.deaths.weeklyObs
 
-        ax.plot(self.allStates.dates, cases,
-                label='Cases', linewidth=2, color='blue')
-        ax.plot(self.allStates.dates, hosps,
-                label='Hosps', linewidth=2, color='green')
-        ax.plot(self.allStates.dates, deaths,
-                label='Deaths', linewidth=2, color='red')
+        ax.plot(self.allStates.dates, cases, label='Cases', linewidth=2, color='blue')
+        ax.plot(self.allStates.dates, hosps, label='Hosps', linewidth=2, color='green')
+
+        # Create a secondary y-axis for deaths
+        ax2 = ax.twinx()
+        ax2.plot(self.allStates.dates, deaths, label='Deaths', linewidth=2, color='red')
+        ax2.set_ylabel('Number of Deaths', color='red')
+        ax2.tick_params(axis='y', labelcolor='red')
+        ax2.set_ylim([0, 150000])  # Set the secondary y-axis limit for deaths
 
         ax.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")
         ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")
 
-        ax.set_title(' Number of Weekly Cases, Hospitalizations and Deaths in the U.S.')
+        ax.set_title('Number of Weekly Cases, Hospitalizations, and Deaths in the U.S.')
         ax.set_xlabel('Date')
         ax.set_ylabel('QALY Loss')
         ax.legend()
@@ -1470,7 +1464,6 @@ class ProbabilisticAllStates:
         ax.tick_params(axis='x', labelsize=6.5)
 
         output_figure(fig, filename=ROOT_DIR + '/figs/national_outcomes.png')
-
 
     def subplot_weekly_cases_by_state_100K_pop(self):
         """
@@ -1566,3 +1559,220 @@ class ProbabilisticAllStates:
         # Save the plot with the state name in the filename
         filename = ROOT_DIR + f"/figs/subplots_all_states_weekly_deaths.png"
         output_figure(fig, filename)
+
+    def plot_map_of_prop_pop_over_65_by_county(self):
+        """
+        Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
+        """
+
+        age_data = pd.read_csv('/Users/fm478/Downloads/cc-est2022-agesex-all.csv',
+                               converters={'COUNTY': str, 'STATE': str})
+        age_data['FIPS'] = age_data['STATE'] + age_data['COUNTY']
+
+        # Filter rows where the year is 3
+        age_data = age_data[age_data['YEAR'] == 3]
+
+        age_data['Percentage pop over 65'] = (age_data['AGE65PLUS_TOT'] / age_data['POPESTIMATE']) * 100
+        print(age_data)
+
+        # Merge the county QALY loss data with the geometry data
+        geoData = gpd.read_file(
+            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
+        )
+
+        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
+        print(geoData)
+        merged_geo_data = geoData.merge(age_data, left_on='FIPS', right_on='FIPS', how='left')
+
+        # Remove counties where there is no data
+        merged_geo_data = merged_geo_data.dropna(subset=["Percentage pop over 65"])
+        print(merged_geo_data)
+
+        # Remove Alaska, HI, Puerto Rico (to be plotted later)
+        stateToRemove = ["02", "15", "72"]
+        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE_x.isin(stateToRemove)]
+
+        # Explode the MultiPolygon geometries into individual polygons
+        merged_geo_data_mainland = merged_geo_data_mainland.explode()
+
+        # Plot the map
+        fig, ax = plt.subplots(1, 1, figsize=(18, 14))
+
+        ax.axis = ('off')
+
+        ax.set_title('Percentage of Population over 65 by County', fontsize=42)
+
+        scheme = mc.Quantiles(merged_geo_data_mainland["Percentage pop over 65"], k=10)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="Percentage pop over 65",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Percentage pop over 65', 'bbox_to_anchor': (1, 0.5)},
+            edgecolor="black",
+            ax=ax
+        )
+
+        plt.tight_layout()
+
+        ## Alaska ##
+        stateToInclude = ["02"]
+        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE_x.isin(stateToInclude)]
+        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
+        akax = fig.add_axes([0.1, 0.17, 0.2, 0.19])
+        akax.axis('off')
+        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
+        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["Percentage pop over 65"], k=2)
+
+        gplt.choropleth(
+            merged_geo_data_AK_exploded,
+            hue="Percentage pop over 65",
+            linewidth=0.1,
+            scheme=scheme_AK,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=akax,
+            extent=(-180, -90, 50, 75)
+        )
+
+        akax.get_legend().remove()
+
+        ## Hawai'i ##
+        # fig_HI, ax_HI = plt.subplots(1, 1, figsize=(16, 12))
+        stateToInclude_HI = ["15"]
+        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE_x.isin(stateToInclude_HI)]
+        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
+
+        hiax = fig.add_axes([.28, 0.20, 0.1, 0.1])
+        hiax.axis('off')
+        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
+        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["Percentage pop over 65"], k=2)
+
+        gplt.choropleth(
+            merged_geo_data_HI_exploded,
+            hue="Percentage pop over 65",
+            linewidth=0.1,
+            scheme=scheme_HI,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=hiax,
+        )
+
+        hiax.get_legend().remove()
+
+        output_figure(fig, filename=ROOT_DIR + '/figs/map_pop_over_65.png')
+
+        return fig
+
+    def plot_map_of_median_age_by_county(self):
+        """
+        Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
+        """
+
+
+        age_data = pd.read_csv('/Users/fm478/Downloads/cc-est2022-agesex-all.csv', converters={'COUNTY': str,'STATE': str})
+        # Filter rows where the year is 3
+        age_data = age_data[age_data['YEAR'] == 3]
+        age_data['FIPS'] =  age_data['STATE'] + age_data['COUNTY']
+
+
+        # Merge the county QALY loss data with the geometry data
+        geoData = gpd.read_file(
+            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
+        )
+
+
+        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
+
+        merged_geo_data = geoData.merge(age_data, left_on='FIPS', right_on='FIPS', how='left')
+        # Remove counties where there is no data
+        merged_geo_data = merged_geo_data.dropna(subset=["MEDIAN_AGE_TOT"])
+
+        # Remove Alaska, HI, Puerto Rico (to be plotted later)
+        stateToRemove = ["02", "15", "72"]
+        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE_x.isin(stateToRemove)]
+
+        # Explode the MultiPolygon geometries into individual polygons
+        merged_geo_data_mainland = merged_geo_data_mainland.explode()
+
+        # Plot the map
+        fig, ax = plt.subplots(1, 1, figsize=(18, 14))
+
+        ax.axis = ('off')
+
+
+        ax.set_title('Median Age by County', fontsize=42)
+
+        scheme = mc.Quantiles(merged_geo_data_mainland["MEDIAN_AGE_TOT"], k=10)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="MEDIAN_AGE_TOT",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Median Age', 'bbox_to_anchor': (1, 0.5)},
+            edgecolor="black",
+            ax=ax
+        )
+
+
+        plt.tight_layout()
+
+        ## Alaska ##
+        stateToInclude = ["02"]
+        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE_x.isin(stateToInclude)]
+        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
+        akax = fig.add_axes([0.1, 0.17, 0.2, 0.19])
+        akax.axis('off')
+        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
+        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["MEDIAN_AGE_TOT"], k=2)
+
+        gplt.choropleth(
+            merged_geo_data_AK_exploded,
+            hue="MEDIAN_AGE_TOT",
+            linewidth=0.1,
+            scheme=scheme_AK,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=akax,
+            extent=(-180, -90, 50, 75)
+        )
+
+        akax.get_legend().remove()
+
+        ## Hawai'i ##
+        # fig_HI, ax_HI = plt.subplots(1, 1, figsize=(16, 12))
+        stateToInclude_HI = ["15"]
+        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE_x.isin(stateToInclude_HI)]
+        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
+
+        hiax = fig.add_axes([.28, 0.20, 0.1, 0.1])
+        hiax.axis('off')
+        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
+        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["MEDIAN_AGE_TOT"], k=2)
+
+        gplt.choropleth(
+            merged_geo_data_HI_exploded,
+            hue="MEDIAN_AGE_TOT",
+            linewidth=0.1,
+            scheme=scheme_HI,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=hiax,
+        )
+
+        hiax.get_legend().remove()
+
+        output_figure(fig, filename=ROOT_DIR + '/figs/map_median_age.png')
+
+        return fig
+
