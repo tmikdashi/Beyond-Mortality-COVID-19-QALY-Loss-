@@ -1143,7 +1143,11 @@ class ProbabilisticAllStates:
         # Set the labels for each state
         ax.set_yticks(y_pos)
         y_tick_colors = ['blue' if state_obj.name in democratic_states else 'red' for state_obj in sorted_states]
-        ax.set_yticklabels([state_obj.name for state_obj in sorted_states], colors=y_tick_colors,fontsize=8, rotation=0, ha='right')
+        ax.set_yticklabels([state_obj.name for state_obj in sorted_states], fontsize=8, rotation=0)
+
+        # Set the colors for ticks
+        for tick, color in zip(ax.yaxis.get_major_ticks(), y_tick_colors):
+            tick.label1.set_color(color)
 
         # Set the labels and title
         ax.set_ylabel('States')
