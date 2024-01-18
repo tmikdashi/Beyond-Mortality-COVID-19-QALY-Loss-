@@ -818,16 +818,17 @@ class ProbabilisticAllStates:
             self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
 
         ax.plot(self.allStates.dates, mean_cases,
-                label='QALY Loss Cases', linewidth=2, color='blue')
+                label='Cases', linewidth=2, color='blue')
         ax.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
 
         ax.plot(self.allStates.dates, mean_hosps,
-                label='QALY Loss Hospitalizations', linewidth=2, color='green')
+                label='Hospital Admissions', linewidth=2, color='green')
         ax.fill_between(self.allStates.dates, ui_hosps[0], ui_hosps[1], color='lightgreen', alpha=0.25)
 
         ax.plot(self.allStates.dates, mean_deaths,
-                label='QALY Loss Deaths', linewidth=2, color='red')
+                label='Deaths', linewidth=2, color='red')
         ax.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='orange', alpha=0.25)
+
 
         [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
 
@@ -846,7 +847,7 @@ class ProbabilisticAllStates:
         ax.set_yticklabels(['{:,.{prec}f}'.format(x, prec=0) for x in vals_y])
         # To label every other tick on the x-axis
         [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
-        plt.xticks(rotation=90)
+        plt.xticks(rotation=45)
         ax.tick_params(axis='x', labelsize=6.5)
 
         output_figure(fig, filename=ROOT_DIR + '/figs/simulations_national_qaly_loss_by_outcome.png')
@@ -1103,9 +1104,9 @@ class ProbabilisticAllStates:
 
         y_pos = (range(len(sorted_states)))
 
-        democratic_states = ['AZ','CA','CO','CT','DE','HI','IL','KS','KY','ME','MD','MA','MI','MN','NJ','NM','NY','NC','OR','PA','RI','WA','WI']  # Replace with your actual list of democratic states
+        democratic_states = ['AZ','CA','CO','CT','DE','HI','IL','KS','KY','ME','MD','MA','MI','MN','NJ','NM','NY','NC','OR','PA','RI','WA','WI']
         republican_states = ['AL', 'AK', 'AR', 'FL', 'GA', 'ID', 'IN','IA', 'LA','MI','MS','MO','MT','NE','NH','NV','ND','OH','OK','SC','SD','TN','TX',
-                             'UT','VT','VA','WV','WY']  # Replace with your actual list of republican states
+                             'UT','VT','VA','WV','WY']
 
         # Iterate through each state
 
@@ -1134,7 +1135,7 @@ class ProbabilisticAllStates:
 
             ax.scatter(cases_height, [state_obj.name], marker='o', color='blue', label='cases')
             ax.errorbar(cases_height, [state_obj.name], xerr=xterr_cases, fmt='none', color='blue', capsize=0, alpha=0.4)
-            ax.scatter(hosps_height, [state_obj.name], marker='o', color='green', label='hosps')
+            ax.scatter(hosps_height, [state_obj.name], marker='o', color='green', label='hospital admissions')
             ax.errorbar(hosps_height, [state_obj.name],xerr=xterr_hosps, fmt='none', color='green', capsize=0, alpha=0.4)
             ax.scatter(deaths_height_test, [state_obj.name], marker='o', color='red', label='deaths')
             ax.errorbar(deaths_height_test, [state_obj.name],xerr=xterr_deaths, fmt='none', color='red', capsize=0, alpha=0.4)
@@ -1156,7 +1157,7 @@ class ProbabilisticAllStates:
         ax.set_title('Total QALY Loss by State and Outcome')
 
         # Show the legend with unique labels
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Cases', 'Hospitalizations','Deaths'])
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Cases', 'Hospital Admissions','Deaths'])
 
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
@@ -1403,7 +1404,7 @@ class ProbabilisticAllStates:
         )
 
         ax2.axis('off')
-        ax2.set_title('Hosps per 100K', fontsize=15)
+        ax2.set_title('Hospital Admissions per 100K', fontsize=15)
 
         scheme_hosps = mc.Quantiles(merged_geo_data_mainland["Hosps per 100K"], k=10)
 
@@ -1414,7 +1415,7 @@ class ProbabilisticAllStates:
             scheme=scheme_hosps,
             cmap="viridis",
             legend=True,
-            legend_kwargs={'title': 'Hosps per 100K', 'fontsize': 8, 'bbox_to_anchor': (0.95, 0.5),
+            legend_kwargs={'title': 'Hospital Admissions per 100K', 'fontsize': 8, 'bbox_to_anchor': (0.95, 0.5),
                            'loc': 'center left'},
             legend_labels=None,
             edgecolor="black",
@@ -1439,28 +1440,40 @@ class ProbabilisticAllStates:
         deaths = self.allStates.pandemicOutcomes.deaths.weeklyObs
 
         ax.plot(self.allStates.dates, cases, label='Cases', linewidth=2, color='blue')
-        ax.plot(self.allStates.dates, hosps, label='Hosps', linewidth=2, color='green')
+        ax.plot(self.allStates.dates, hosps, label='Hospital Admissions', linewidth=2, color='green')
 
         # Create a secondary y-axis for deaths
         ax2 = ax.twinx()
         ax2.plot(self.allStates.dates, deaths, label='Deaths', linewidth=2, color='red')
-        ax2.set_ylabel('Number of Deaths', color='red')
+
         ax2.tick_params(axis='y', labelcolor='red')
-        ax2.set_ylim([0, 150000])  # Set the secondary y-axis limit for deaths
+        ax2.set_ylim([0, 300000])  # Set the secondary y-axis limit for deaths
 
         ax.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")
         ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")
 
-        ax.set_title('Number of Weekly Cases, Hospitalizations, and Deaths in the U.S.')
+        ax.set_title('Number of Weekly Cases, Hospital Admissions, and Deaths in the U.S.')
         ax.set_xlabel('Date')
-        ax.set_ylabel('QALY Loss')
-        ax.legend()
+        ax.set_ylabel('Number of Cases and Hospital Admissions')
+
+        # Move the number of deaths further to the right
+        ax2.set_ylabel('Number of Deaths', rotation=270, labelpad=15)
+
+        # Combine legend for deaths, cases, and hospital admissions
+        lines, labels = ax.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax2.legend(lines + lines2, labels + labels2, loc='upper left')
 
         vals_y = ax.get_yticks()
+        vals_y2 = ax2.get_yticks()
+
         ax.set_yticklabels(['{:,.{prec}f}'.format(x, prec=0) for x in vals_y])
+        ax2.set_yticklabels(['{:,.{prec}f}'.format(x, prec=0) for x in vals_y2])
+
         # To label every other tick on the x-axis
+
         [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
-        plt.xticks(rotation=90)
+        plt.xticks(rotation=45)
         ax.tick_params(axis='x', labelsize=6.5)
 
         output_figure(fig, filename=ROOT_DIR + '/figs/national_outcomes.png')

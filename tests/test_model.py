@@ -5,14 +5,15 @@ probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=10)
 
 probabilisticModel.plot_weekly_outcomes()
-probabilisticModel.plot_map_of_prop_pop_over_65_by_county()
-probabilisticModel.plot_map_of_median_age_by_county()
+probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
+
 
 probabilisticModel.plot_map_of_outcomes_by_county_per_100K()
-'''
+
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
 probabilisticModel.plot_weekly_outcomes()
-
+''''
 probabilisticModel.plot_map_of_deaths_by_county_per_100K()
 probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
@@ -24,9 +25,10 @@ probabilisticModel.plot_map_of_avg_qaly_loss_by_county_raw()
 probabilisticModel.plot_weekly_qaly_loss_by_state()
 probabilisticModel.subplot_weekly_qaly_loss_by_state_100K_pop()
 probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
-probabilisticModel.plot_weekly_qaly_loss_by_outcome()
-probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
+probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
+probabilisticModel.plot_map_of_prop_pop_over_65_by_county()
+probabilisticModel.plot_map_of_median_age_by_county()
 '''
 
 
