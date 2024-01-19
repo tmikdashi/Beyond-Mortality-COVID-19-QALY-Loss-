@@ -5,6 +5,7 @@ import pandas as pd
 
 from deampy.in_out_functions import write_csv, read_csv_rows
 from definitions import ROOT_DIR
+from datetime import datetime
 
 
 def get_dict_of_county_data_by_type(data_type):
@@ -41,7 +42,7 @@ def get_dict_of_county_data_by_type(data_type):
     return county_data_by_type, dates
 
 
-from datetime import datetime
+
 
 def generate_county_data_csv(data_type='cases'):
     """
@@ -193,11 +194,11 @@ def generate_combined_county_data_csv():
 
 def generate_deaths_by_age_group():
     """
-    This function generate a csv containing information on the number of deaths associated with each age group.
-    A crucial step in this process is redefining the age bands to match the values from the spreadsheet tool.
-    Calculation for the number of deaths in each age band are based on spreadsheet.
+    This function generates a csv containing information on the number of deaths associated with each age group.
+    A crucial step in this process is redefining the age bands to match the dQALY age groups in the Briggs paper.
+    Calculation for the number of deaths in each age band are based on Briggs spreadsheet tool
 
-    :return: The outputted csv is organized as 2 columns: Age Group and COVID-19 Deaths.
+    :return: A csv of COVID-19 deaths by age group.
     """
 
     data = pd.read_csv(ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')

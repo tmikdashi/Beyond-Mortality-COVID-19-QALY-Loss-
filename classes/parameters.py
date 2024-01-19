@@ -37,7 +37,7 @@ class ParameterGenerator:
         data = pd.read_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv')
 
         self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
-        self.parameters['death_weight_by_age'] = ConstantArray(values=[22.53, 20.89, 19.08, 16.96, 14.30, 11.52, 8.61, 5.50, 3.00, 1.46])
+        self.parameters['dQALY_loss_by_age'] = ConstantArray(values=[22.53, 20.89, 19.08, 16.96, 14.30, 11.52, 8.61, 5.50, 3.00, 1.46])
 
     def generate(self, rng):
         """
@@ -75,4 +75,4 @@ class ParameterGenerator:
 
         param.qWeightDeath = np.dot(
             self.parameters['death_age_dist'].value,
-            self.parameters['death_weight_by_age'].value)
+            self.parameters['dQALY_loss_by_age'].value)

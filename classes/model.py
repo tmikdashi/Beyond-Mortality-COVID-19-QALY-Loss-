@@ -1315,7 +1315,7 @@ class ProbabilisticAllStates:
 
     def plot_map_of_outcomes_by_county_per_100K(self):
         """
-        Plots a map of outcomes per 100,000 population for each county, considering cases, deaths, and hospitalizations.
+        Generates sub-plotted maps of number of cases, hospital admissions and deaths per 100,000 population for each county.
         """
 
         county_outcomes_data = {
@@ -1573,9 +1573,9 @@ class ProbabilisticAllStates:
         filename = ROOT_DIR + f"/figs/subplots_all_states_weekly_deaths.png"
         output_figure(fig, filename)
 
-    def plot_map_of_prop_pop_over_65_by_county(self):
+    def plot_map_of_pop_over_65_by_county(self):
         """
-        Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
+        Plots a map of the percentage of the county's population that is over 65.
         """
 
         age_data = pd.read_csv('/Users/fm478/Downloads/cc-est2022-agesex-all.csv',
@@ -1684,7 +1684,7 @@ class ProbabilisticAllStates:
 
     def plot_map_of_median_age_by_county(self):
         """
-        Plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
+        Plots a map of the median of the county's population.
         """
 
 
