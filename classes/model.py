@@ -486,7 +486,7 @@ class AllStates:
         )
         ax.set_xlim([-170.0, 60])
         ax.set_ylim([25, 76])
-        plt.title("Cumulative County QALY Loss per 100K", fontsize=24)
+        plt.title("Cumulative County QALY Loss per 100,000 Population", fontsize=22)
 
         stateToInclude = ["2"]
         merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
@@ -822,7 +822,7 @@ class ProbabilisticAllStates:
         ax.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
 
         ax.plot(self.allStates.dates, mean_hosps,
-                label='Hospital Admissions', linewidth=2, color='green')
+                label='Hospital admissions', linewidth=2, color='green')
         ax.fill_between(self.allStates.dates, ui_hosps[0], ui_hosps[1], color='lightgreen', alpha=0.25)
 
         ax.plot(self.allStates.dates, mean_deaths,
@@ -833,12 +833,12 @@ class ProbabilisticAllStates:
         [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
 
         ax.plot(self.allStates.dates, mean,
-                label='All outcomes', linewidth=2, color='black')
+                label='All health states', linewidth=2, color='black')
         ax.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
         ax.axvspan("2021-06-30","2021-10-27",alpha=0.2,color="lightblue")
         ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")
 
-        ax.set_title('National Weekly QALY Loss by Outcome')
+        ax.set_title('National Weekly QALY Loss by Health State')
         ax.set_xlabel('Date')
         ax.set_ylabel('QALY Loss')
         ax.legend()
@@ -918,7 +918,7 @@ class ProbabilisticAllStates:
         ax.axis = ('off')
 
 
-        ax.set_title('Cumulative County QALY Loss per 100K', fontsize=42)
+        ax.set_title('Cumulative County QALY Loss per 100,000 Population', fontsize=36)
 
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=10)
 
@@ -941,7 +941,7 @@ class ProbabilisticAllStates:
         stateToInclude = ["2"]
         merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
         merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
-        akax = fig.add_axes([0.1, 0.17, 0.2, 0.19])
+        akax = fig.add_axes([0.1, 0.1, 0.2, 0.3])
         akax.axis('off')
         polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
         scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["QALY Loss per 100K"], k=2)
@@ -1145,19 +1145,19 @@ class ProbabilisticAllStates:
         # Set the labels for each state
         ax.set_yticks(y_pos)
         y_tick_colors = ['blue' if state_obj.name in democratic_states else 'red' for state_obj in sorted_states]
-        ax.set_yticklabels([state_obj.name for state_obj in sorted_states], fontsize=8, rotation=0)
+        ax.set_yticklabels([state_obj.name for state_obj in sorted_states], fontsize=12, rotation=0)
 
         # Set the colors for ticks
         for tick, color in zip(ax.yaxis.get_major_ticks(), y_tick_colors):
             tick.label1.set_color(color)
 
         # Set the labels and title
-        ax.set_ylabel('States')
-        ax.set_xlabel('Total QALY Loss per 100,000')
-        ax.set_title('Total QALY Loss by State and Outcome')
+        ax.set_ylabel('States', fontsize=14)
+        ax.set_xlabel('Total QALY Loss per 100,000', fontsize=14)
+        ax.set_title('State-level QALY Loss by Health State')
 
         # Show the legend with unique labels
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Cases', 'Hospital Admissions','Deaths'])
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Cases', 'Hospital Admissions','Deaths', "All Health States "])
 
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
@@ -1363,7 +1363,7 @@ class ProbabilisticAllStates:
         merged_geo_data_mainland = merged_geo_data_mainland.explode()
 
         # Plot the map
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 6))
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5),subplot_kw={'aspect': 'equal'})
 
         ax3.axis('off')
         ax3.set_title('Deaths per 100K', fontsize=15)
@@ -1428,6 +1428,122 @@ class ProbabilisticAllStates:
 
         return fig
 
+    def plot_map_of_outcomes_by_county_per_100K_alt(self):
+        """
+        Generates vertically-aligned sub-plotted maps of the number of cases, hospital admissions, and deaths per 100,000 population for each county.
+        """
+
+        county_outcomes_data = {
+            "COUNTY": [],
+            "FIPS": [],
+            "Cases per 100K": [],
+            "Hosps per 100K": [],
+            "Deaths per 100K": []
+        }
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                # Calculate the number of outcomes per 100,000 population
+                cases_per_100k = (county.pandemicOutcomes.cases.totalObs / county.population) * 100000
+                hosps_per_100k = (county.pandemicOutcomes.hosps.totalObs / county.population) * 100000
+                deaths_per_100k = (county.pandemicOutcomes.deaths.totalObs / county.population) * 100000
+                # Append county data to the list
+                county_outcomes_data["COUNTY"].append(county.name)
+                county_outcomes_data["FIPS"].append(county.fips)
+                county_outcomes_data["Cases per 100K"].append(cases_per_100k)
+                county_outcomes_data["Hosps per 100K"].append(hosps_per_100k)
+                county_outcomes_data["Deaths per 100K"].append(deaths_per_100k)
+
+        # Create a DataFrame from the county data
+        county_outcomes_df = pd.DataFrame(county_outcomes_data)
+
+        county_outcomes_df.to_csv(ROOT_DIR + '/csv_files/county_outcomes.csv', index=False)
+
+        # Merge the county QALY loss data with the geometry data
+        geoData = gpd.read_file(
+            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
+        )
+        geoData['STATE'] = geoData['STATE'].str.lstrip('0')
+        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
+        merged_geo_data = geoData.merge(county_outcomes_df, left_on='FIPS', right_on='FIPS', how='left')
+
+        # Remove counties where there is no data
+        merged_geo_data = merged_geo_data.dropna(subset=["Deaths per 100K"])
+
+        # Remove Alaska, HI, Puerto Rico (to be plotted later)
+        stateToRemove = ["2", "15", "72"]
+        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
+
+        # Explode the MultiPolygon geometries into individual polygons
+        merged_geo_data_mainland = merged_geo_data_mainland.explode()
+
+        # Plot the map
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 18), subplot_kw={'aspect': 'equal'})
+
+        ax3.axis('off')
+        ax3.set_title('Deaths per 100K', fontsize=15)
+
+        scheme = mc.Quantiles(merged_geo_data_mainland["Deaths per 100K"], k=10)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="Deaths per 100K",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Deaths per 100K', 'fontsize': 8, 'bbox_to_anchor': (1, 0.5),
+                           'loc': 'center left'},
+            legend_labels=None,
+            edgecolor="black",
+            ax=ax3
+        )
+
+        ax1.axis('off')
+        ax1.set_title('Cases per 100K', fontsize=15)
+
+        scheme_cases = mc.Quantiles(merged_geo_data_mainland["Cases per 100K"], k=10)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="Cases per 100K",
+            linewidth=0.1,
+            scheme=scheme_cases,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Cases per 100K', 'fontsize': 8, 'bbox_to_anchor': (1, 0.5),
+                           'loc': 'center left'},
+            legend_labels=None,
+            edgecolor="black",
+            ax=ax1
+        )
+
+        ax2.axis('off')
+        ax2.set_title('Hospital Admissions per 100K', fontsize=15)
+
+        scheme_hosps = mc.Quantiles(merged_geo_data_mainland["Hosps per 100K"], k=10)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="Hosps per 100K",
+            linewidth=0.1,
+            scheme=scheme_hosps,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Hospital Admissions per 100K', 'fontsize': 8, 'bbox_to_anchor': (1, 0.5),
+                           'loc': 'center left'},
+            legend_labels=None,
+            edgecolor="black",
+            ax=ax2
+        )
+
+        plt.subplots_adjust(hspace=0.1)
+        plt.tight_layout()
+
+        output_figure(fig, filename=ROOT_DIR + '/figs/map_county_outcomes_per_100K_alt.png')
+
+        return fig
+
     def plot_weekly_outcomes(self):
         """
         :return: Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
@@ -1457,7 +1573,7 @@ class ProbabilisticAllStates:
         ax.set_ylabel('Number of Cases and Hospital Admissions')
 
         # Move the number of deaths further to the right
-        ax2.set_ylabel('Number of Deaths', rotation=270, labelpad=15)
+        ax2.set_ylabel('Number of Deaths', rotation=270, labelpad=15, color= 'red')
 
         # Combine legend for deaths, cases, and hospital admissions
         lines, labels = ax.get_legend_handles_labels()
@@ -1472,11 +1588,14 @@ class ProbabilisticAllStates:
 
         # To label every other tick on the x-axis
 
-        [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
-        plt.xticks(rotation=45)
+        [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 8 != 0]
         ax.tick_params(axis='x', labelsize=6.5)
+        plt.xticks(rotation=45)
+
 
         output_figure(fig, filename=ROOT_DIR + '/figs/national_outcomes.png')
+
+
 
     def subplot_weekly_cases_by_state_100K_pop(self):
         """
