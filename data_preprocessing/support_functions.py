@@ -71,11 +71,11 @@ def generate_county_data_csv(data_type='cases'):
             "'deaths per 100,000', 'hospitalizations per 100,000', 'icu admissions per 100,000'.")
 
     # Read the data
-    rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
-                         if_ignore_first_row=True)
-
-    #rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
+    #rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
                          #if_ignore_first_row=True)
+
+    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
+                         if_ignore_first_row=True)
 
 
     # Creating a dictionary to store the time series of data for each county

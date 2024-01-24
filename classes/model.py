@@ -15,6 +15,7 @@ from deampy.in_out_functions import write_csv, read_csv_rows
 from deampy.format_functions import format_interval
 from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
+from matplotlib.ticker import ScalarFormatter
 from definitions import ROOT_DIR
 
 
@@ -645,6 +646,14 @@ class AllStates:
             overall_qaly_loss_deaths_by_state[state_name] = state_obj.pandemicOutcomes.deaths.totalQALYLoss
         return overall_qaly_loss_deaths_by_state
 
+    def get_death_QALY_loss_by_age(self, param_gen):
+        deaths_by_age = (param_gen.parameters['death_age_dist'].value * self.pandemicOutcomes.deaths.totalObs)
+        total_dQAlY_loss_by_age = deaths_by_age * param_gen.parameters['dQALY_loss_by_age'].value
+        return total_dQAlY_loss_by_age
+
+
+
+
 
 class SummaryOutcomes:
 
@@ -675,7 +684,12 @@ class SummaryOutcomes:
         self.statOverallQALYLossHosps = None
         self.statOverallQALYLossDeaths = None
 
-    def extract_outcomes(self, simulated_model):
+        self.deathQALYLossByAge = []
+        self.age_group = []
+
+
+
+    def extract_outcomes(self, simulated_model,param_gen):
 
         self.overallQALYlosses.append(simulated_model.get_overall_qaly_loss())
         self.overallQALYlossesByState.append(simulated_model.get_overall_qaly_loss_by_state())
@@ -695,6 +709,8 @@ class SummaryOutcomes:
         self.overallQALYlossesCasesByState.append(simulated_model.get_overall_qaly_loss_by_state_cases())
         self.overallQALYlossesHospsByState.append(simulated_model.get_overall_qaly_loss_by_state_hosps())
         self.overallQALYlossesDeathsByState.append(simulated_model.get_overall_qaly_loss_by_state_deaths())
+
+        self.deathQALYLossByAge.append(simulated_model.get_death_QALY_loss_by_age(param_gen))
 
 
     def summarize(self):
@@ -740,6 +756,8 @@ class ProbabilisticAllStates:
 
         rng = np.random.RandomState(1)
         param_gen = ParameterGenerator()
+        self.age_group = param_gen.parameters['Age Group'].value
+
 
         for i in range(n):
 
@@ -748,11 +766,32 @@ class ProbabilisticAllStates:
 
             # Calculate the QALY loss for this set of parameters
             self.allStates.calculate_qaly_loss(param_values=params)
+            self.allStates.get_death_QALY_loss_by_age(param_gen=param_gen)
 
             # extract outcomes from the simulated all states
-            self.summaryOutcomes.extract_outcomes(simulated_model=self.allStates)
+            self.summaryOutcomes.extract_outcomes(simulated_model=self.allStates, param_gen=param_gen)
 
         self.summaryOutcomes.summarize()
+
+
+    def plot_qaly_loss_from_deaths_by_age(self):
+
+        mean, ui = get_mean_ui_of_a_time_series(self.summaryOutcomes.deathQALYLossByAge, alpha=0.05)
+        print('mean', mean)
+        print('ui', ui)
+        print('lower error', ui[1]-mean)
+        fig, ax = plt.subplots(figsize=(8, 10))
+        ax.bar(self.age_group, mean)
+        ax.errorbar(self.age_group, mean,yerr=[mean-ui[0],ui[1]- mean],fmt='none', color='black', capsize=0, alpha=0.8)
+
+        ax.set_title('QALY Loss from Deaths by Age', size=20)
+        ax.set_xlabel('Age Groups', size=16)
+        ax.set_ylabel('QALY Loss', size=16)
+        ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=False))
+
+
+        output_figure(fig, filename=ROOT_DIR + '/figs/death_qaly_loss_by_age.png')
+
 
     def print_overall_outcomes_and_qaly_loss(self):
         """

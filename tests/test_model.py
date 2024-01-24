@@ -5,6 +5,8 @@ probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=10)
 
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
+probabilisticModel.plot_qaly_loss_from_deaths_by_age()
+
 
 probabilisticModel.plot_weekly_outcomes()
 probabilisticModel.plot_weekly_qaly_loss_by_outcome()
