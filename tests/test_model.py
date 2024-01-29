@@ -4,6 +4,7 @@ from classes.model import ProbabilisticAllStates
 probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=10)
 
+probabilisticModel.get_state_total_qaly_loss()
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
 probabilisticModel.plot_qaly_loss_from_deaths_by_age()
 

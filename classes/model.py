@@ -17,6 +17,7 @@ from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
 from matplotlib.ticker import ScalarFormatter
 from definitions import ROOT_DIR
+from datetime import datetime
 
 
 class AnOutcome:
@@ -874,8 +875,11 @@ class ProbabilisticAllStates:
         ax.plot(self.allStates.dates, mean,
                 label='All health states', linewidth=2, color='black')
         ax.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
-        ax.axvspan("2021-06-30","2021-10-27",alpha=0.2,color="lightblue")
-        ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")
+        ax.axvspan("2021-06-30","2021-10-27",alpha=0.2,color="lightblue") #delta variant
+        ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey") # omicron variant
+
+        ax.axvline("2021-03-24", linestyle='--', color='grey', label='70% of 65+ years population vaccinated')
+        ax.axvline ("2021-08-11", linestyle= '--', color='black', label='70% of population vaccinated')
 
         ax.set_title('National Weekly QALY Loss by Health State')
         ax.set_xlabel('Date')
@@ -1947,3 +1951,50 @@ class ProbabilisticAllStates:
 
         return fig
 
+
+    def get_state_total_qaly_loss(self):
+        for i, (state_name, state_obj) in enumerate(self.allStates.states.items()):
+            # Calculate the weekly QALY loss per 100,000 population
+            weekly_qaly_losses = [qaly_losses[state_name] for qaly_losses in
+                                  self.summaryOutcomes.weeklyQALYlossesByState]
+            print (weekly_qaly_losses)
+            #(mean_before_vaccination, ui_before_vaccination), (mean_after_vaccination, ui_after_vaccination) = self.get_mean_ui_total_qaly_loss_by_state_vax(state_name, alpha=0.05, vaccination_date='2022-08-02')
+            #print((mean_before_vaccination, ui_before_vaccination), (mean_after_vaccination, ui_after_vaccination))
+    def get_mean_ui_total_qaly_loss_by_state_vax(self, state_name, alpha=0.05, vaccination_date='2022-08-02'):
+        """
+        :param state_name: Name of the state.
+        :param alpha: (float) significance value for calculating uncertainty intervals
+        :param vaccination_date: The date of vaccination to split the data ('YYYY-MM-DD')
+        :return: mean and uncertainty interval for the weekly QALY loss for a specific state.
+        """
+        weekly_qaly_losses = [qaly_losses[state_name] for qaly_losses in self.summaryOutcomes.weeklyQALYlossesByState]
+
+        # Assuming the dates are in the first column of weeklyQALYlossesByState
+        dates = self.summaryOutcomes.weeklyQALYlossesByState[0]['dates']
+
+        # Convert vaccination_date to datetime object for comparison
+        vaccination_datetime = datetime.strptime(vaccination_date, '%Y-%m-%d')
+
+        # Initialize lists to store weekly values before and after vaccination
+        weekly_values_before_vaccination = []
+        weekly_values_after_vaccination = []
+
+        for week_qaly_losses in weekly_qaly_losses:
+            # Check if the date is before or after the vaccination date
+            is_before_vaccination = datetime.strptime(week_qaly_losses['dates'][0], '%Y-%m-%d') < vaccination_datetime
+            is_after_vaccination = not is_before_vaccination
+
+            # Append weekly QALY losses to the corresponding list based on before/after vaccination status
+            if is_before_vaccination:
+                weekly_values_before_vaccination.append(np.sum(week_qaly_losses[state_name]))
+            else:
+                weekly_values_after_vaccination.append(np.sum(week_qaly_losses[state_name]))
+
+        # Calculate mean and uncertainty interval for weekly QALY losses before and after vaccination
+        mean_before_vaccination = np.mean(weekly_values_before_vaccination)
+        ui_before_vaccination = np.percentile(weekly_values_before_vaccination, q=[alpha / 2 * 100, 100 - alpha / 2 * 100])
+
+        mean_after_vaccination = np.mean(weekly_values_after_vaccination)
+        ui_after_vaccination = np.percentile(weekly_values_after_vaccination, q=[alpha / 2 * 100, 100 - alpha / 2 * 100])
+
+        return (mean_before_vaccination, ui_before_vaccination), (mean_after_vaccination, ui_after_vaccination)
