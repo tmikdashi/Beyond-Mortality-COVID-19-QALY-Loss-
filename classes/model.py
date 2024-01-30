@@ -1952,49 +1952,313 @@ class ProbabilisticAllStates:
         return fig
 
 
-    def get_state_total_qaly_loss(self):
-        for i, (state_name, state_obj) in enumerate(self.allStates.states.items()):
-            # Calculate the weekly QALY loss per 100,000 population
-            weekly_qaly_losses = [qaly_losses[state_name] for qaly_losses in
-                                  self.summaryOutcomes.weeklyQALYlossesByState]
-            print (weekly_qaly_losses)
-            #(mean_before_vaccination, ui_before_vaccination), (mean_after_vaccination, ui_after_vaccination) = self.get_mean_ui_total_qaly_loss_by_state_vax(state_name, alpha=0.05, vaccination_date='2022-08-02')
-            #print((mean_before_vaccination, ui_before_vaccination), (mean_after_vaccination, ui_after_vaccination))
-    def get_mean_ui_total_qaly_loss_by_state_vax(self, state_name, alpha=0.05, vaccination_date='2022-08-02'):
-        """
-        :param state_name: Name of the state.
-        :param alpha: (float) significance value for calculating uncertainty intervals
-        :param vaccination_date: The date of vaccination to split the data ('YYYY-MM-DD')
-        :return: mean and uncertainty interval for the weekly QALY loss for a specific state.
-        """
-        weekly_qaly_losses = [qaly_losses[state_name] for qaly_losses in self.summaryOutcomes.weeklyQALYlossesByState]
+    def get_state_vax_index(self):
+        # Assuming 'dates' is a list of weekly dates and 'result_df' is the DataFrame containing vaccination data
+        # Replace 'your_csv_path' with the actual path to your CSV file
+        result_df = pd.read_csv(ROOT_DIR + '/csv_files/vaccinated_percentage_by_state.csv')
+        dates = self.allStates.dates
+        dates = [pd.to_datetime(date) for date in dates]
 
-        # Assuming the dates are in the first column of weeklyQALYlossesByState
-        dates = self.summaryOutcomes.weeklyQALYlossesByState[0]['dates']
+        # Convert 'Date_Dose1_Over_70Pct_Vaccinated' to datetime
+        result_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(result_df['Date_Dose1_Over_70Pct_Vaccinated'],
+                                                                       errors='coerce')
 
-        # Convert vaccination_date to datetime object for comparison
-        vaccination_datetime = datetime.strptime(vaccination_date, '%Y-%m-%d')
+        # Initialize a new column to store the index of the closest date
+        result_df['Index_Closest_Date'] = np.nan
 
-        # Initialize lists to store weekly values before and after vaccination
-        weekly_values_before_vaccination = []
-        weekly_values_after_vaccination = []
+        # Iterate through each state
+        for index, row in result_df.iterrows():
+            # Get the state and the date of dose1 over 70%
+            state = row['Location']
+            date_dose1_over_70 = row['Date_Dose1_Over_70Pct_Vaccinated']
 
-        for week_qaly_losses in weekly_qaly_losses:
-            # Check if the date is before or after the vaccination date
-            is_before_vaccination = datetime.strptime(week_qaly_losses['dates'][0], '%Y-%m-%d') < vaccination_datetime
-            is_after_vaccination = not is_before_vaccination
+            # Find the closest date in 'dates' for the given state
+            closest_date = min(dates, key=lambda x: abs((x - date_dose1_over_70).days))
 
-            # Append weekly QALY losses to the corresponding list based on before/after vaccination status
-            if is_before_vaccination:
-                weekly_values_before_vaccination.append(np.sum(week_qaly_losses[state_name]))
+            # Get the index of the closest date
+            index_closest_date = dates.index(closest_date)
+
+            # Update the 'Index_Closest_Date' column
+            result_df.at[index, 'Index_Closest_Date'] = index_closest_date
+
+        # Display the updated DataFrame
+        print(result_df)
+
+        # Iterate through each state
+        states_list = list(self.allStates.states.values())
+
+        # Iterate through each state
+        for state_obj in states_list:
+            # Get the index from the result_df
+            index_closest_date = result_df[result_df['Location'] == state_obj.name]['Index_Closest_Date'].values[0]
+            print(state_obj.name)
+            print('Index Closest Date', index_closest_date)
+
+            # Get the weekly QALY losses for the state
+            state_qaly_losses = np.array(
+                [qaly_losses[state_obj.name] for qaly_losses in self.summaryOutcomes.weeklyQALYlossesByState])
+
+            # Check if index_closest_date is a valid number
+            if pd.notna(index_closest_date):
+                index_closest_date = int(index_closest_date)
+
+                # Split the array into pre-vax and post-vax based on the index
+                prevax_qaly_losses = state_qaly_losses[:index_closest_date + 1]
+                postvax_qaly_losses = state_qaly_losses[index_closest_date + 1:]
+
+                # Sum values for pre-vax and post-vax
+                prevax_total_qaly_loss = np.sum(prevax_qaly_losses)
+                postvax_total_qaly_loss = np.sum(postvax_qaly_losses)
             else:
-                weekly_values_after_vaccination.append(np.sum(week_qaly_losses[state_name]))
+                # If index_closest_date is NaN or invalid, consider all values in pre-vax and post-vax
+                prevax_total_qaly_loss = np.sum(state_qaly_losses)
+                postvax_total_qaly_loss = 0  # Assuming postvax_total_qaly_loss is 0 in this case
 
-        # Calculate mean and uncertainty interval for weekly QALY losses before and after vaccination
-        mean_before_vaccination = np.mean(weekly_values_before_vaccination)
-        ui_before_vaccination = np.percentile(weekly_values_before_vaccination, q=[alpha / 2 * 100, 100 - alpha / 2 * 100])
+            # Now you can use these total values in your plotting or analysis
+            print(
+                f"State: {state_obj.name}, PreVax Total QALY Loss: {prevax_total_qaly_loss}, PostVax Total QALY Loss: {postvax_total_qaly_loss}")
 
-        mean_after_vaccination = np.mean(weekly_values_after_vaccination)
-        ui_after_vaccination = np.percentile(weekly_values_after_vaccination, q=[alpha / 2 * 100, 100 - alpha / 2 * 100])
+    # ... (rest of your class definition)
 
-        return (mean_before_vaccination, ui_before_vaccination), (mean_after_vaccination, ui_after_vaccination)
+    def plot_prevax_postvax_qaly_loss_by_state(self):
+        """
+        Generate a bar graph of the total QALY loss per 100,000 pop for each state, with pre-vax and post-vax contributions.
+        """
+        result_df = pd.read_csv(ROOT_DIR + '/csv_files/vaccinated_percentage_by_state.csv')
+        dates = self.allStates.dates
+        dates = [pd.to_datetime(date) for date in dates]
+
+        # Convert 'Date_Dose1_Over_70Pct_Vaccinated' to datetime
+        result_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(result_df['Date_Dose1_Over_70Pct_Vaccinated'],
+                                                                       errors='coerce')
+
+        # Initialize a new column to store the index of the closest date
+        result_df['Index_Closest_Date'] = np.nan
+
+        # Iterate through each state
+        for index, row in result_df.iterrows():
+            # Get the state and the date of dose1 over 70%
+            state = row['Location']
+            date_dose1_over_70 = row['Date_Dose1_Over_70Pct_Vaccinated']
+
+            # Find the closest date in 'dates' for the given state
+            closest_date = min(dates, key=lambda x: abs((x - date_dose1_over_70).days))
+
+            # Get the index of the closest date
+            index_closest_date = dates.index(closest_date)
+
+            # Update the 'Index_Closest_Date' column
+            result_df.at[index, 'Index_Closest_Date'] = index_closest_date
+
+        # Display the updated DataFrame
+        print(result_df)
+
+        # Set up the figure and axis
+        fig, ax = plt.subplots(figsize=(8, 10))
+
+        states_list = list(self.allStates.states.values())
+        # To sort states by overall QALY loss
+        sorted_states = sorted(
+            states_list,
+            key=lambda state_obj: (self.get_mean_ui_overall_qaly_loss_by_state(
+                state_name=state_obj.name, alpha=0.05)[0] / state_obj.population) * 100000)
+
+        # Set up the positions for the bars
+        y_pos = (range(len(sorted_states)))
+
+        democratic_states = ['AZ', 'CA', 'CO', 'CT', 'DE', 'HI', 'IL', 'KS', 'KY', 'ME', 'MD', 'MA', 'MI', 'MN', 'NJ',
+                             'NM', 'NY',
+                             'NC', 'OR', 'PA', 'RI', 'WA', 'WI']
+
+        # Iterate through each state
+        for i, state_obj in enumerate(sorted_states):
+            # Get the index from the result_df
+            index_closest_date = result_df[result_df['Location'] == state_obj.name]['Index_Closest_Date'].values[0]
+
+            # Get the pre-vax and post-vax values
+            prevax_value = \
+            result_df[result_df['Location'] == state_obj.name]['Prevax_Total_QALY_Loss_per_100000'].values[0]
+            postvax_value = \
+            result_df[result_df['Location'] == state_obj.name]['Postvax_Total_QALY_Loss_per_100000'].values[0]
+
+            # Plotting the scatter points for pre-vax and post-vax
+            ax.scatter([prevax_value], [postvax_value], marker='o', color='blue', label=state_obj.name)
+
+        # Set the labels and title
+        ax.set_xlabel('Prevax Total QALY Loss per 100,000', fontsize=14)
+        ax.set_ylabel('Postvax Total QALY Loss per 100,000', fontsize=14)
+        ax.set_title('Scatter Plot of QALY Loss (Prevax vs. Postvax) by State')
+
+        # Show the legend with unique labels
+        ax.legend()
+
+        plt.tight_layout()
+        output_figure(fig, filename=ROOT_DIR + '/figs/prevax_postvax_scatter_qaly_loss_by_state.png')
+
+    def get_state_vax_index(self):
+        # Assuming 'dates' is a list of weekly dates and 'result_df' is the DataFrame containing vaccination data
+        # Replace 'your_csv_path' with the actual path to your CSV file
+        result_df = pd.read_csv(ROOT_DIR + '/csv_files/vaccinated_percentage_by_state.csv')
+        dates = self.allStates.dates
+        dates = [pd.to_datetime(date) for date in dates]
+
+        # Convert 'Date_Dose1_Over_70Pct_Vaccinated' to datetime
+        result_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(result_df['Date_Dose1_Over_70Pct_Vaccinated'],
+                                                                       errors='coerce')
+
+        # Initialize a new column to store the index of the closest date
+        result_df['Index_Closest_Date'] = np.nan
+
+        # Iterate through each state
+        for index, row in result_df.iterrows():
+            # Get the state and the date of dose1 over 70%
+            state = row['Location']
+            date_dose1_over_70 = row['Date_Dose1_Over_70Pct_Vaccinated']
+
+            # Find the closest date in 'dates' for the given state
+            closest_date = min(dates, key=lambda x: abs((x - date_dose1_over_70).days))
+
+            # Get the index of the closest date
+            index_closest_date = dates.index(closest_date)
+
+            # Update the 'Index_Closest_Date' column
+            result_df.at[index, 'Index_Closest_Date'] = index_closest_date
+
+        # Display the updated DataFrame
+        print(result_df)
+
+        # Iterate through each state
+        states_list = list(self.allStates.states.values())
+
+        # Iterate through each state
+        for state_obj in states_list:
+            # Get the index from the result_df
+            index_closest_date = result_df[result_df['Location'] == state_obj.name]['Index_Closest_Date'].values[0]
+            print(state_obj.name)
+            print('Index Closest Date', index_closest_date)
+
+            # Get the weekly QALY losses for the state
+            state_qaly_losses = np.array(
+                [qaly_losses[state_obj.name] for qaly_losses in self.summaryOutcomes.weeklyQALYlossesByState])
+
+            # Check if index_closest_date is a valid number
+            if pd.notna(index_closest_date):
+                index_closest_date = int(index_closest_date)
+
+                # Split the array into pre-vax and post-vax based on the index
+                prevax_qaly_losses = state_qaly_losses[:index_closest_date + 1]
+                postvax_qaly_losses = state_qaly_losses[index_closest_date + 1:]
+
+                # Sum values for pre-vax and post-vax
+                prevax_total_qaly_loss = np.sum(prevax_qaly_losses)
+                postvax_total_qaly_loss = np.sum(postvax_qaly_losses)
+            else:
+                # If index_closest_date is NaN or invalid, consider all values in pre-vax and post-vax
+                prevax_total_qaly_loss = np.sum(state_qaly_losses)
+                postvax_total_qaly_loss = 0  # Assuming postvax_total_qaly_loss is 0 in this case
+
+            # Now you can use these total values in your plotting or analysis
+            print(
+                f"State: {state_obj.name}, PreVax Total QALY Loss: {prevax_total_qaly_loss}, PostVax Total QALY Loss: {postvax_total_qaly_loss}")
+
+    def plot_prevax_postvax_qaly_loss_by_state(self):
+        # Set up the figure and axis
+        fig, ax = plt.subplots(figsize=(8, 10))
+
+        result_df = pd.read_csv(ROOT_DIR + '/csv_files/vaccinated_percentage_by_state.csv')
+        dates = self.allStates.dates
+        dates = [pd.to_datetime(date) for date in dates]
+
+        # Convert 'Date_Dose1_Over_70Pct_Vaccinated' to datetime
+        result_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(result_df['Date_Dose1_Over_70Pct_Vaccinated'],
+                                                                       errors='coerce')
+
+        # Initialize a new column to store the index of the closest date
+        result_df['Index_Closest_Date'] = np.nan
+
+        # Iterate through each state
+        for index, row in result_df.iterrows():
+            # Get the state and the date of dose1 over 70%
+            state = row['Location']
+            date_dose1_over_70 = row['Date_Dose1_Over_70Pct_Vaccinated']
+
+            # Find the closest date in 'dates' for the given state
+            closest_date = min(dates, key=lambda x: abs((x - date_dose1_over_70).days))
+
+            # Get the index of the closest date
+            index_closest_date = dates.index(closest_date)
+
+            # Update the 'Index_Closest_Date' column
+            result_df.at[index, 'Index_Closest_Date'] = index_closest_date
+
+        states_list = list(self.allStates.states.values())
+        # To sort states by overall QALY loss
+        sorted_states = sorted(
+            states_list,
+            key=lambda state_obj: (self.get_mean_ui_overall_qaly_loss_by_state(
+                state_name=state_obj.name, alpha=0.05)[0] / state_obj.population) * 100000)
+
+        # Set up the positions for the bars
+        y_pos = (range(len(sorted_states)))
+
+        democratic_states = ['AZ', 'CA', 'CO', 'CT', 'DE', 'HI', 'IL', 'KS', 'KY', 'ME', 'MD', 'MA', 'MI', 'MN', 'NJ',
+                             'NM', 'NY','NC', 'OR', 'PA', 'RI', 'WA', 'WI']
+
+        # Iterate through each state
+        for i, state_obj in enumerate(sorted_states):
+            # Get the index from the result_df
+            index_closest_date = result_df[result_df['Location'] == state_obj.name]['Index_Closest_Date'].values[0]
+            print(state_obj.name)
+            print('Index Closest Date', index_closest_date)
+
+            # Get the weekly QALY losses for the state
+            state_qaly_losses = np.array(
+                [qaly_losses[state_obj.name] for qaly_losses in self.summaryOutcomes.weeklyQALYlossesByState])
+
+            # Check if index_closest_date is a valid number
+            if pd.notna(index_closest_date):
+                index_closest_date = int(index_closest_date)
+
+                # Split the array into pre-vax and post-vax based on the index
+                prevax_qaly_losses = state_qaly_losses[:index_closest_date + 1]
+                postvax_qaly_losses = state_qaly_losses[index_closest_date + 1:]
+
+                # Sum values for pre-vax and post-vax
+                prevax_total_qaly_loss = np.sum(prevax_qaly_losses) * 100000 / state_obj.population
+                postvax_total_qaly_loss = np.sum(postvax_qaly_losses) * 100000 / state_obj.population
+            else:
+                # If index_closest_date is NaN or invalid, consider all values in pre-vax and post-vax
+                prevax_total_qaly_loss = np.sum(state_qaly_losses)*100000/state_obj.population
+                postvax_total_qaly_loss = 0  # Assuming postvax_total_qaly_loss is 0 in this case
+
+            # Plotting the scatter points for pre-vax and post-vax
+            ax.scatter([prevax_total_qaly_loss], [i], color='blue', marker='o')
+            ax.scatter([postvax_total_qaly_loss], [i], color='green', marker='o')
+
+            # Plotting the scatter point for total height
+            mean_total, ui_total = self.get_mean_ui_overall_qaly_loss_by_state(state_obj.name, alpha=0.05)
+            total_height = (mean_total / state_obj.population) * 100000
+            ax.scatter([total_height], [i], color='black', marker='o')
+
+        # Set the labels for each state
+        ax.set_yticks(y_pos)
+        y_tick_colors = ['blue' if state_obj.name in democratic_states else 'red' for state_obj in sorted_states]
+        ax.set_yticklabels([state_obj.name for state_obj in sorted_states], fontsize=12, rotation=0)
+
+        # Set the colors for ticks
+        for tick, color in zip(ax.yaxis.get_major_ticks(), y_tick_colors):
+            tick.label1.set_color(color)
+
+        # Set the labels and title
+        ax.set_ylabel('States', fontsize=14)
+        ax.set_xlabel('Total QALY Loss per 100,000', fontsize=14)
+        ax.set_title('State-level QALY Loss by Health State (Pre-Vax and Post-Vax)')
+
+        # Show the legend with unique labels
+        #ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+
+        plt.tight_layout()
+        output_figure(fig, filename=ROOT_DIR + '/figs/prevax_postvax_qaly_loss_by_state.png')
+
+
+

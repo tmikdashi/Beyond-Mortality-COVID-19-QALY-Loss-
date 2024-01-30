@@ -4,7 +4,10 @@ from classes.model import ProbabilisticAllStates
 probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=10)
 
-probabilisticModel.get_state_total_qaly_loss()
+
+probabilisticModel.get_state_vax_index()
+probabilisticModel.plot_prevax_postvax_qaly_loss_by_state()
+'''
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
 probabilisticModel.plot_qaly_loss_from_deaths_by_age()
 
@@ -22,6 +25,6 @@ probabilisticModel.plot_map_of_outcomes_by_county_per_100K_alt()
 probabilisticModel.plot_map_of_pop_over_65_by_county()
 probabilisticModel.plot_map_of_median_age_by_county()
 
-
+'''
 
 
