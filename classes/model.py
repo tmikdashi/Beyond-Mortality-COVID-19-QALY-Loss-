@@ -18,6 +18,7 @@ from deampy.statistics import SummaryStat
 from matplotlib.ticker import ScalarFormatter
 from definitions import ROOT_DIR
 from datetime import datetime
+from matplotlib.ticker import FuncFormatter
 
 
 class AnOutcome:
@@ -449,6 +450,7 @@ class AllStates:
                 county_qaly_loss_data["FIPS"].append(county.fips)
                 county_qaly_loss_data["QALY Loss per 100K"].append(qaly_loss_per_100k)
 
+
         # Create a DataFrame from the county data
         county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
 
@@ -462,6 +464,7 @@ class AllStates:
 
         # Remove counties where there is no data
         merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss per 100K"])
+        merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss"])
 
         # Remove Alaska, HI, Puerto Rico (to be plotted later)
         stateToRemove = ["02", "15", "72"]
@@ -916,7 +919,8 @@ class ProbabilisticAllStates:
         county_qaly_loss_data = {
             "COUNTY": [],
             "FIPS": [],
-            "QALY Loss per 100K": []
+            "QALY Loss per 100K": [],
+            "QALY Loss": []
         }
 
         for state in self.allStates.states.values():
@@ -929,6 +933,7 @@ class ProbabilisticAllStates:
                 county_qaly_loss_data["COUNTY"].append(county.name)
                 county_qaly_loss_data["FIPS"].append(county.fips)
                 county_qaly_loss_data["QALY Loss per 100K"].append(qaly_loss_per_100k)
+                county_qaly_loss_data["QALY Loss"].append(qaly_loss)
 
         # Create a DataFrame from the county data
         county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
@@ -946,7 +951,8 @@ class ProbabilisticAllStates:
         merged_geo_data = geoData.merge(county_qaly_loss_df, left_on='FIPS', right_on='FIPS', how='left')
 
         # Remove counties where there is no data
-        merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss per 100K"])
+        merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss"])
+
 
         # Remove Alaska, HI, Puerto Rico (to be plotted later)
         stateToRemove = ["2", "15", "72"]
@@ -956,12 +962,80 @@ class ProbabilisticAllStates:
         merged_geo_data_mainland = merged_geo_data_mainland.explode()
 
         # Plot the map
-        fig, ax = plt.subplots(1, 1, figsize=(18, 14))
+        # Plot the map
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 5),subplot_kw={'aspect': 'equal'})
 
-        ax.axis = ('off')
+        ax1.axis('off')
+        ax1.set_title('AbsoluteQALY Loss', fontsize=15)
 
+        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=10)
 
-        ax.set_title('Cumulative County QALY Loss per 100,000 Population', fontsize=36)
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="QALY Loss",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwds=dict(fmt='{:.0f}', interval=True),
+            legend_kwargs={'title': ' Absolute QALY Loss', 'bbox_to_anchor': (1, 0.5)},
+            edgecolor="black",
+            ax=ax1
+        )
+
+        #ax1.legend_.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
+
+        plt.tight_layout()
+
+        ## Alaska ##
+        stateToInclude= ["2"]
+        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
+        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
+        akax1 = fig.add_axes([0.15, -0.18, 0.3, 0.5])
+        akax1.axis('off')
+        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
+        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["QALY Loss"], k=2)
+
+        gplt.choropleth(
+            merged_geo_data_AK_exploded,
+            hue="QALY Loss",
+            linewidth=0.1,
+            scheme=scheme_AK,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=akax1,
+            extent=(-180, -90, 50, 75)
+        )
+
+        akax1.get_legend().remove()
+
+        ## Hawai'i ##
+        # fig_HI, ax_HI = plt.subplots(1, 1, figsize=(16, 12))
+        stateToInclude_HI = ["15"]
+        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
+        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
+
+        hiax1 = fig.add_axes([.28, 0.10, 0.1, 0.15])
+        hiax1.axis('off')
+        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
+        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["QALY Loss"], k=2)
+
+        gplt.choropleth(
+            merged_geo_data_HI_exploded,
+            hue="QALY Loss",
+            linewidth=0.1,
+            scheme=scheme_HI,
+            cmap="viridis",
+            legend=True,
+            edgecolor="black",
+            ax=hiax1,
+        )
+
+        hiax1.get_legend().remove()
+
+        ax2.axis('off')
+        ax2.set_title('QALY Loss per 100K', fontsize=15)
 
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=10)
 
@@ -972,11 +1046,13 @@ class ProbabilisticAllStates:
             scheme=scheme,
             cmap="viridis",
             legend=True,
-            legend_kwargs={'title': 'Cumulative QALY Loss per 100K', 'bbox_to_anchor': (1, 0.5)},
+            legend_labels=dict(fmt='{:.0f}', interval=True),
+            legend_kwargs={'title': 'QALY Loss per 100K', 'bbox_to_anchor': (1, 0.5)},
             edgecolor="black",
-            ax=ax
+            ax=ax2
         )
 
+        #ax2.legend_.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
 
         plt.tight_layout()
 
@@ -984,8 +1060,8 @@ class ProbabilisticAllStates:
         stateToInclude = ["2"]
         merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
         merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
-        akax = fig.add_axes([0.1, 0.1, 0.2, 0.3])
-        akax.axis('off')
+        akax2 = fig.add_axes([0.15, -0.18, 1.0, 0.5])
+        akax2.axis('off')
         polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
         scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["QALY Loss per 100K"], k=2)
 
@@ -997,11 +1073,11 @@ class ProbabilisticAllStates:
             cmap="viridis",
             legend=True,
             edgecolor="black",
-            ax=akax,
+            ax=akax2,
             extent=(-180, -90, 50, 75)
         )
 
-        akax.get_legend().remove()
+        akax2.get_legend().remove()
 
         ## Hawai'i ##
         # fig_HI, ax_HI = plt.subplots(1, 1, figsize=(16, 12))
@@ -1009,9 +1085,9 @@ class ProbabilisticAllStates:
         merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
         merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
 
-        hiax = fig.add_axes([.28, 0.20, 0.1, 0.1])
-        hiax.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
+        hiax2 = fig.add_axes([.28, 0.10, 0.8, 0.15])
+        hiax2.axis('off')
+        hipolygon = Polygon([(-170, 0), (-170, 72), (-140, 72), (-120, 0)])
         scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["QALY Loss per 100K"], k=2)
 
         gplt.choropleth(
@@ -1022,10 +1098,10 @@ class ProbabilisticAllStates:
             cmap="viridis",
             legend=True,
             edgecolor="black",
-            ax=hiax,
+            ax=hiax2,
         )
 
-        hiax.get_legend().remove()
+        hiax2.get_legend().remove()
 
         output_figure(fig, filename=ROOT_DIR + '/figs/map_avg_county_qaly_loss_all_simulations.png')
 
@@ -1238,8 +1314,6 @@ class ProbabilisticAllStates:
         """
         Plots a map of the QALY loss for each county, considering cases, deaths, and hospitalizations.
         """
-
-        # TODO: is it possible to format the legends so that the numbers in the legend are whole numbers?
 
         county_qaly_loss_data = {
             "COUNTY": [],

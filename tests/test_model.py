@@ -5,8 +5,10 @@ probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=10)
 
 
-probabilisticModel.get_state_vax_index()
-probabilisticModel.plot_prevax_postvax_qaly_loss_by_state()
+#probabilisticModel.get_state_vax_index()
+#probabilisticModel.plot_prevax_postvax_qaly_loss_by_state()
+
+probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
 '''
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
 probabilisticModel.plot_qaly_loss_from_deaths_by_age()
