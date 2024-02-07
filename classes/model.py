@@ -937,9 +937,26 @@ class ProbabilisticAllStates:
 
         # Create a DataFrame from the county data
         county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
-        print(county_qaly_loss_df)
-        print("min value of QALY loss:", county_qaly_loss_df["QALY Loss per 100K"].min())
-        print("max value of QALY loss:", county_qaly_loss_df["QALY Loss per 100K"].max())
+        # Print top 10 highest QALY loss
+        top_10_highest_loss = county_qaly_loss_df.nlargest(10, "QALY Loss")
+        print("Top 10 Counties with Highest QALY Loss:")
+        print(top_10_highest_loss[["COUNTY", "QALY Loss"]])
+
+        # Print top 10 highest QALY loss per 100K
+        top_10_highest_loss_per_100k = county_qaly_loss_df.nlargest(10, "QALY Loss per 100K")
+        print("\nTop 10 Counties with Highest QALY Loss per 100K:")
+        print(top_10_highest_loss_per_100k[["COUNTY", "QALY Loss per 100K"]])
+
+        # Print top 10 lowest QALY loss
+        top_10_lowest_loss = county_qaly_loss_df.nsmallest(10, "QALY Loss")
+        print("\nTop 10 Counties with Lowest QALY Loss:")
+        print(top_10_lowest_loss[["COUNTY", "QALY Loss"]])
+
+        # Print top 10 lowest QALY loss per 100K
+        top_10_lowest_loss_per_100k = county_qaly_loss_df.nsmallest(10, "QALY Loss per 100K")
+        print("\nTop 10 Counties with Lowest QALY Loss per 100K:")
+        print(top_10_lowest_loss_per_100k[["COUNTY", "QALY Loss per 100K"]])
+
         county_qaly_loss_df.to_csv(ROOT_DIR + '/csv_files/county_qaly_loss.csv', index=False)
 
         # Merge the county QALY loss data with the geometry data
@@ -966,7 +983,7 @@ class ProbabilisticAllStates:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 5),subplot_kw={'aspect': 'equal'})
 
         ax1.axis('off')
-        ax1.set_title('AbsoluteQALY Loss', fontsize=15)
+        ax1.set_title('Absolute QALY Loss', fontsize=15)
 
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=10)
 
@@ -977,8 +994,8 @@ class ProbabilisticAllStates:
             scheme=scheme,
             cmap="viridis",
             legend=True,
-            legend_kwds=dict(fmt='{:.0f}', interval=True),
-            legend_kwargs={'title': ' Absolute QALY Loss', 'bbox_to_anchor': (1, 0.5)},
+            #legend_kwds=dict(fmt='{:.0f}', interval=True),
+            legend_kwargs={'title': 'Absolute QALY Loss', 'bbox_to_anchor': (1, 0.5)},
             edgecolor="black",
             ax=ax1
         )
@@ -991,7 +1008,7 @@ class ProbabilisticAllStates:
         stateToInclude= ["2"]
         merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
         merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
-        akax1 = fig.add_axes([0.15, -0.18, 0.3, 0.5])
+        akax1 = fig.add_axes([0.15, -0.2, 0.3, 0.5])
         akax1.axis('off')
         polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
         scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["QALY Loss"], k=2)
@@ -1016,7 +1033,7 @@ class ProbabilisticAllStates:
         merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
         merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
 
-        hiax1 = fig.add_axes([.28, 0.10, 0.1, 0.15])
+        hiax1 = fig.add_axes([.28, 0.20, 0.1, 0.15])
         hiax1.axis('off')
         hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
         scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["QALY Loss"], k=2)
@@ -1046,7 +1063,7 @@ class ProbabilisticAllStates:
             scheme=scheme,
             cmap="viridis",
             legend=True,
-            legend_labels=dict(fmt='{:.0f}', interval=True),
+            #legend_labels=dict(fmt='{:.0f}', interval=True),
             legend_kwargs={'title': 'QALY Loss per 100K', 'bbox_to_anchor': (1, 0.5)},
             edgecolor="black",
             ax=ax2
@@ -1060,7 +1077,7 @@ class ProbabilisticAllStates:
         stateToInclude = ["2"]
         merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
         merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
-        akax2 = fig.add_axes([0.15, -0.18, 1.0, 0.5])
+        akax2 = fig.add_axes([0.15, -0.2, 1.0, 0.5])
         akax2.axis('off')
         polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
         scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["QALY Loss per 100K"], k=2)
@@ -1085,7 +1102,7 @@ class ProbabilisticAllStates:
         merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
         merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
 
-        hiax2 = fig.add_axes([.28, 0.10, 0.8, 0.15])
+        hiax2 = fig.add_axes([.28, 0.20, 0.7, 0.15])
         hiax2.axis('off')
         hipolygon = Polygon([(-170, 0), (-170, 72), (-140, 72), (-120, 0)])
         scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["QALY Loss per 100K"], k=2)
