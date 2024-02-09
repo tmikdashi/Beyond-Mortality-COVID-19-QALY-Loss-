@@ -25,7 +25,7 @@ class ParameterGenerator:
         self.parameters = dict()
 
         # parameters to calculate the QALY loss due to a case
-        self.parameters['case_prob_symp'] = Beta(mean=0.62, st_dev=0.07)  # SD based on 95% CI-- may need to be revised
+        self.parameters['case_prob_symp'] = Beta(mean=0.692, st_dev=0.115)  # SD based on 95% CI-- may need to be revised
         self.parameters['case_weight_symp'] = Beta(mean=0.43, st_dev=0.015)
         self.parameters['case_dur_symp'] = Gamma(mean=10, st_dev=1) # Based on CDC isolation guidelines, can be replaced by exp decay function
 
