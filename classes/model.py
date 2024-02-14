@@ -1515,44 +1515,101 @@ class ProbabilisticAllStates:
 
         return mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths
 
-
     def plot_map_of_outcomes_by_county_per_100K(self):
         """
-        Generates vertically-aligned sub-plotted maps of the number of cases, hospital admissions, and deaths per 100,000 population for each county.
+        Generates sub-plotted maps of the number of cases, hospital admissions, and deaths per 100,000 population for each county.
         """
 
+        # Load HSA data
+        hsa_data = read_csv_rows(file_name='C:/Users/fm478/Pictures/Health.Service.Areas.csv',
+                                 if_ignore_first_row=True)
+
+        # Create a dictionary for FIPS to HSA mapping
+        fips_to_hsa_mapping = {str(entry[3]).lstrip('0'): entry[0] for entry in hsa_data}
+
+
+        # Read the aggregated_totals.csv file
+        aggregated_totals_df = pd.read_csv(ROOT_DIR + '/_playground/support/csv_files/aggregated_totals.csv')
+
+        # Create a mapping between HSA Number and total cases
+        hsa_totals_mapping = {
+            int(row['HSA Number']): {
+                'Total Cases': row['Total Cases'],
+                'Total Hospitalizations': row['Total Hospitalizations'],
+                'Total Deaths': row['Total Deaths'],
+                'Population': row['Population']
+            }
+            for _, row in aggregated_totals_df.iterrows()
+        }
+
+        print(hsa_totals_mapping)
+
+        # Initialize county_outcomes_data
         county_outcomes_data = {
             "COUNTY": [],
             "FIPS": [],
             "Cases per 100K": [],
             "Hosps per 100K": [],
             "Deaths per 100K": [],
-            "Population": [],
-            "Number of Hosps": []
+            "HSA Number": [],
+            "HSA Total Cases per 100K": [],
+            "HSA Total Hospitalizations per 100K": [],
+            "HSA Total Deaths per 100K": []
         }
 
+        # Iterate over all states and counties
         for state in self.allStates.states.values():
             for county in state.counties.values():
-                # Calculate the number of outcomes per 100,000 population
-                cases_per_100k = (county.pandemicOutcomes.cases.totalObs / county.population) * 100000
-                hosps_per_100k = (county.pandemicOutcomes.hosps.totalObs / county.population) * 100000
-                deaths_per_100k = (county.pandemicOutcomes.deaths.totalObs / county.population) * 100000
-                # Append county data to the list
-                county_outcomes_data["COUNTY"].append(county.name)
-                county_outcomes_data["FIPS"].append(county.fips)
-                county_outcomes_data["Cases per 100K"].append(cases_per_100k)
-                county_outcomes_data["Hosps per 100K"].append(hosps_per_100k)
-                county_outcomes_data["Deaths per 100K"].append(deaths_per_100k)
-                county_outcomes_data["Population"].append(county.population)
-                county_outcomes_data['Number of Hosps'].append(county.pandemicOutcomes.hosps.totalObs)
+                fips_code = county.fips
+                hsa_number = fips_to_hsa_mapping.get(fips_code, None)
 
+                if hsa_number is not None:
+                    hsa_number = int(hsa_number)
+                else:
+                    hsa_number = None
+
+                # Get HSA totals from the mapping
+                if hsa_number is not None:
+                    try:
+                        hsa_totals = hsa_totals_mapping[hsa_number]
+                    except KeyError:
+                        hsa_totals = {'Total Cases': 0, 'Total Hospitalizations': 0, 'Total Deaths': 0, 'Population': 1}
+                        print(f"KeyError: HSA Number {hsa_number} not found in hsa_totals_mapping")
+
+                    # Check if HSA total deaths, cases, and hospitalizations per 100k are greater than 0
+                    if (hsa_totals['Total Deaths'] > 0 and
+                            hsa_totals['Total Cases'] > 0 and
+                            hsa_totals['Total Hospitalizations'] > 0):
+                        # Append county data to the list
+                        county_outcomes_data["HSA Number"].append(hsa_number)
+                        county_outcomes_data["COUNTY"].append(county.name)
+                        county_outcomes_data["FIPS"].append(fips_code)
+                        county_outcomes_data["Cases per 100K"].append(
+                            (county.pandemicOutcomes.cases.totalObs / county.population) * 100000)
+                        county_outcomes_data["Hosps per 100K"].append(
+                            (county.pandemicOutcomes.hosps.totalObs / county.population) * 100000)
+                        county_outcomes_data["Deaths per 100K"].append(
+                            (county.pandemicOutcomes.deaths.totalObs / county.population) * 100000)
+
+                        # Calculate HSA total cases, hospitalizations, deaths, and population per 100K
+                        hsa_total_cases_per_100K = (hsa_totals['Total Cases'] / float(
+                            hsa_totals['Population'])) * 100000
+                        hsa_total_hospitalizations_per_100K = (hsa_totals['Total Hospitalizations'] / float(
+                            hsa_totals['Population'])) * 100000
+                        hsa_total_deaths_per_100K = (hsa_totals['Total Deaths'] / float(
+                            hsa_totals['Population'])) * 100000
+
+                        # Append HSA data to the list
+                        county_outcomes_data["HSA Total Cases per 100K"].append(hsa_total_cases_per_100K)
+                        county_outcomes_data["HSA Total Hospitalizations per 100K"].append(
+                            hsa_total_hospitalizations_per_100K)
+                        county_outcomes_data["HSA Total Deaths per 100K"].append(hsa_total_deaths_per_100K)
+                else:
+                    # Handle the case when hsa_number is None
+                    continue  # Skip this county if HSA number is None
 
         # Create a DataFrame from the county data
         county_outcomes_df = pd.DataFrame(county_outcomes_data)
-        # Print top 10 highest QALY loss per 100K
-        top_10_highest_loss_per_100k = county_outcomes_df.nlargest(30, "Hosps per 100K")
-        print("\nTop 10 Counties with Highest Hosps:")
-        print(top_10_highest_loss_per_100k[["COUNTY", "Hosps per 100K", "Population", "Number of Hosps"]])
 
         county_outcomes_df.to_csv(ROOT_DIR + '/csv_files/county_outcomes.csv', index=False)
 
@@ -1565,22 +1622,41 @@ class ProbabilisticAllStates:
         merged_geo_data = geoData.merge(county_outcomes_df, left_on='FIPS', right_on='FIPS', how='left')
 
         # Remove counties where there is no data
-        merged_geo_data = merged_geo_data.dropna(subset=["Deaths per 100K"])
+        merged_geo_data = merged_geo_data.dropna(subset=["HSA Total Deaths per 100K"])
 
         # Remove Alaska, HI, Puerto Rico (to be plotted later)
-        stateToRemove = ["2", "15"]
+        stateToRemove = ["2", "15", "72"]
         merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
 
         # Explode the MultiPolygon geometries into individual polygons
         merged_geo_data_mainland = merged_geo_data_mainland.explode()
 
         # Plot the map
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12), subplot_kw={'aspect': 'equal'})
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5), subplot_kw={'aspect': 'equal'})
+
+        ax3.axis('off')
+        ax3.set_title('HSA Total Deaths per 100K', fontsize=15)
+
+        scheme = mc.Quantiles(merged_geo_data_mainland["HSA Total Deaths per 100K"], k=10)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="HSA Total Deaths per 100K",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'HSA Total Deaths per 100K', 'fontsize': 8, 'bbox_to_anchor': (0.95, 0.5),
+                           'loc': 'center left'},
+            legend_labels=None,
+            edgecolor="black",
+            ax=ax3
+        )
 
         ax1.axis('off')
-        ax1.set_title('Cases per 100,000 Population', fontsize=15)
+        ax1.set_title("HSA Total Cases per 100K", fontsize=15)
 
-        scheme_cases = mc.Quantiles(merged_geo_data_mainland["Cases per 100K"], k=10)
+        scheme_cases = mc.Quantiles(merged_geo_data_mainland["HSA Total Cases per 100K"], k=10)
 
         gplt.choropleth(
             merged_geo_data_mainland,
@@ -1589,199 +1665,38 @@ class ProbabilisticAllStates:
             scheme=scheme_cases,
             cmap="viridis",
             legend=True,
-            legend_values=None,
-            legend_kwargs={'title': 'Cases per 100K', 'fontsize': 10,  'bbox_to_anchor': (0.95, 0.5),
+            legend_kwargs={'title': "HSA Total Cases per 100K", 'fontsize': 8, 'bbox_to_anchor': (0.95, 0.5),
                            'loc': 'center left'},
             legend_labels=None,
             edgecolor="black",
             ax=ax1
         )
 
-        stateToInclude = ["2"]
-        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
-        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
-        akax1 =  fig.add_axes([0.15, 0.39, 0.3, 0.5])
-        akax1.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["Cases per 100K"], k=2)
-
-        gplt.choropleth(
-            merged_geo_data_AK_exploded,
-            hue="Cases per 100K",
-            linewidth=0.1,
-            scheme=scheme_AK,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=akax1,
-            extent=(-180, -90, 50, 75)
-        )
-
-        akax1.get_legend().remove()
-
-        ## Hawai'i ##
-        stateToInclude_HI = ["15"]
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
-        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
-        hiax1 = fig.add_axes([0.2, 0.65, 0.1, 0.15])
-        hiax1.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["Cases per 100K"], k=2)
-
-        gplt.choropleth(
-            merged_geo_data_HI_exploded,
-            hue="Cases per 100K",
-            linewidth=0.1,
-            scheme=scheme_HI,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=hiax1,
-        )
-
-        hiax1.get_legend().remove()
-
         ax2.axis('off')
-        ax2.set_title('Hospital Admissions per 100,000 Population', fontsize=15)
+        ax2.set_title("HSA Total Hospitalizations per 100K", fontsize=15)
 
-        scheme_hosps = mc.Quantiles(merged_geo_data_mainland["Hosps per 100K"], k=10)
+        scheme_hosps = mc.Quantiles(merged_geo_data_mainland["HSA Total Hospitalizations per 100K"], k=10)
 
         gplt.choropleth(
             merged_geo_data_mainland,
-            hue="Hosps per 100K",
+            hue="HSA Total Hospitalizations per 100K",
             linewidth=0.1,
             scheme=scheme_hosps,
             cmap="viridis",
             legend=True,
-            legend_values=None,
-            legend_kwargs={'title': 'Hospital Admissions per 100K', 'fontsize': 10,  'bbox_to_anchor': (0.95, 0.5),
+            legend_kwargs={'title': '"HSA Total Hospitalizations per 100K"', 'fontsize': 8, 'bbox_to_anchor': (0.95, 0.5),
                            'loc': 'center left'},
             legend_labels=None,
             edgecolor="black",
             ax=ax2
         )
 
-
-        stateToInclude = ["2"]
-        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
-        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
-        akax2 =  fig.add_axes([0.15, 0.06, 0.3, 0.5])
-        akax1.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["Hosps per 100K"], k=2)
-
-        gplt.choropleth(
-            merged_geo_data_AK_exploded,
-            hue="Hosps per 100K",
-            linewidth=0.1,
-            scheme=scheme_AK,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=akax2,
-            extent=(-180, -90, 50, 75)
-        )
-
-        akax2.get_legend().remove()
-
-        ## Hawai'i ##
-        stateToInclude_HI = ["15"]
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
-        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
-        hiax2 = fig.add_axes([0.2, 0.32, 0.1, 0.15])
-        hiax2.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["Hosps per 100K"], k=2)
-
-        gplt.choropleth(
-            merged_geo_data_HI_exploded,
-            hue="Hosps per 100K",
-            linewidth=0.1,
-            scheme=scheme_HI,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=hiax2,
-        )
-
-        hiax2.get_legend().remove()
-
-        ax3.axis('off')
-        ax3.set_title('Deaths per 100,000 Population', fontsize=15)
-
-        scheme = mc.Quantiles(merged_geo_data_mainland["Deaths per 100K"], k=10)
-
-        gplt.choropleth(
-            merged_geo_data_mainland,
-            hue="Deaths per 100K",
-            linewidth=0.1,
-            scheme=scheme,
-            cmap="viridis",
-            legend=True,
-            legend_values=None,
-            legend_kwargs={'title': 'Deaths per 100K', 'fontsize': 10,  'bbox_to_anchor': (0.95, 0.5),
-                           'loc': 'center left'},
-            legend_labels=None,
-            edgecolor="black",
-            ax=ax3
-        )
-
-
-        stateToInclude = ["2"]
-        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
-        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
-        akax3 = fig.add_axes([0.15, -0.25, 0.3, 0.5])
-
-        akax3.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["Cases per 100K"], k=2)
-
-        gplt.choropleth(
-            merged_geo_data_AK_exploded,
-            hue="Cases per 100K",
-            linewidth=0.1,
-            scheme=scheme_AK,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=akax3,
-            extent=(-180, -90, 50, 75)
-        )
-
-        akax3.get_legend().remove()
-
-        ## Hawai'i ##
-        stateToInclude_HI = ["15"]
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
-        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
-        hiax3 = fig.add_axes([0.2, 0.01, 0.1, 0.15])
-        hiax1.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["Cases per 100K"], k=2)
-
-        gplt.choropleth(
-            merged_geo_data_HI_exploded,
-            hue="Cases per 100K",
-            linewidth=0.1,
-            scheme=scheme_HI,
-            cmap="viridis",
-            legend=True,
-            edgecolor="black",
-            ax=hiax3,
-        )
-
-        hiax3.get_legend().remove()
-
-        plt.subplots_adjust(hspace=0.01)
-
         plt.tight_layout()
 
         output_figure(fig, filename=ROOT_DIR + '/figs/map_county_outcomes_per_100K.png')
 
         return fig
+
 
     def plot_weekly_outcomes(self):
         """

@@ -8,7 +8,7 @@ probabilisticModel.simulate(n=10)
 #probabilisticModel.get_state_vax_index()
 #probabilisticModel.plot_prevax_postvax_qaly_loss_by_state()
 
-probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
+#probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
 probabilisticModel.plot_map_of_outcomes_by_county_per_100K()
 '''
 probabilisticModel.print_overall_outcomes_and_qaly_loss()

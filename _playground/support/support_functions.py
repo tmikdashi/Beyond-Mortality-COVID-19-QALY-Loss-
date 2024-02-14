@@ -139,6 +139,66 @@ def generate_hsa_data_csv(data_type='cases'):
 
 
 
+
+
+from collections import defaultdict
+import numpy as np
+from datetime import datetime
+
+
+def generate_hsa_outcomes_total_csv():
+    def calculate_hsa_totals(data_rows):
+        total_values = defaultdict(float)
+
+        for row in data_rows:
+            hsa_number = row[0]
+            hsa_name = row[1]
+            population = row[2]
+
+            # Sum values starting from the fourth column (index 3)
+            data_values = [float(value) if value != 'NA' else 0.0 for value in row[3:]]
+            total_values[(hsa_number, hsa_name, population)] += sum(data_values)
+
+        return total_values
+
+    # Specify the file paths for each outcome
+    cases_file_path = ROOT_DIR+ '/csv_files/hsa_cases.csv'
+    hospitalizations_file_path = ROOT_DIR+'/csv_files/hsa_hospitalizations.csv'
+    deaths_file_path = ROOT_DIR+'/csv_files/hsa_deaths.csv'
+
+    # Read the data
+    cases_rows = read_csv_rows(file_name=cases_file_path, if_ignore_first_row=True)
+    hospitalizations_rows = read_csv_rows(file_name=hospitalizations_file_path, if_ignore_first_row=True)
+    deaths_rows = read_csv_rows(file_name=deaths_file_path, if_ignore_first_row=True)
+
+    # Calculate total values for cases, deaths, and hospitalizations
+    total_cases = calculate_hsa_totals(cases_rows)
+    total_deaths = calculate_hsa_totals(deaths_rows)
+    total_hospitalizations = calculate_hsa_totals(hospitalizations_rows)
+
+    # Combine the totals into a new list
+    aggregated_data = []
+    for key in total_cases.keys():
+        hsa_number, hsa_name, population = key
+        total_cases_value = total_cases[key]
+        total_deaths_value = total_deaths[key]
+        total_hospitalizations_value = total_hospitalizations[key]
+
+        aggregated_data.append(
+            [hsa_number, hsa_name, population, total_cases_value, total_deaths_value, total_hospitalizations_value])
+
+    # Generate the output file name
+    output_file = '/csv_files/aggregated_totals.csv'
+
+    # Create the header row
+    header_row = ['HSA Number', 'HSA Name', 'Population', 'Total Cases', 'Total Deaths', 'Total Hospitalizations']
+
+    # Write into a CSV file using the write_csv function
+    write_csv(rows=[header_row] + aggregated_data, file_name=output_file)
+
+
+generate_hsa_outcomes_total_csv()
+
 def generate_deaths_by_age_group():
     """
     This function generates a csv containing information on the number of deaths associated with each age group.
