@@ -17,6 +17,7 @@ from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
 from matplotlib.ticker import ScalarFormatter
 from definitions import ROOT_DIR
+import seaborn as sns
 from datetime import datetime
 from matplotlib.ticker import FuncFormatter
 from matplotlib.ticker import StrMethodFormatter
@@ -1701,6 +1702,7 @@ class ProbabilisticAllStates:
     def plot_map_of_hsa_outcomes_by_county_per_100K_alt(self):
         """
         Generates sub-plotted maps of the number of cases, hospital admissions, and deaths per 100,000 population for each county.
+        Values are computed per HSA (aggregate of county values for all counties within an HSA), but plotted by county.
         """
 
         # Load HSA data
@@ -2159,6 +2161,7 @@ class ProbabilisticAllStates:
         output_figure(fig, filename)
 
 
+
     def subplot_weekly_deaths_by_state_100K_pop(self):
         """
         :return: Plot composed of 52 state subplots of weekly QALY loss per 100K population
@@ -2407,22 +2410,109 @@ class ProbabilisticAllStates:
         return fig
 
 
+    def plot_date_70pct_vaccinated_by_state(self):
+        """
+        Generate a bar graph of the date when 70% vaccinated for each state, with colors based on political affiliation.
+        """
+        vax_df = pd.read_csv(ROOT_DIR + '/csv_files/vaccinated_percentage_by_state.csv')
+        vax_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(vax_df['Date_Dose1_Over_70Pct_Vaccinated'],
+                                                                    errors='coerce')
+
+        # Filter locations based on whether they appear in the 'states' data
+        valid_locations = [state.name for state in self.allStates.states.values()] + ['US']
+
+        # Create a dictionary mapping states to political affiliations
+        state_to_affiliation = {
+            'AZ': 'Republican', 'CA': 'Democratic', 'CO': 'Democratic', 'CT': 'Democratic', 'DE': 'Democratic',
+            'HI': 'Democratic', 'IL': 'Democratic', 'KS': 'Republican', 'KY': 'Republican', 'ME': 'Democratic',
+            'MD': 'Democratic', 'MA': 'Democratic', 'MI': 'Democratic', 'MN': 'Democratic', 'NJ': 'Democratic',
+            'NM': 'Democratic', 'NY': 'Democratic', 'NC': 'Republican', 'OR': 'Democratic', 'PA': 'Democratic',
+            'RI': 'Democratic', 'WA': 'Democratic', 'WI': 'Democratic', 'US': 'Unknown'
+            # Set US to 'Unknown' or any other value
+            # Add more states as needed
+        }
+
+        # Set up the figure and axis
+        fig, ax = plt.subplots(figsize=(12, 8))
+
+        # Set the x-axis limits to July 2020 - November 2022 with weekly frequency
+        date_range = pd.date_range(start='2021-07-01', end='2023-04-30', freq='W')
+        ax.set_xlim(date_range.min(), date_range.max())
+
+        # Create a DataFrame for states without a date
+        no_date_df = vax_df[vax_df['Date_Dose1_Over_70Pct_Vaccinated'].isna()]
+
+        # Sort DataFrame by date (US at the top, earlier dates next, then no dates)
+        sorted_df = vax_df.sort_values(by=['Location', 'Date_Dose1_Over_70Pct_Vaccinated'], ascending=[False, True])
+
+        # Keep track of labeled states to avoid overlapping labels
+        labeled_states = set()
+
+        # Iterate through each state with a date
+        for _, row in sorted_df.dropna(subset=['Date_Dose1_Over_70Pct_Vaccinated']).iterrows():
+            state = row['Location']
+
+            # Skip if the state is not in the 'states' data or if the date is before 2021
+            if state not in valid_locations:
+                continue
+
+            date_dose1_over_70 = row['Date_Dose1_Over_70Pct_Vaccinated']
+
+            # Determine political affiliation based on the mapping
+            political_affiliation = state_to_affiliation.get(state, 'Unknown')
+
+            # Plot a filled bar with the color of the political affiliation
+            color = 'black' if pd.isna(
+                date_dose1_over_70) else 'blue' if political_affiliation == 'Democratic' else 'red'
+            ax.barh(state, pd.Timestamp('2022-11-30') if pd.isna(date_dose1_over_70) else date_dose1_over_70,
+                    color=color, edgecolor='black', linewidth=1)
+
+        # Iterate through each state without a date (hollow bars)
+        for _, row in no_date_df.iterrows():
+            state = row['Location']
+
+            # Skip if the state is not in the 'states' data
+            if state not in valid_locations:
+                continue
+
+            # Plot a hollow bar with black lining
+            ax.barh(state, date_range.max(), color='none', edgecolor='black', linewidth=1)
+
+        # Set the labels and title
+        ax.set_xlabel('Date', fontsize=14)
+        ax.set_ylabel('State', fontsize=14)
+        ax.set_title('Date When 70% of Population Vaccinated by at least 1 Dose by State and Political Affiliation')
+
+        # Hide y-axis labels on the right side
+        ax.tick_params(axis='y', right=False)
+
+        # Rotate y-axis labels for better visibility
+        plt.yticks(rotation=0)
+
+        # Set the colors for ticks
+        y_tick_colors = ['blue' if state_to_affiliation.get(state, 'Unknown') == 'Democratic' else 'red' for state in
+                         valid_locations]
+        for tick, color in zip(ax.yaxis.get_major_ticks(), y_tick_colors):
+            tick.label1.set_color(color)
+
+        plt.tight_layout()
+        output_figure(fig, filename=ROOT_DIR + '/figs/bar_plot_date_70pct_vaccinated_by_state.png')
+
     def get_state_vax_index(self):
-        # Assuming 'dates' is a list of weekly dates and 'result_df' is the DataFrame containing vaccination data
-        # Replace 'your_csv_path' with the actual path to your CSV file
-        result_df = pd.read_csv(ROOT_DIR + '/csv_files/vaccinated_percentage_by_state.csv')
+
+        vax_df = pd.read_csv(ROOT_DIR + '/csv_files/vaccinated_percentage_by_state.csv')
         dates = self.allStates.dates
         dates = [pd.to_datetime(date) for date in dates]
 
         # Convert 'Date_Dose1_Over_70Pct_Vaccinated' to datetime
-        result_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(result_df['Date_Dose1_Over_70Pct_Vaccinated'],
+        vax_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(vax_df['Date_Dose1_Over_70Pct_Vaccinated'],
                                                                        errors='coerce')
 
         # Initialize a new column to store the index of the closest date
-        result_df['Index_Closest_Date'] = np.nan
+        vax_df['Index_Closest_Date'] = np.nan
 
         # Iterate through each state
-        for index, row in result_df.iterrows():
+        for index, row in vax_df.iterrows():
             # Get the state and the date of dose1 over 70%
             state = row['Location']
             date_dose1_over_70 = row['Date_Dose1_Over_70Pct_Vaccinated']
@@ -2434,10 +2524,10 @@ class ProbabilisticAllStates:
             index_closest_date = dates.index(closest_date)
 
             # Update the 'Index_Closest_Date' column
-            result_df.at[index, 'Index_Closest_Date'] = index_closest_date
+            vax_df.at[index, 'Index_Closest_Date'] = index_closest_date
 
         # Display the updated DataFrame
-        print(result_df)
+        print(vax_df)
 
         # Iterate through each state
         states_list = list(self.allStates.states.values())
@@ -2445,7 +2535,7 @@ class ProbabilisticAllStates:
         # Iterate through each state
         for state_obj in states_list:
             # Get the index from the result_df
-            index_closest_date = result_df[result_df['Location'] == state_obj.name]['Index_Closest_Date'].values[0]
+            index_closest_date = vax_df[vax_df['Location'] == state_obj.name]['Index_Closest_Date'].values[0]
             print(state_obj.name)
             print('Index Closest Date', index_closest_date)
 
@@ -2479,19 +2569,19 @@ class ProbabilisticAllStates:
         """
         Generate a bar graph of the total QALY loss per 100,000 pop for each state, with pre-vax and post-vax contributions.
         """
-        result_df = pd.read_csv(ROOT_DIR + '/csv_files/vaccinated_percentage_by_state.csv')
+        vax_df = pd.read_csv(ROOT_DIR + '/csv_files/vaccinated_percentage_by_state.csv')
         dates = self.allStates.dates
         dates = [pd.to_datetime(date) for date in dates]
 
         # Convert 'Date_Dose1_Over_70Pct_Vaccinated' to datetime
-        result_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(result_df['Date_Dose1_Over_70Pct_Vaccinated'],
+        vax_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(result_df['Date_Dose1_Over_70Pct_Vaccinated'],
                                                                        errors='coerce')
 
         # Initialize a new column to store the index of the closest date
-        result_df['Index_Closest_Date'] = np.nan
+        vax_df['Index_Closest_Date'] = np.nan
 
         # Iterate through each state
-        for index, row in result_df.iterrows():
+        for index, row in vax_df.iterrows():
             # Get the state and the date of dose1 over 70%
             state = row['Location']
             date_dose1_over_70 = row['Date_Dose1_Over_70Pct_Vaccinated']
@@ -2503,10 +2593,10 @@ class ProbabilisticAllStates:
             index_closest_date = dates.index(closest_date)
 
             # Update the 'Index_Closest_Date' column
-            result_df.at[index, 'Index_Closest_Date'] = index_closest_date
+            vax_df.at[index, 'Index_Closest_Date'] = index_closest_date
 
         # Display the updated DataFrame
-        print(result_df)
+        print(vax_df)
 
         # Set up the figure and axis
         fig, ax = plt.subplots(figsize=(8, 10))
@@ -2528,13 +2618,13 @@ class ProbabilisticAllStates:
         # Iterate through each state
         for i, state_obj in enumerate(sorted_states):
             # Get the index from the result_df
-            index_closest_date = result_df[result_df['Location'] == state_obj.name]['Index_Closest_Date'].values[0]
+            index_closest_date = vax_df[vax_df['Location'] == state_obj.name]['Index_Closest_Date'].values[0]
 
             # Get the pre-vax and post-vax values
             prevax_value = \
-            result_df[result_df['Location'] == state_obj.name]['Prevax_Total_QALY_Loss_per_100000'].values[0]
+            vax_df[vax_df['Location'] == state_obj.name]['Prevax_Total_QALY_Loss_per_100000'].values[0]
             postvax_value = \
-            result_df[result_df['Location'] == state_obj.name]['Postvax_Total_QALY_Loss_per_100000'].values[0]
+            vax_df[vax_df['Location'] == state_obj.name]['Postvax_Total_QALY_Loss_per_100000'].values[0]
 
             # Plotting the scatter points for pre-vax and post-vax
             ax.scatter([prevax_value], [postvax_value], marker='o', color='blue', label=state_obj.name)
