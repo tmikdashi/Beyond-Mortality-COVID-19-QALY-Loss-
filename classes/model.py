@@ -2574,7 +2574,7 @@ class ProbabilisticAllStates:
         dates = [pd.to_datetime(date) for date in dates]
 
         # Convert 'Date_Dose1_Over_70Pct_Vaccinated' to datetime
-        vax_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(result_df['Date_Dose1_Over_70Pct_Vaccinated'],
+        vax_df['Date_Dose1_Over_70Pct_Vaccinated'] = pd.to_datetime(vax_df['Date_Dose1_Over_70Pct_Vaccinated'],
                                                                        errors='coerce')
 
         # Initialize a new column to store the index of the closest date
