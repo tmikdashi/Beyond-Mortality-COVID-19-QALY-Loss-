@@ -31,6 +31,16 @@ class AnOutcome:
         self.weeklyQALYLoss = np.array([])
         self.totalQALYLoss = 0
 
+        self.prevaxWeeklyObs = np.array([])  # Pre-vaccination weekly observations
+        self.postvaxWeeklyObs = np.array([])  # Post-vaccination weekly observations
+        self.prevaxTotalObs = 0
+        self.postvaxTotalObs = 0
+        self.prevaxWeeklyQALYLoss = np.array([])  # Pre-vaccination weekly QALY loss
+        self.postvaxWeeklyQALYLoss = np.array([])  # Post-vaccination weekly QALY loss
+        self.prevaxTotalQALYLoss = 0
+        self.postvaxTotalQALYLoss = 0
+        self.vaccination_index = 35
+
     def add_traj(self, weekly_obs):
         """
         Add weekly data to the Outcome object.
@@ -45,10 +55,17 @@ class AnOutcome:
         # add the weekly data to the existing data
         if len(self.weeklyObs) == 0:
             self.weeklyObs = weekly_obs
+            self.prevaxWeeklyObs = weekly_obs[:self.vaccination_index]
+            self.postvaxWeeklyObs = weekly_obs[self.vaccination_index:]
         else:
             self.weeklyObs += weekly_obs
+            self.prevaxWeeklyObs += weekly_obs[:self.vaccination_index]
+            self.postvaxWeeklyObs += weekly_obs[self.vaccination_index:]
 
         self.totalObs += sum(weekly_obs)
+        self.prevaxTotalObs += sum(weekly_obs[:self.vaccination_index])
+        self.postvaxTotalObs += sum(weekly_obs[self.vaccination_index:])
+
 
     def calculate_qaly_loss(self, quality_weight):
         """
@@ -58,6 +75,12 @@ class AnOutcome:
         """
         self.weeklyQALYLoss = quality_weight * self.weeklyObs
         self.totalQALYLoss = sum(self.weeklyQALYLoss)
+
+        self.prevaxWeeklyQALYLoss = quality_weight * self.prevaxWeeklyObs
+        self.prevaxTotalQALYLoss = sum(self.prevaxWeeklyQALYLoss)
+
+        self.postvaxWeeklyQALYLoss = quality_weight * self.postvaxWeeklyObs
+        self.postvaxTotalQALYLoss = sum(self.postvaxWeeklyQALYLoss)
 
 
 class PandemicOutcomes:
@@ -69,6 +92,13 @@ class PandemicOutcomes:
 
         self.weeklyQALYLoss = np.array([])
         self.totalQALYLoss = 0
+
+        self.prevaxWeeklyQALYLoss = np.array([])
+        self.prevaxTotalQALYLoss =0
+
+        self.postvaxWeeklyQALYLoss = np.array([])
+        self.postvaxTotalQALYLoss = 0
+
 
     def add_traj(self, weekly_cases, weekly_hosp, weekly_deaths):
         """
@@ -95,6 +125,13 @@ class PandemicOutcomes:
 
         self.weeklyQALYLoss = self.cases.weeklyQALYLoss + self.hosps.weeklyQALYLoss + self.deaths.weeklyQALYLoss
         self.totalQALYLoss = self.cases.totalQALYLoss + self.hosps.totalQALYLoss + self.deaths.totalQALYLoss
+
+        self.prevaxWeeklyQALYLoss = self.cases.prevaxWeeklyQALYLoss + self.hosps.prevaxWeeklyQALYLoss + self.deaths.prevaxWeeklyQALYLoss
+        self.prevaxTotalQALYLoss = self.cases.prevaxTotalQALYLoss + self.hosps.prevaxTotalQALYLoss + self.deaths.prevaxTotalQALYLoss
+
+        self.postvaxWeeklyQALYLoss = self.cases.postvaxWeeklyQALYLoss + self.hosps.postvaxWeeklyQALYLoss + self.deaths.postvaxWeeklyQALYLoss
+        self.postvaxTotalQALYLoss = self.cases.postvaxTotalQALYLoss + self.hosps.postvaxTotalQALYLoss + self.deaths.postaxTotalQALYLoss
+
 
 
 class County:
@@ -762,7 +799,8 @@ class ProbabilisticAllStates:
 
         rng = np.random.RandomState(1)
         param_gen = ParameterGenerator()
-        self.age_group = param_gen.parameters['Age Group'].value
+        self.age_group = param_gen.parameters['Age Group'].values
+        #self.age_group = param_gen.parameters['Age Group'].value
 
 
         for i in range(n):
