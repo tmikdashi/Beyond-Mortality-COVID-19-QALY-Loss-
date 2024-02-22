@@ -185,6 +185,17 @@ class County:
         """
         return self.pandemicOutcomes.weeklyQALYLoss
 
+    def get_vax_weekly_qaly_loss(self):
+        """
+        Retrieves weekly pre/post-vaccination QALY loss for the County, across outcomes.
+        """
+        return self.pandemicOutcomes.prevaxWeeklyQALYLoss, self.pandemicOutcomes.postvaxWeeklyQALYLoss
+
+    def get_vax_overall_qaly_loss(self):
+        """
+        Retrieves overall pre/post-vaccination QALY loss for the County, across outcomes.
+        """
+        return self.pandemicOutcomes.prevaxTotalQALYLoss, self.pandemicOutcomes.postvaxTotalQALYLoss
 
 class State:
     def __init__(self, name, num_weeks):
@@ -240,6 +251,18 @@ class State:
         Retrieves weekly QALY loss for the State, across outcomes.
         """
         return self.pandemicOutcomes.weeklyQALYLoss
+
+    def get_weekly_vax_qaly_loss(self):
+        """
+        Retrieves pre-vaccination QALY loss for the State, across outcomes.
+        """
+        return self.pandemicOutcomes.prevaxWeeklyQALYLoss, self.pandemicOutcomes.postvaxWeeklyQALYLoss
+
+    def get_overall_vax_qaly_loss(self):
+        """
+        Retrieves pre-vaccination QALY loss for the State, across outcomes.
+        """
+        return self.pandemicOutcomes.prevaxTotalQALYLoss, self.pandemicOutcomes.postvaxTotalQALYLoss
 
 
 class AllStates:
@@ -694,6 +717,18 @@ class AllStates:
         total_dQAlY_loss_by_age = deaths_by_age * param_gen.parameters['dQALY_loss_by_age'].value
         return total_dQAlY_loss_by_age
 
+    def get_prevax_total_qaly_loss_by_state(self):
+        return {state_name: state_obj.pandemicOutcomes.prevaxTotalQALYLoss for state_name, state_obj in self.states.items()}
+
+    def get_postvax_total_qaly_loss_by_state(self):
+        return {state_name: state_obj.pandemicOutcomes.postvaxTotalQALYLoss for state_name, state_obj in self.states.items()}
+
+    def get_prevax_weekly_qaly_loss_by_state(self):
+        return {state_name: state_obj.pandemicOutcomes.prevaxWeeklyQALYLoss for state_name, state_obj in self.states.items()}
+
+    def get_postvax_weekly_qaly_loss_by_state(self):
+        return {state_name: state_obj.pandemicOutcomes.postvaxWeeklyQALYLoss for state_name, state_obj in self.states.items()}
+
 
 
 
@@ -721,6 +756,14 @@ class SummaryOutcomes:
         self.overallQALYlossesDeathsByState = []
 
         self.overallQALYlossessByStateandOutcome =[]
+
+        self.prevaxOverallQALYlossesCasesByState = []
+        self.prevaxOverallQALYlossesHospsByState = []
+        self.prevaxOverallQALYlossesDeathsByState = []
+
+        self.postvaxOverallQALYlossesCasesByState = []
+        self.postvaxOverallQALYlossesHospsByState = []
+        self.postvaxOverallQALYlossesDeathsByState = []
 
         self.statOverallQALYLoss = None
         self.statOverallQALYLossCases = None
@@ -752,6 +795,15 @@ class SummaryOutcomes:
         self.overallQALYlossesCasesByState.append(simulated_model.get_overall_qaly_loss_by_state_cases())
         self.overallQALYlossesHospsByState.append(simulated_model.get_overall_qaly_loss_by_state_hosps())
         self.overallQALYlossesDeathsByState.append(simulated_model.get_overall_qaly_loss_by_state_deaths())
+
+        self.prevaxOverallQALYlossesCasesByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_cases())
+        self.prevaxOverallQALYlossesHospsByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_hosps())
+        self.prevaxOverallQALYlossesDeathsByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_deaths())
+
+        self.postvaxOverallQALYlossesCasesByState.append(simulated_model.get_postvax_overall_qaly_loss_by_state_cases())
+        self.postvaxOverallQALYlossesHospsByState.append(simulated_model.get_postvax_overall_qaly_loss_by_state_hosps())
+        self.postvaxOverallQALYlossesDeathsByState.append(
+            simulated_model.get_postvax_overall_qaly_loss_by_state_deaths())
 
         self.deathQALYLossByAge.append(simulated_model.get_death_QALY_loss_by_age(param_gen))
 
@@ -2843,5 +2895,77 @@ class ProbabilisticAllStates:
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/prevax_postvax_qaly_loss_by_state.png')
 
+    def plot_qaly_loss_by_state_and_vax_status_subplots(self):
+        """
+        Generate three subplots, one for each health outcome, with bar graphs representing total QALY loss per 100,000 pop
+        for each state. Each subplot has pre-vaccination and post-vaccination QALY loss values separated by state.
+        """
+
+        num_states = len(self.allStates.states)
+        states_list = list(self.allStates.states.values())
+
+        # Set up the figure and axis for three subplots
+        fig, axs = plt.subplots(3, 1, figsize=(12, 18), sharex=True)
+
+        # Set up the positions for the bars
+        bar_positions = np.arange(2 * num_states)
+
+        # Set up the width for each state bar
+        bar_width = 0.8
+
+        # Set up colors for each segment and vaccination status
+        pre_vax_color = 'lightblue'
+        post_vax_color = 'orange'
+        cases_color = 'blue'
+        deaths_color = 'red'
+        hosps_color = 'green'
+
+        # Iterate through each state
+        for i, state_obj in enumerate(states_list):
+            # Calculate the heights for each segment for pre-vaccination
+            pre_vax_cases_height = (state_obj.pandemicOutcomes.cases.totalQALYLoss / state_obj.population) * 100000
+            pre_vax_deaths_height = (state_obj.pandemicOutcomes.deaths.totalQALYLoss / state_obj.population) * 100000
+            pre_vax_hosps_height = (state_obj.pandemicOutcomes.hosps.totalQALYLoss / state_obj.population) * 100000
+
+            # Plot the segments for pre-vaccination
+            axs[0].bar(2 * i, pre_vax_cases_height, color=pre_vax_color, width=bar_width, align='center',
+                       label='Pre-Vax' if i == 0 else "")
+            axs[1].bar(2 * i, pre_vax_deaths_height, color=pre_vax_color, width=bar_width, align='center',
+                       label='Pre-Vax' if i == 0 else "")
+            axs[2].bar(2 * i, pre_vax_hosps_height, color=pre_vax_color, width=bar_width, align='center',
+                       label='Pre-Vax' if i == 0 else "")
+
+            # Calculate the heights for each segment for post-vaccination
+            post_vax_cases_height = (state_obj.pandemicOutcomes.cases.totalQALYLoss_post_vax / state_obj.population) * 100000
+            post_vax_deaths_height = (state_obj.pandemicOutcomes.deaths.totalQALYLoss_post_vax / state_obj.population) * 100000
+            post_vax_hosps_height = (state_obj.pandemicOutcomes.hosps.totalQALYLoss_post_vax / state_obj.population) * 100000
+
+            # Plot the segments for post-vaccination
+            axs[0].bar(2 * i + 1, post_vax_cases_height, color=post_vax_color, width=bar_width, align='center',
+                       label='Post-Vax' if i == 0 else "")
+            axs[1].bar(2 * i + 1, post_vax_deaths_height, color=post_vax_color, width=bar_width, align='center',
+                       label='Post-Vax' if i == 0 else "")
+            axs[2].bar(2 * i + 1, post_vax_hosps_height, color=post_vax_color, width=bar_width, align='center',
+                       label='Post-Vax' if i == 0 else "")
+
+        # Set the labels for each state and vaccination status
+        axs[2].set_xticks(2 * bar_positions)
+        axs[2].set_xticklabels([state_obj.name for state_obj in states_list] * 2, fontsize=8, rotation=45, ha='right')
+
+        # Set the labels and title for each subplot
+        axs[0].set_ylabel('Cases QALY Loss per 100,000')
+        axs[1].set_ylabel('Deaths QALY Loss per 100,000')
+        axs[2].set_ylabel('Hospitalizations QALY Loss per 100,000')
+        axs[2].set_xlabel('States')
+        axs[0].set_title('Total QALY Loss by State and Outcome (Pre-Post Vaccination)')
+
+        # Show the legend with unique labels for each subplot
+        axs[0].legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Pre-Vax', 'Post-Vax'])
+        axs[1].legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Pre-Vax', 'Post-Vax'])
+        axs[2].legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Pre-Vax', 'Post-Vax'])
+
+        plt.tight_layout()
+        # Add the appropriate path to save the figure
+        output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome_and_vax_status_subplots.png')
 
 

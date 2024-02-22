@@ -60,14 +60,36 @@ class ParameterGenerator:
 
         return param
 
+    '''
     def _sample_parameters(self, rng):
-        """
-        samples all parameters
-        """
+        #"""
+        #samples all parameters
+        #"""
 
         for par in self.parameters.values():
             par.sample(rng)
 
+    '''
+
+    def _sample_parameters(self, rng):
+        """
+        samples all parameters
+        """
+        for par_name, par in self.parameters.items():
+            if isinstance(par, Beta):
+                if par.value is None:
+                    # If value is not sampled yet, use alpha and beta
+                    alpha = par.alpha
+                    beta = par.beta
+                    self.parameters[par_name].value = rng.beta(alpha, beta)
+                else:
+                    # Use the sampled value if available
+                    pass
+            elif isinstance(par, Gamma):
+                self.parameters[par_name].value = rng.gamma(par.mean / par.st_dev ** 2,
+                                                            scale=par.st_dev ** 2 / par.mean)
+            elif isinstance(par, Dirichlet):
+                self.parameters[par_name].value = rng.dirichlet(par.par_ns)
 
     def _update_param_values(self, param):
 
