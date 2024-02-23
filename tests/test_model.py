@@ -8,8 +8,11 @@ probabilisticModel.simulate(n=10)
 #probabilisticModel.get_state_vax_index()
 #probabilisticModel.plot_prevax_postvax_qaly_loss_by_state()
 
-#probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
-probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K_alt()
+probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
+#probabilisticModel.plot_qaly_loss_by_state_and_vax_status_subplots()
+probabilisticModel.plot_qaly_loss_by_state_and_by_outcome_alt_2()
+probabilisticModel.print_state_prevax_values()
+
 #probabilisticModel.plot_date_70pct_vaccinated_by_state()
 
 '''
