@@ -591,11 +591,113 @@ class AllStates:
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome.png')
 
 
+class SummaryOutcomes:
+
+    def __init__(self):
+
+        # Lists for the outcomes of interest to collect
+        self.overallQALYlosses = []
+        self.overallQALYlossesByState = []
+        self.overallQALYlossesByCounty = []
+        self.overallQALYlossesCases = []
+        self.overallQALYlossesHosps = []
+        self.overallQALYlossesDeaths = []
+
+        self.weeklyQALYlosses = []
+        self.weeklyQALYlossesByState = []
+        self.weeklyQALYlossesCases = []
+        self.weeklyQALYlossesHosps = []
+        self.weeklyQALYlossesDeaths = []
+
+        self.overallQALYlossesCasesByState = []
+        self.overallQALYlossesHospsByState = []
+        self.overallQALYlossesDeathsByState = []
+
+        self.overallQALYlossessByStateandOutcome =[]
+
+        self.prevaxOverallQALYLossesCasesByState = []
+        self.prevaxOverallQALYLossesHospsByState = []
+        self.prevaxOverallQALYLossesDeathsByState = []
+
+        self.postvaxOverallQALYLossesCasesByState = []
+        self.postvaxOverallQALYLossesHospsByState = []
+        self.postvaxOverallQALYLossesDeathsByState = []
+
+
+        self.statOverallQALYLoss = None
+        self.statOverallQALYLossCases = None
+        self.statOverallQALYLossHosps = None
+        self.statOverallQALYLossDeaths = None
+
+        self.deathQALYLossByAge = []
+        self.age_group = []
+
+
+
+    def extract_outcomes(self, simulated_model,param_gen):
+
+        self.overallQALYlosses.append(simulated_model.get_overall_qaly_loss())
+        self.overallQALYlossesByState.append(simulated_model.get_overall_qaly_loss_by_state())
+        self.overallQALYlossesByCounty.append(simulated_model.get_overall_qaly_loss_by_county())
+
+        self.weeklyQALYlosses.append(simulated_model.get_weekly_qaly_loss())
+        self.weeklyQALYlossesByState.append(simulated_model.get_weekly_qaly_loss_by_state())
+
+        self.weeklyQALYlossesCases.append(simulated_model.pandemicOutcomes.cases.weeklyQALYLoss)
+        self.weeklyQALYlossesHosps.append(simulated_model.pandemicOutcomes.hosps.weeklyQALYLoss)
+        self.weeklyQALYlossesDeaths.append(simulated_model.pandemicOutcomes.deaths.weeklyQALYLoss)
+
+        self.overallQALYlossesCases.append(simulated_model.pandemicOutcomes.cases.totalQALYLoss)
+        self.overallQALYlossesHosps.append(simulated_model.pandemicOutcomes.hosps.totalQALYLoss)
+        self.overallQALYlossesDeaths.append(simulated_model.pandemicOutcomes.deaths.totalQALYLoss)
+
+        self.overallQALYlossesCasesByState.append(simulated_model.get_overall_qaly_loss_by_state_cases())
+        self.overallQALYlossesHospsByState.append(simulated_model.get_overall_qaly_loss_by_state_hosps())
+        self.overallQALYlossesDeathsByState.append(simulated_model.get_overall_qaly_loss_by_state_deaths())
+
+        self.prevaxOverallQALYLossesCasesByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_cases())
+        self.prevaxOverallQALYLossesHospsByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_hosps())
+        self.prevaxOverallQALYLossesDeathsByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_deaths())
+
+        self.postvaxOverallQALYLossesCasesByState.append(simulated_model.get_postvax_overall_qaly_loss_by_state_cases())
+        self.postvaxOverallQALYLossesHospsByState.append(simulated_model.get_postvax_overall_qaly_loss_by_state_hosps())
+        self.postvaxOverallQALYLossesDeathsByState.append(simulated_model.get_postvax_overall_qaly_loss_by_state_deaths())
+
+        self.deathQALYLossByAge.append(simulated_model.get_death_QALY_loss_by_age(param_gen))
+
+
+    def summarize(self):
+
+        self.statOverallQALYLoss = SummaryStat(data=self.overallQALYlosses)
+        self.statOverallQALYLossCases = SummaryStat(data=self.overallQALYlossesCases)
+        self.statOverallQALYLossHosps = SummaryStat(data=self.overallQALYlossesHosps)
+        self.statOverallQALYLossDeaths = SummaryStat(data=self.overallQALYlossesDeaths)
+
+    def get_mean_ci_ui_overall_qaly_loss(self):
+        """
+        :return: Mean, confidence interval, and uncertainty interval for overall QALY loss summed over all states.
+        """
+        return (self.statOverallQALYLoss.get_mean(),
+                self.statOverallQALYLoss.get_t_CI(alpha=0.05),
+                self.statOverallQALYLoss.get_PI(alpha=0.05),
+                self.statOverallQALYLossCases.get_mean(),
+                self.statOverallQALYLossCases.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossCases.get_PI(alpha=0.05),
+                self.statOverallQALYLossHosps.get_mean(),
+                self.statOverallQALYLossHosps.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossHosps.get_PI(alpha=0.05),
+                self.statOverallQALYLossDeaths.get_mean(),
+                self.statOverallQALYLossDeaths.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossDeaths.get_PI(alpha=0.05),
+                )
+
+
 class ProbabilisticAllStates:
 
     def __init__(self):
         self.allStates = AllStates()
         self.allStates.populate()
+        self.summaryOutcomes = SummaryOutcomes()
 
         self.overallQALYlosses = []
         self.weeklyQALYlosses = []
@@ -610,8 +712,6 @@ class ProbabilisticAllStates:
         self.overallCountyQALYlosses = []
 
 
-
-
     def simulate(self, n):
         """
         Simulates the model n times
@@ -620,6 +720,7 @@ class ProbabilisticAllStates:
 
         rng = np.random.RandomState(1)
         param_gen = ParameterGenerator()
+        self.age_group = param_gen.parameters['Age Group'].value
 
 
         for i in range(n):
@@ -627,6 +728,9 @@ class ProbabilisticAllStates:
             params = param_gen.generate(rng)
 
             self.allStates.calculate_qaly_loss(params)
+
+            # extract outcomes from the simulated all states
+            self.summaryOutcomes.extract_outcomes(simulated_model=self.allStates, param_gen=param_gen)
 
             overall_qaly_loss = self.allStates.get_overall_qaly_loss()
             self.overallQALYlosses.append(overall_qaly_loss)

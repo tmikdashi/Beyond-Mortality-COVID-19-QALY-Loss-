@@ -17,10 +17,7 @@ from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
 from matplotlib.ticker import ScalarFormatter
 from definitions import ROOT_DIR
-import seaborn as sns
-from datetime import datetime
-from matplotlib.ticker import FuncFormatter
-from matplotlib.ticker import StrMethodFormatter
+
 
 
 class AnOutcome:
@@ -41,7 +38,6 @@ class AnOutcome:
         self.postvaxTotalQALYLoss = 0
         self.vaccination_index = 35
 
-
     def add_traj(self, weekly_obs):
         """
         Add weekly data to the Outcome object.
@@ -56,18 +52,29 @@ class AnOutcome:
         # add the weekly data to the existing data
         if len(self.weeklyObs) == 0:
             self.weeklyObs = weekly_obs
+        else:
+            self.weeklyObs += weekly_obs
+
+        self.totalObs += sum(weekly_obs)
+
+    def add_vax_traj(self, weekly_obs):
+        if not isinstance(weekly_obs, np.ndarray):
+            weekly_obs = np.array(weekly_obs)
+
+        # replace missing values with 0
+        weekly_obs = np.nan_to_num(weekly_obs, nan=0)
+
+        # If self.weeklyObs is empty, initialize prevaxWeeklyObs and postvaxWeeklyObs
+        if len(self.weeklyObs) == 0:
             self.prevaxWeeklyObs = weekly_obs[:self.vaccination_index]
             self.postvaxWeeklyObs = weekly_obs[self.vaccination_index:]
         else:
-            self.weeklyObs += weekly_obs
+            # add the weekly data to the existing data
             self.prevaxWeeklyObs += weekly_obs[:self.vaccination_index]
             self.postvaxWeeklyObs += weekly_obs[self.vaccination_index:]
 
-        self.totalObs += sum(weekly_obs)
         self.prevaxTotalObs += sum(weekly_obs[:self.vaccination_index])
         self.postvaxTotalObs += sum(weekly_obs[self.vaccination_index:])
-
-
 
     def calculate_qaly_loss(self, quality_weight):
         """
@@ -111,6 +118,17 @@ class PandemicOutcomes:
         self.cases.add_traj(weekly_obs=weekly_cases)
         self.hosps.add_traj(weekly_obs=weekly_hosp)
         self.deaths.add_traj(weekly_obs=weekly_deaths)
+
+    def add_vax_traj(self, weekly_cases, weekly_hosp, weekly_deaths):
+        """
+        Add weekly cases, hospitalization, and deaths and calculate the total cases, hospitalizations, and deaths.
+        :param weekly_cases: Weekly cases data as a numpy array.
+        :param weekly_hosp: Weekly hospitalizations data as a numpy array.
+        :param weekly_deaths: Weekly deaths data as a numpy array.
+        """
+        self.cases.add_vax_traj(weekly_obs=weekly_cases)
+        self.hosps.add_vax_traj(weekly_obs=weekly_hosp)
+        self.deaths.add_vax_traj(weekly_obs=weekly_deaths)
 
     def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
         """
@@ -159,6 +177,16 @@ class County:
         :param weekly_deaths: Weekly deaths data as a numpy array.
         """
         self.pandemicOutcomes.add_traj(
+            weekly_cases=weekly_cases, weekly_hosp=weekly_hosp, weekly_deaths=weekly_deaths)
+
+    def add_vax_traj(self, weekly_cases, weekly_deaths, weekly_hosp):
+        """
+        Add weekly data to the County object.
+        :param weekly_cases: Weekly cases data as a numpy array.
+        :param weekly_hosp: Weekly hospitalizations data as a numpy array.
+        :param weekly_deaths: Weekly deaths data as a numpy array.
+        """
+        self.pandemicOutcomes.add_vax_traj(
             weekly_cases=weekly_cases, weekly_hosp=weekly_hosp, weekly_deaths=weekly_deaths)
 
     def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
@@ -221,6 +249,10 @@ class State:
         self.counties[county.name] = county
         self.population += county.population
         self.pandemicOutcomes.add_traj(
+            weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
+            weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
+            weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
+        self.pandemicOutcomes.add_vax_traj(
             weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
             weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
             weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
@@ -313,6 +345,15 @@ class AllStates:
 
             # update the nation pandemic outcomes based on the outcomes for this county
             self.pandemicOutcomes.add_traj(
+                weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
+                weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
+                weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
+
+            county.add_vax_traj(
+                weekly_cases=case_values, weekly_deaths=death_values, weekly_hosp=hosp_values)
+
+            # update the nation pandemic outcomes based on the outcomes for this county
+            self.pandemicOutcomes.add_vax_traj(
                 weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
                 weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
                 weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
@@ -906,7 +947,6 @@ class ProbabilisticAllStates:
 
         self.summaryOutcomes.summarize()
 
-
     def plot_qaly_loss_from_deaths_by_age(self):
 
         mean, ui = get_mean_ui_of_a_time_series(self.summaryOutcomes.deathQALYLossByAge, alpha=0.05)
@@ -935,7 +975,7 @@ class ProbabilisticAllStates:
         mean_hosps = self.allStates.pandemicOutcomes.hosps.totalObs
         mean_deaths = self.allStates.pandemicOutcomes.deaths.totalObs
 
-
+        print("weekly national hosps", self.allStates.pandemicOutcomes.deaths.totalObs)
         print('Overall Outcomes:')
         print('  Mean Cases: {:,.0f}'.format(mean_cases))
         print('  Mean Hospitalizations: {:,.0f}'.format(mean_hosps))
