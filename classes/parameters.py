@@ -39,7 +39,10 @@ class ParameterGenerator:
 
         self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
         self.parameters['dQALY_loss_by_age'] =Dirichlet(par_ns=[22.53, 20.89, 19.08, 16.96, 14.30, 11.52, 8.61, 5.50, 3.00, 1.46])
-        self.parameters['Age Group']= data['Age Group']
+
+        #self.parameters['Age Group'] = list(data['Age Group'])
+
+
         #self.parameters['dQALY_loss_by_age'] = ConstantArray(values=[22.53, 20.89, 19.08, 16.96, 14.30, 11.52, 8.61, 5.50, 3.00, 1.46])
         #self.parameters['Age Group']= ConstantArray(values=data['Age Group'])
 
@@ -60,36 +63,14 @@ class ParameterGenerator:
 
         return param
 
-    '''
-    def _sample_parameters(self, rng):
-        #"""
-        #samples all parameters
-        #"""
-
-        for par in self.parameters.values():
-            par.sample(rng)
-
-    '''
 
     def _sample_parameters(self, rng):
         """
         samples all parameters
         """
-        for par_name, par in self.parameters.items():
-            if isinstance(par, Beta):
-                if par.value is None:
-                    # If value is not sampled yet, use alpha and beta
-                    alpha = par.alpha
-                    beta = par.beta
-                    self.parameters[par_name].value = rng.beta(alpha, beta)
-                else:
-                    # Use the sampled value if available
-                    pass
-            elif isinstance(par, Gamma):
-                self.parameters[par_name].value = rng.gamma(par.mean / par.st_dev ** 2,
-                                                            scale=par.st_dev ** 2 / par.mean)
-            elif isinstance(par, Dirichlet):
-                self.parameters[par_name].value = rng.dirichlet(par.par_ns)
+
+        for par in self.parameters.values():
+            par.sample(rng)
 
     def _update_param_values(self, param):
 
