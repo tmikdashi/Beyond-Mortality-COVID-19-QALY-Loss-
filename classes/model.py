@@ -51,7 +51,7 @@ class AnOutcome:
 
         self.totalObs += sum(weekly_obs)
 
-        self.prevaxWeeklyObs = weekly_obs[:self.vaccination_index]
+        self.prevaxWeeklyObs = weekly_obs[:self.vaccination_index][:35]
         self.postvaxWeeklyObs = weekly_obs[self.vaccination_index:]
 
         self.prevaxTotalObs += sum(self.prevaxWeeklyObs)
@@ -227,22 +227,46 @@ class State:
 
         :param county: County object to be added to the State.
         """
+
+        print(f"Adding county {county.name} to state {self.name}")
+        print(f"County weekly cases: {county.pandemicOutcomes.cases.weeklyObs}")
+        print(f"County weekly deaths: {county.pandemicOutcomes.deaths.weeklyObs}")
+        print(f"County weekly hospitalizations: {county.pandemicOutcomes.hosps.weeklyObs}")
+
         self.counties[county.name] = county
         self.population += county.population
 
-        self.pandemicOutcomes.cases.add_traj(
-            weekly_obs=county.pandemicOutcomes.cases.weeklyObs)
-        self.pandemicOutcomes.hosps.add_traj(
-            weekly_obs=county.pandemicOutcomes.hosps.weeklyObs)
-        self.pandemicOutcomes.deaths.add_traj(
-            weekly_obs=county.pandemicOutcomes.deaths.weeklyObs)
+        self.pandemicOutcomes.cases.add_traj(weekly_obs=county.pandemicOutcomes.cases.weeklyObs)
+        self.pandemicOutcomes.hosps.add_traj(weekly_obs=county.pandemicOutcomes.hosps.weeklyObs)
+        self.pandemicOutcomes.deaths.add_traj(weekly_obs=county.pandemicOutcomes.deaths.weeklyObs)
+
+        print(f"State weekly cases: {self.pandemicOutcomes.cases.weeklyObs}")
+        print(f"State weekly deaths: {self.pandemicOutcomes.deaths.weeklyObs}")
+        print(f"State weekly hospitalizations: {self.pandemicOutcomes.hosps.weeklyObs}")
+        print(f"State population: {self.population}")
 
         # Update the prevax and postvax weekly observations at the state level
-        self.pandemicOutcomes.prevaxWeeklyObs = np.concatenate([
-            self.pandemicOutcomes.cases.prevaxWeeklyObs,
-            self.pandemicOutcomes.hosps.prevaxWeeklyObs,
-            self.pandemicOutcomes.deaths.prevaxWeeklyObs
-        ])
+        self.pandemicOutcomes.prevaxWeeklyObs = np.concatenate([ county.pandemicOutcomes.cases.prevaxWeeklyObs for
+                                                                 county in self.counties.values()
+                                                               ] + [
+                                                                   county.pandemicOutcomes.hosps.prevaxWeeklyObs for
+                                                                   county in self.counties.values()
+                                                               ] + [
+                                                                   county.pandemicOutcomes.deaths.prevaxWeeklyObs for
+                                                                   county in self.counties.values()
+                                                               ])
+
+        print(f"State before pre weekly cases: {self.pandemicOutcomes.cases.prevaxWeeklyObs}")
+        print(f"State pre weekly deaths: {self.pandemicOutcomes.deaths.prevaxWeeklyObs}")
+        print(f"State pre weekly hospitalizations: {self.pandemicOutcomes.hosps.prevaxWeeklyObs}")
+
+        self.pandemicOutcomes.cases.add_traj(weekly_obs=county.pandemicOutcomes.cases.prevaxWeeklyObs)
+        self.pandemicOutcomes.hosps.add_traj(weekly_obs=county.pandemicOutcomes.hosps.prevaxWeeklyObs)
+        self.pandemicOutcomes.deaths.add_traj(weekly_obs=county.pandemicOutcomes.deaths.prevaxWeeklyObs)
+
+        print(f"State after pre weekly cases: {self.pandemicOutcomes.cases.prevaxWeeklyObs}")
+        print(f"State pre weekly deaths: {self.pandemicOutcomes.deaths.prevaxWeeklyObs}")
+        print(f"State pre weekly hospitalizations: {self.pandemicOutcomes.hosps.prevaxWeeklyObs}")
 
         self.pandemicOutcomes.postvaxWeeklyObs = np.concatenate([
             self.pandemicOutcomes.cases.postvaxWeeklyObs,
