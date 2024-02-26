@@ -9,6 +9,7 @@ probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
 probabilisticModel.print_state_prevax_values()
+#probabilisticModel.print_county_prevax_values()
 
 #probabilisticModel.get_state_vax_index()
 #probabilisticModel.plot_prevax_postvax_qaly_loss_by_state()

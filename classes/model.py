@@ -19,9 +19,9 @@ from matplotlib.ticker import ScalarFormatter
 from definitions import ROOT_DIR
 
 
+import numpy as np
 
 class AnOutcome:
-
     def __init__(self):
         self.weeklyObs = np.array([])
         self.totalObs = 0
@@ -34,22 +34,16 @@ class AnOutcome:
         self.postvaxTotalObs = 0
         self.prevaxWeeklyQALYLoss = np.array([])
         self.postvaxWeeklyQALYLoss = np.array([])
-        self.prevaxTotalQALYLoss= 0
+        self.prevaxTotalQALYLoss = 0
         self.postvaxTotalQALYLoss = 0
         self.vaccination_index = 35
 
     def add_traj(self, weekly_obs):
-        """
-        Add weekly data to the Outcome object.
-        :param weekly_obs: Weekly data as a numpy array.
-        """
         if not isinstance(weekly_obs, np.ndarray):
             weekly_obs = np.array(weekly_obs)
 
-        # replace missing values with 0
         weekly_obs = np.nan_to_num(weekly_obs, nan=0)
 
-        # add the weekly data to the existing data
         if len(self.weeklyObs) == 0:
             self.weeklyObs = weekly_obs
         else:
@@ -57,31 +51,14 @@ class AnOutcome:
 
         self.totalObs += sum(weekly_obs)
 
-    def add_vax_traj(self, weekly_obs):
-        if not isinstance(weekly_obs, np.ndarray):
-            weekly_obs = np.array(weekly_obs)
+        self.prevaxWeeklyObs = weekly_obs[:self.vaccination_index]
+        self.postvaxWeeklyObs = weekly_obs[self.vaccination_index:]
 
-        # replace missing values with 0
-        weekly_obs = np.nan_to_num(weekly_obs, nan=0)
+        self.prevaxTotalObs += sum(self.prevaxWeeklyObs)
+        self.postvaxTotalObs += sum(self.postvaxWeeklyObs)
 
-        # If self.weeklyObs is empty, initialize prevaxWeeklyObs and postvaxWeeklyObs
-        if len(self.weeklyObs) == 0:
-            self.prevaxWeeklyObs = weekly_obs[:self.vaccination_index]
-            self.postvaxWeeklyObs = weekly_obs[self.vaccination_index:]
-        else:
-            # add the weekly data to the existing data
-            self.prevaxWeeklyObs += weekly_obs[:self.vaccination_index]
-            self.postvaxWeeklyObs += weekly_obs[self.vaccination_index:]
-
-        self.prevaxTotalObs += sum(weekly_obs[:self.vaccination_index])
-        self.postvaxTotalObs += sum(weekly_obs[self.vaccination_index:])
 
     def calculate_qaly_loss(self, quality_weight):
-        """
-        Calculates the weekly and overall QALY
-        :param quality_weight: Weight to be applied to each case in calculating QALY loss.
-        :return Weekly QALY loss as a numpy array or numerical values to total QALY loss.
-        """
         self.weeklyQALYLoss = quality_weight * self.weeklyObs
         self.totalQALYLoss = sum(self.weeklyQALYLoss)
 
@@ -93,8 +70,8 @@ class AnOutcome:
 
 
 class PandemicOutcomes:
-    def __init__(self):
 
+    def __init__(self):
         self.cases = AnOutcome()
         self.hosps = AnOutcome()
         self.deaths = AnOutcome()
@@ -102,55 +79,68 @@ class PandemicOutcomes:
         self.weeklyQALYLoss = np.array([])
         self.totalQALYLoss = 0
 
+        self.prevaxWeeklyObs = np.array([])
+        self.postvaxWeeklyObs = np.array([])
         self.prevaxWeeklyQALYLoss = np.array([])
-        self.prevaxTotalQALYLoss = 0
-
         self.postvaxWeeklyQALYLoss = np.array([])
+        self.prevaxTotalQALYLoss = 0
         self.postvaxTotalQALYLoss = 0
 
     def add_traj(self, weekly_cases, weekly_hosp, weekly_deaths):
-        """
-        Add weekly cases, hospitalization, and deaths and calculate the total cases, hospitalizations, and deaths.
-        :param weekly_cases: Weekly cases data as a numpy array.
-        :param weekly_hosp: Weekly hospitalizations data as a numpy array.
-        :param weekly_deaths: Weekly deaths data as a numpy array.
-        """
         self.cases.add_traj(weekly_obs=weekly_cases)
         self.hosps.add_traj(weekly_obs=weekly_hosp)
         self.deaths.add_traj(weekly_obs=weekly_deaths)
 
-    def add_vax_traj(self, weekly_cases, weekly_hosp, weekly_deaths):
-        """
-        Add weekly cases, hospitalization, and deaths and calculate the total cases, hospitalizations, and deaths.
-        :param weekly_cases: Weekly cases data as a numpy array.
-        :param weekly_hosp: Weekly hospitalizations data as a numpy array.
-        :param weekly_deaths: Weekly deaths data as a numpy array.
-        """
-        self.cases.add_vax_traj(weekly_obs=weekly_cases)
-        self.hosps.add_vax_traj(weekly_obs=weekly_hosp)
-        self.deaths.add_vax_traj(weekly_obs=weekly_deaths)
+        self.prevaxWeeklyObs = np.concatenate([
+            self.cases.prevaxWeeklyObs,
+            self.hosps.prevaxWeeklyObs,
+            self.deaths.prevaxWeeklyObs
+        ])
+
+        self.postvaxWeeklyObs = np.concatenate([
+            self.cases.postvaxWeeklyObs,
+            self.hosps.postvaxWeeklyObs,
+            self.deaths.postvaxWeeklyObs
+        ])
+
+
 
     def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
-        """
-        Calculates the weekly and overall QALY
-        :param case_weight: cases-specific weight to be applied to each case in calculating QALY loss.
-        :param hosp_weight: hosp-specific weight to be applied to each hospitalization in calculating QALY loss.
-        :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
-        """
-
         self.cases.calculate_qaly_loss(quality_weight=case_weight)
         self.hosps.calculate_qaly_loss(quality_weight=hosp_weight)
         self.deaths.calculate_qaly_loss(quality_weight=death_weight)
 
-        self.weeklyQALYLoss = self.cases.weeklyQALYLoss + self.hosps.weeklyQALYLoss + self.deaths.weeklyQALYLoss
-        self.totalQALYLoss = self.cases.totalQALYLoss + self.hosps.totalQALYLoss + self.deaths.totalQALYLoss
+        self.weeklyQALYLoss = (
+            self.cases.weeklyQALYLoss
+            + self.hosps.weeklyQALYLoss
+            + self.deaths.weeklyQALYLoss
+        )
+        self.totalQALYLoss = (
+            self.cases.totalQALYLoss
+            + self.hosps.totalQALYLoss
+            + self.deaths.totalQALYLoss
+        )
 
-        self.prevaxWeeklyQALYLoss =self.cases.prevaxWeeklyQALYLoss + self.hosps.prevaxWeeklyQALYLoss + self.deaths.prevaxWeeklyQALYLoss
-        self.prevaxTotalQALYLoss = self.cases.prevaxTotalQALYLoss + self.hosps.prevaxTotalQALYLoss + self.deaths.prevaxTotalQALYLoss
-
-        self.postvaxWeeklyQALYLoss = self.cases.postvaxWeeklyQALYLoss + self.hosps.postvaxWeeklyQALYLoss + self.deaths.postvaxWeeklyQALYLoss
-        self.postvaxTotalQALYLoss = self.cases.postvaxTotalQALYLoss + self.hosps.postvaxTotalQALYLoss + self.deaths.postvaxTotalQALYLoss
-
+        self.prevaxWeeklyQALYLoss = (
+                self.cases.prevaxWeeklyQALYLoss
+                + self.hosps.prevaxWeeklyQALYLoss
+                + self.deaths.prevaxWeeklyQALYLoss
+        )
+        self.postvaxWeeklyQALYLoss = (
+                self.cases.postvaxWeeklyQALYLoss
+                + self.hosps.postvaxWeeklyQALYLoss
+                + self.deaths.postvaxWeeklyQALYLoss
+        )
+        self.prevaxTotalQALYLoss = (
+                self.cases.prevaxTotalQALYLoss
+                + self.hosps.prevaxTotalQALYLoss
+                + self.deaths.prevaxTotalQALYLoss
+        )
+        self.postvaxTotalQALYLoss = (
+                self.cases.postvaxTotalQALYLoss
+                + self.hosps.postvaxTotalQALYLoss
+                + self.deaths.postvaxTotalQALYLoss
+        )
 
 
 class County:
@@ -179,15 +169,6 @@ class County:
         self.pandemicOutcomes.add_traj(
             weekly_cases=weekly_cases, weekly_hosp=weekly_hosp, weekly_deaths=weekly_deaths)
 
-    def add_vax_traj(self, weekly_cases, weekly_deaths, weekly_hosp):
-        """
-        Add weekly data to the County object.
-        :param weekly_cases: Weekly cases data as a numpy array.
-        :param weekly_hosp: Weekly hospitalizations data as a numpy array.
-        :param weekly_deaths: Weekly deaths data as a numpy array.
-        """
-        self.pandemicOutcomes.add_vax_traj(
-            weekly_cases=weekly_cases, weekly_hosp=weekly_hosp, weekly_deaths=weekly_deaths)
 
     def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
@@ -248,14 +229,26 @@ class State:
         """
         self.counties[county.name] = county
         self.population += county.population
-        self.pandemicOutcomes.add_traj(
-            weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
-            weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
-            weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
-        self.pandemicOutcomes.add_vax_traj(
-            weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
-            weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
-            weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
+
+        self.pandemicOutcomes.cases.add_traj(
+            weekly_obs=county.pandemicOutcomes.cases.weeklyObs)
+        self.pandemicOutcomes.hosps.add_traj(
+            weekly_obs=county.pandemicOutcomes.hosps.weeklyObs)
+        self.pandemicOutcomes.deaths.add_traj(
+            weekly_obs=county.pandemicOutcomes.deaths.weeklyObs)
+
+        # Update the prevax and postvax weekly observations at the state level
+        self.pandemicOutcomes.prevaxWeeklyObs = np.concatenate([
+            self.pandemicOutcomes.cases.prevaxWeeklyObs,
+            self.pandemicOutcomes.hosps.prevaxWeeklyObs,
+            self.pandemicOutcomes.deaths.prevaxWeeklyObs
+        ])
+
+        self.pandemicOutcomes.postvaxWeeklyObs = np.concatenate([
+            self.pandemicOutcomes.cases.postvaxWeeklyObs,
+            self.pandemicOutcomes.hosps.postvaxWeeklyObs,
+            self.pandemicOutcomes.deaths.postvaxWeeklyObs
+        ])
 
     def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
         """
@@ -349,14 +342,6 @@ class AllStates:
                 weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
                 weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
 
-            county.add_vax_traj(
-                weekly_cases=case_values, weekly_deaths=death_values, weekly_hosp=hosp_values)
-
-            # update the nation pandemic outcomes based on the outcomes for this county
-            self.pandemicOutcomes.add_vax_traj(
-                weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
-                weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
-                weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
 
             # create a new state if not already in the dictionary of states
             if state not in self.states:
@@ -365,6 +350,20 @@ class AllStates:
             # add the new county to the state
             self.states[state].add_county(county)
 
+
+
+        for state in self.states.values():
+            print("State Weekly cases:", state.name, state.pandemicOutcomes.cases.weeklyObs)
+            print("State Prevax Weekly cases:", state.name, state.pandemicOutcomes.cases.prevaxWeeklyObs)
+        '''
+        for state_name, state_obj in self.states.items():
+            print("Alt calling method", state_obj.name, state_obj.pandemicOutcomes.cases.weeklyObs)
+            print("Alt calling method-- pre",state_obj.name, state_obj.pandemicOutcomes.cases.prevaxWeeklyObs)
+            #for county in state.counties.values():
+                #print("County Weekly Obs:",county.name, county.pandemicOutcomes.cases.weeklyObs)
+                #print("County Pre Weekly Obs:", county.name, county.pandemicOutcomes.cases.prevaxWeeklyObs)
+                #print("County Post Weekly Obs:", county.name, county.pandemicOutcomes.cases.postvaxWeeklyObs)
+        '''
 
 
     def calculate_qaly_loss(self, param_values):
@@ -975,7 +974,8 @@ class ProbabilisticAllStates:
         mean_hosps = self.allStates.pandemicOutcomes.hosps.totalObs
         mean_deaths = self.allStates.pandemicOutcomes.deaths.totalObs
 
-        print("weekly national hosps", self.allStates.pandemicOutcomes.deaths.totalObs)
+
+        print("weekly national hosps", self.allStates.pandemicOutcomes.hosps.totalObs)
         print('Overall Outcomes:')
         print('  Mean Cases: {:,.0f}'.format(mean_cases))
         print('  Mean Hospitalizations: {:,.0f}'.format(mean_hosps))
