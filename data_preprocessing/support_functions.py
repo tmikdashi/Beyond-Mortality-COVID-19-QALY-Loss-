@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 
 from deampy.in_out_functions import write_csv, read_csv_rows
+
+import tests.generate_data
 from definitions import ROOT_DIR
 from datetime import datetime
 
@@ -249,4 +251,41 @@ def generate_deaths_by_age_group():
     # save the data as a csv file
     deaths_by_age_group.to_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv', index=False)
 
+
+def hsa_mapping_county_data(self):
+    """
+    Generates sub-plotted maps of the number of cases, hospital admissions, and deaths per 100,000 population for each county.
+    Values are computed per HSA (aggregate of county values for all counties within an HSA), but plotted by county.
+    """
+
+    #Load county hosp data
+    tests.generate_data.generate_county_data_csv('hospitalizations')
+    county_hosp_data, dates = get_dict_of_county_data_by_type('hospitalizations')
+
+    # Load HSA data
+    hsa_data = read_csv_rows(file_name='C:/Users/fm478/Downloads/county_names_HSA_number.csv',
+                             if_ignore_first_row=True)
+
+    # Create a dictionary for FIPS to HSA mapping
+    fips_to_hsa_mapping = {str(entry[4]): (entry[6], float(entry[8].replace(',', ''))) for entry in hsa_data}
+
+    # List to store counties without corresponding HSA
+    counties_without_hsa = []
+
+    # Dictionary to store HSA totals
+    hsa_totals_dict = {}
+
+    # Dictionary to store aggregated values for each HSA
+    hsa_aggregated_data = {}
+
+    county_outcomes_data = {
+        "COUNTY": [],
+        "FIPS": [],
+        "County Population": [],
+        "HSA Number": [],
+        "Cases": [],
+        "Hosps": [],
+        "Deaths": [],
+        "HSA Population": []
+    }
 

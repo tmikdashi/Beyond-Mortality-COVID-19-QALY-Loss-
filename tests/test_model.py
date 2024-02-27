@@ -1,4 +1,4 @@
-from classes.model import ProbabilisticAllStates
+from classes.model_updated_structure import ProbabilisticAllStates
 
 
 probabilisticModel = ProbabilisticAllStates()
@@ -8,11 +8,8 @@ probabilisticModel.print_overall_outcomes_and_qaly_loss()
 probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
-probabilisticModel.print_state_prevax_values()
-#probabilisticModel.print_county_prevax_values()
+probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
 
-#probabilisticModel.get_state_vax_index()
-#probabilisticModel.plot_prevax_postvax_qaly_loss_by_state()
 
 #probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
 #probabilisticModel.plot_qaly_loss_by_state_and_vax_status_subplots()

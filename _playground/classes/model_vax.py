@@ -49,13 +49,13 @@ class AnOutcome:
         else:
             self.weeklyObs += weekly_obs
 
-        self.totalObs += sum(weekly_obs)
-
-        self.prevaxWeeklyObs = weekly_obs[:self.vaccination_index][:35]
+        self.prevaxWeeklyObs = weekly_obs[:self.vaccination_index]
         self.postvaxWeeklyObs = weekly_obs[self.vaccination_index:]
 
+        self.totalObs += sum(weekly_obs)
         self.prevaxTotalObs += sum(self.prevaxWeeklyObs)
         self.postvaxTotalObs += sum(self.postvaxWeeklyObs)
+
 
 
     def calculate_qaly_loss(self, quality_weight):
@@ -79,8 +79,6 @@ class PandemicOutcomes:
         self.weeklyQALYLoss = np.array([])
         self.totalQALYLoss = 0
 
-        self.prevaxWeeklyObs = np.array([])
-        self.postvaxWeeklyObs = np.array([])
         self.prevaxWeeklyQALYLoss = np.array([])
         self.postvaxWeeklyQALYLoss = np.array([])
         self.prevaxTotalQALYLoss = 0
@@ -90,19 +88,6 @@ class PandemicOutcomes:
         self.cases.add_traj(weekly_obs=weekly_cases)
         self.hosps.add_traj(weekly_obs=weekly_hosp)
         self.deaths.add_traj(weekly_obs=weekly_deaths)
-
-        self.prevaxWeeklyObs = np.concatenate([
-            self.cases.prevaxWeeklyObs,
-            self.hosps.prevaxWeeklyObs,
-            self.deaths.prevaxWeeklyObs
-        ])
-
-        self.postvaxWeeklyObs = np.concatenate([
-            self.cases.postvaxWeeklyObs,
-            self.hosps.postvaxWeeklyObs,
-            self.deaths.postvaxWeeklyObs
-        ])
-
 
 
     def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
@@ -228,11 +213,9 @@ class State:
         :param county: County object to be added to the State.
         """
 
-        print(f"Adding county {county.name} to state {self.name}")
-        print(f"County weekly cases: {county.pandemicOutcomes.cases.weeklyObs}")
-        print(f"County weekly deaths: {county.pandemicOutcomes.deaths.weeklyObs}")
-        print(f"County weekly hospitalizations: {county.pandemicOutcomes.hosps.weeklyObs}")
-
+        #print(f"Adding county {county.name} to state {self.name}")
+        #print(f"County weekly cases: {county.pandemicOutcomes.cases.weeklyObs}")
+        #print(f"County prevax weekly cases: {county.pandemicOutcomes.cases.prevaxWeeklyObs}")
         self.counties[county.name] = county
         self.population += county.population
 
@@ -240,11 +223,22 @@ class State:
         self.pandemicOutcomes.hosps.add_traj(weekly_obs=county.pandemicOutcomes.hosps.weeklyObs)
         self.pandemicOutcomes.deaths.add_traj(weekly_obs=county.pandemicOutcomes.deaths.weeklyObs)
 
-        print(f"State weekly cases: {self.pandemicOutcomes.cases.weeklyObs}")
-        print(f"State weekly deaths: {self.pandemicOutcomes.deaths.weeklyObs}")
-        print(f"State weekly hospitalizations: {self.pandemicOutcomes.hosps.weeklyObs}")
-        print(f"State population: {self.population}")
+        if len(self.pandemicOutcomes.cases.prevaxWeeklyObs) == 0:
+            self.pandemicOutcomes.cases.prevaxWeeklyObs = np.zeros_like(county.pandemicOutcomes.cases.prevaxWeeklyObs)
+        self.pandemicOutcomes.cases.prevaxWeeklyObs += county.pandemicOutcomes.cases.prevaxWeeklyObs
 
+
+        if len(self.pandemicOutcomes.cases.postvaxWeeklyObs) == 0:
+            self.pandemicOutcomes.cases.postvaxWeeklyObs = np.zeros_like(county.pandemicOutcomes.cases.postvaxWeeklyObs)
+        self.pandemicOutcomes.cases.postvaxWeeklyObs += county.pandemicOutcomes.cases.postvaxWeeklyObs
+
+
+        '''
+        
+        print(f"State weekly cases: {self.pandemicOutcomes.cases.weeklyObs}")
+        print(f"State prevax weekly cases: {self.pandemicOutcomes.cases.prevaxWeeklyObs}")
+
+        print(f"State population: {self.population}")
         # Update the prevax and postvax weekly observations at the state level
         self.pandemicOutcomes.prevaxWeeklyObs = np.concatenate([ county.pandemicOutcomes.cases.prevaxWeeklyObs for
                                                                  county in self.counties.values()
@@ -273,6 +267,7 @@ class State:
             self.pandemicOutcomes.hosps.postvaxWeeklyObs,
             self.pandemicOutcomes.deaths.postvaxWeeklyObs
         ])
+        '''
 
     def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
         """
@@ -380,6 +375,15 @@ class AllStates:
             print("State Weekly cases:", state.name, state.pandemicOutcomes.cases.weeklyObs)
             print("State Prevax Weekly cases:", state.name, state.pandemicOutcomes.cases.prevaxWeeklyObs)
         '''
+        # Update prevaxWeeklyObs for each state
+        for state in self.states.values():
+            state.pandemicOutcomes.cases.prevaxWeeklyObs = np.concatenate([
+                county.pandemicOutcomes.cases.prevaxWeeklyObs for county in state.counties.values()
+            ])
+
+            state.pandemicOutcomes.cases.postvaxWeeklyObs = np.concatenate([
+                county.pandemicOutcomes.cases.postvaxWeeklyObs for county in state.counties.values()
+            ])
         for state_name, state_obj in self.states.items():
             print("Alt calling method", state_obj.name, state_obj.pandemicOutcomes.cases.weeklyObs)
             print("Alt calling method-- pre",state_obj.name, state_obj.pandemicOutcomes.cases.prevaxWeeklyObs)
