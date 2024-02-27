@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 
 from deampy.in_out_functions import write_csv, read_csv_rows
-
-import tests.generate_data
 from definitions import ROOT_DIR
 from datetime import datetime
 
@@ -252,40 +250,73 @@ def generate_deaths_by_age_group():
     deaths_by_age_group.to_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv', index=False)
 
 
-def hsa_mapping_county_data(self):
-    """
-    Generates sub-plotted maps of the number of cases, hospital admissions, and deaths per 100,000 population for each county.
-    Values are computed per HSA (aggregate of county values for all counties within an HSA), but plotted by county.
-    """
 
-    #Load county hosp data
-    tests.generate_data.generate_county_data_csv('hospitalizations')
-    county_hosp_data, dates = get_dict_of_county_data_by_type('hospitalizations')
+
+def generate_hsa_mapped_county_hosp_data():
+    # Load county hosp data
+    county_hosp_data = pd.read_csv(ROOT_DIR+'/csv_files/county_hospitalizations.csv', skiprows=0)
 
     # Load HSA data
-    hsa_data = read_csv_rows(file_name='C:/Users/fm478/Downloads/county_names_HSA_number.csv',
-                             if_ignore_first_row=True)
+    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
 
-    # Create a dictionary for FIPS to HSA mapping
-    fips_to_hsa_mapping = {str(entry[4]): (entry[6], float(entry[8].replace(',', ''))) for entry in hsa_data}
 
-    # List to store counties without corresponding HSA
-    counties_without_hsa = []
 
-    # Dictionary to store HSA totals
-    hsa_totals_dict = {}
+    # Ensure the FIPS column has the same data type in both dataframes
+    county_hosp_data['FIPS'] = county_hosp_data['FIPS'].astype(str)
+    hsa_data['county_fips'] = hsa_data['county_fips'].astype(str)
 
-    # Dictionary to store aggregated values for each HSA
-    hsa_aggregated_data = {}
+    new_fips_values = [{'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
+                       {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
+                       {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
+                       {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
+                       {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
+                       {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
+                       {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
+                       {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'}]
 
-    county_outcomes_data = {
-        "COUNTY": [],
-        "FIPS": [],
-        "County Population": [],
-        "HSA Number": [],
-        "Cases": [],
-        "Hosps": [],
-        "Deaths": [],
-        "HSA Population": []
-    }
 
+    for county_update in new_fips_values:
+        county_name = county_update['County']
+        state_name = county_update['State']
+        new_fips = county_update['NewFIPS']
+
+        # Update FIPS values for the specified county and state in county_hosp_data
+        condition = (county_hosp_data['County'] == county_name) & (county_hosp_data['State'] == state_name)
+        county_hosp_data.loc[condition, 'FIPS'] = new_fips
+
+    # Merge county_hosp_data with hsa_data based on FIPS
+    merged_data = pd.merge(county_hosp_data, hsa_data, left_on='FIPS', right_on='county_fips', how='left')
+
+    # Extract the necessary columns for computation
+    selected_columns = ['County', 'State', 'FIPS', 'Population', 'health_service_area_number',
+                        'health_service_area_population']
+    selected_columns += county_hosp_data.columns[4:].to_list()  # Add the date columns
+
+    merged_data = merged_data[selected_columns]
+
+    # Convert 'Population' and 'health_service_area_population' columns to numeric
+    merged_data['Population'] = pd.to_numeric(merged_data['Population'], errors='coerce')
+    merged_data['health_service_area_population'] = pd.to_numeric(
+        merged_data['health_service_area_population'].str.replace(',', ''), errors='coerce')
+
+    # Calculate the Population Proportion
+    merged_data['Population Proportion'] = merged_data['Population']/ merged_data['health_service_area_population']
+
+    adjusted_weekly_hosp_values = None  # Initialize the variable
+
+    if (merged_data[county_hosp_data.columns[4:]] == '').any().any():
+        # Replace empty strings with NaN
+        merged_data[county_hosp_data.columns[4:]] = merged_data[county_hosp_data.columns[4:]].replace('', np.nan)
+
+    else:
+        adjusted_weekly_hosp_values = merged_data[county_hosp_data.columns[4:]] * merged_data[
+            'Population Proportion'].values[:, None]
+
+    # Create a new dataframe with adjusted values
+    adjusted_data = pd.concat([merged_data[
+                                   ['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values], axis=1)
+
+    print(adjusted_data)
+
+    # Save the adjusted data to a new CSV
+    adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv', index=False)
