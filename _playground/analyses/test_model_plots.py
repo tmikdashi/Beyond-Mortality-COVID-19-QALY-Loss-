@@ -1,11 +1,11 @@
-from classes.model import AllStates
+from _playground.classes.model_vax import AllStates
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 
 
 # create the model, populate it, and calculate the QALY loss
-from classes.parameters import ParameterValues, ParameterGenerator
+from classes.parameters import ParameterGenerator
 from data_preprocessing.support_functions import generate_deaths_by_age_group_and_sex, generate_life_expectancy_by_sex_age, extract_LE_and_death_arrays
 
 # generate death and life expectancy distribution by age and sex

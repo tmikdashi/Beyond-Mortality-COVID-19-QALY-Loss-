@@ -17,62 +17,48 @@ from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
 from matplotlib.ticker import ScalarFormatter
 from definitions import ROOT_DIR
-import seaborn as sns
-from datetime import datetime
-from matplotlib.ticker import FuncFormatter
-from matplotlib.ticker import StrMethodFormatter
 
+
+import numpy as np
 
 class AnOutcome:
-
     def __init__(self):
         self.weeklyObs = np.array([])
         self.totalObs = 0
         self.weeklyQALYLoss = np.array([])
         self.totalQALYLoss = 0
 
-        self.prevaxWeeklyObs = np.array([])  # Pre-vaccination weekly observations
-        self.postvaxWeeklyObs = np.array([])  # Post-vaccination weekly observations
+        self.prevaxWeeklyObs = np.array([])
+        self.postvaxWeeklyObs = np.array([])
         self.prevaxTotalObs = 0
         self.postvaxTotalObs = 0
-        self.prevaxWeeklyQALYLoss = np.array([])  # Pre-vaccination weekly QALY loss
-        self.postvaxWeeklyQALYLoss = np.array([])  # Post-vaccination weekly QALY loss
+        self.prevaxWeeklyQALYLoss = np.array([])
+        self.postvaxWeeklyQALYLoss = np.array([])
         self.prevaxTotalQALYLoss = 0
         self.postvaxTotalQALYLoss = 0
         self.vaccination_index = 35
 
     def add_traj(self, weekly_obs):
-        """
-        Add weekly data to the Outcome object.
-        :param weekly_obs: Weekly data as a numpy array.
-        """
         if not isinstance(weekly_obs, np.ndarray):
             weekly_obs = np.array(weekly_obs)
 
-        # replace missing values with 0
         weekly_obs = np.nan_to_num(weekly_obs, nan=0)
 
-        # add the weekly data to the existing data
         if len(self.weeklyObs) == 0:
             self.weeklyObs = weekly_obs
-            self.prevaxWeeklyObs = weekly_obs[:self.vaccination_index]
-            self.postvaxWeeklyObs = weekly_obs[self.vaccination_index:]
         else:
             self.weeklyObs += weekly_obs
-            self.prevaxWeeklyObs += weekly_obs[:self.vaccination_index]
-            self.postvaxWeeklyObs += weekly_obs[self.vaccination_index:]
+
+        self.prevaxWeeklyObs = weekly_obs[:self.vaccination_index]
+        self.postvaxWeeklyObs = weekly_obs[self.vaccination_index:]
 
         self.totalObs += sum(weekly_obs)
-        self.prevaxTotalObs += sum(weekly_obs[:self.vaccination_index])
-        self.postvaxTotalObs += sum(weekly_obs[self.vaccination_index:])
+        self.prevaxTotalObs += sum(self.prevaxWeeklyObs)
+        self.postvaxTotalObs += sum(self.postvaxWeeklyObs)
+
 
 
     def calculate_qaly_loss(self, quality_weight):
-        """
-        Calculates the weekly and overall QALY
-        :param quality_weight: Weight to be applied to each case in calculating QALY loss.
-        :return Weekly QALY loss as a numpy array or numerical values to total QALY loss.
-        """
         self.weeklyQALYLoss = quality_weight * self.weeklyObs
         self.totalQALYLoss = sum(self.weeklyQALYLoss)
 
@@ -84,8 +70,8 @@ class AnOutcome:
 
 
 class PandemicOutcomes:
-    def __init__(self):
 
+    def __init__(self):
         self.cases = AnOutcome()
         self.hosps = AnOutcome()
         self.deaths = AnOutcome()
@@ -94,44 +80,52 @@ class PandemicOutcomes:
         self.totalQALYLoss = 0
 
         self.prevaxWeeklyQALYLoss = np.array([])
-        self.prevaxTotalQALYLoss =0
-
         self.postvaxWeeklyQALYLoss = np.array([])
+        self.prevaxTotalQALYLoss = 0
         self.postvaxTotalQALYLoss = 0
 
-
     def add_traj(self, weekly_cases, weekly_hosp, weekly_deaths):
-        """
-        Add weekly cases, hospitalization, and deaths and calculate the total cases, hospitalizations, and deaths.
-        :param weekly_cases: Weekly cases data as a numpy array.
-        :param weekly_hosp: Weekly hospitalizations data as a numpy array.
-        :param weekly_deaths: Weekly deaths data as a numpy array.
-        """
         self.cases.add_traj(weekly_obs=weekly_cases)
         self.hosps.add_traj(weekly_obs=weekly_hosp)
         self.deaths.add_traj(weekly_obs=weekly_deaths)
 
-    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
-        """
-        Calculates the weekly and overall QALY
-        :param case_weight: cases-specific weight to be applied to each case in calculating QALY loss.
-        :param hosp_weight: hosp-specific weight to be applied to each hospitalization in calculating QALY loss.
-        :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
-        """
 
+    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
         self.cases.calculate_qaly_loss(quality_weight=case_weight)
         self.hosps.calculate_qaly_loss(quality_weight=hosp_weight)
         self.deaths.calculate_qaly_loss(quality_weight=death_weight)
 
-        self.weeklyQALYLoss = self.cases.weeklyQALYLoss + self.hosps.weeklyQALYLoss + self.deaths.weeklyQALYLoss
-        self.totalQALYLoss = self.cases.totalQALYLoss + self.hosps.totalQALYLoss + self.deaths.totalQALYLoss
+        self.weeklyQALYLoss = (
+            self.cases.weeklyQALYLoss
+            + self.hosps.weeklyQALYLoss
+            + self.deaths.weeklyQALYLoss
+        )
+        self.totalQALYLoss = (
+            self.cases.totalQALYLoss
+            + self.hosps.totalQALYLoss
+            + self.deaths.totalQALYLoss
+        )
 
-        self.prevaxWeeklyQALYLoss = self.cases.prevaxWeeklyQALYLoss + self.hosps.prevaxWeeklyQALYLoss + self.deaths.prevaxWeeklyQALYLoss
-        self.prevaxTotalQALYLoss = self.cases.prevaxTotalQALYLoss + self.hosps.prevaxTotalQALYLoss + self.deaths.prevaxTotalQALYLoss
-
-        self.postvaxWeeklyQALYLoss = self.cases.postvaxWeeklyQALYLoss + self.hosps.postvaxWeeklyQALYLoss + self.deaths.postvaxWeeklyQALYLoss
-        self.postvaxTotalQALYLoss = self.cases.postvaxTotalQALYLoss + self.hosps.postvaxTotalQALYLoss + self.deaths.postaxTotalQALYLoss
-
+        self.prevaxWeeklyQALYLoss = (
+                self.cases.prevaxWeeklyQALYLoss
+                + self.hosps.prevaxWeeklyQALYLoss
+                + self.deaths.prevaxWeeklyQALYLoss
+        )
+        self.postvaxWeeklyQALYLoss = (
+                self.cases.postvaxWeeklyQALYLoss
+                + self.hosps.postvaxWeeklyQALYLoss
+                + self.deaths.postvaxWeeklyQALYLoss
+        )
+        self.prevaxTotalQALYLoss = (
+                self.cases.prevaxTotalQALYLoss
+                + self.hosps.prevaxTotalQALYLoss
+                + self.deaths.prevaxTotalQALYLoss
+        )
+        self.postvaxTotalQALYLoss = (
+                self.cases.postvaxTotalQALYLoss
+                + self.hosps.postvaxTotalQALYLoss
+                + self.deaths.postvaxTotalQALYLoss
+        )
 
 
 class County:
@@ -160,6 +154,7 @@ class County:
         self.pandemicOutcomes.add_traj(
             weekly_cases=weekly_cases, weekly_hosp=weekly_hosp, weekly_deaths=weekly_deaths)
 
+
     def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight):
         """
         Calculates the weekly and total QALY loss for the County.
@@ -185,17 +180,18 @@ class County:
         """
         return self.pandemicOutcomes.weeklyQALYLoss
 
+    def get_vax_overall_qaly_loss(self):
+        """
+        Retrieves overall QALY loss before and after vaccination for the County, across outcomes.
+        """
+        return self.pandemicOutcomes.prevaxTotalQALYLoss, self.pandemicOutcomes.postvaxTotalQALYLoss
+
     def get_vax_weekly_qaly_loss(self):
         """
-        Retrieves weekly pre/post-vaccination QALY loss for the County, across outcomes.
+        Retrieves weekly QALY loss before and after vaccination for the County, across outcomes.
         """
         return self.pandemicOutcomes.prevaxWeeklyQALYLoss, self.pandemicOutcomes.postvaxWeeklyQALYLoss
 
-    def get_vax_overall_qaly_loss(self):
-        """
-        Retrieves overall pre/post-vaccination QALY loss for the County, across outcomes.
-        """
-        return self.pandemicOutcomes.prevaxTotalQALYLoss, self.pandemicOutcomes.postvaxTotalQALYLoss
 
 class State:
     def __init__(self, name, num_weeks):
@@ -216,12 +212,62 @@ class State:
 
         :param county: County object to be added to the State.
         """
+
+        #print(f"Adding county {county.name} to state {self.name}")
+        #print(f"County weekly cases: {county.pandemicOutcomes.cases.weeklyObs}")
+        #print(f"County prevax weekly cases: {county.pandemicOutcomes.cases.prevaxWeeklyObs}")
         self.counties[county.name] = county
         self.population += county.population
-        self.pandemicOutcomes.add_traj(
-            weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
-            weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
-            weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
+
+        self.pandemicOutcomes.cases.add_traj(weekly_obs=county.pandemicOutcomes.cases.weeklyObs)
+        self.pandemicOutcomes.hosps.add_traj(weekly_obs=county.pandemicOutcomes.hosps.weeklyObs)
+        self.pandemicOutcomes.deaths.add_traj(weekly_obs=county.pandemicOutcomes.deaths.weeklyObs)
+
+        if len(self.pandemicOutcomes.cases.prevaxWeeklyObs) == 0:
+            self.pandemicOutcomes.cases.prevaxWeeklyObs = np.zeros_like(county.pandemicOutcomes.cases.prevaxWeeklyObs)
+        self.pandemicOutcomes.cases.prevaxWeeklyObs += county.pandemicOutcomes.cases.prevaxWeeklyObs
+
+
+        if len(self.pandemicOutcomes.cases.postvaxWeeklyObs) == 0:
+            self.pandemicOutcomes.cases.postvaxWeeklyObs = np.zeros_like(county.pandemicOutcomes.cases.postvaxWeeklyObs)
+        self.pandemicOutcomes.cases.postvaxWeeklyObs += county.pandemicOutcomes.cases.postvaxWeeklyObs
+
+
+        '''
+        
+        print(f"State weekly cases: {self.pandemicOutcomes.cases.weeklyObs}")
+        print(f"State prevax weekly cases: {self.pandemicOutcomes.cases.prevaxWeeklyObs}")
+
+        print(f"State population: {self.population}")
+        # Update the prevax and postvax weekly observations at the state level
+        self.pandemicOutcomes.prevaxWeeklyObs = np.concatenate([ county.pandemicOutcomes.cases.prevaxWeeklyObs for
+                                                                 county in self.counties.values()
+                                                               ] + [
+                                                                   county.pandemicOutcomes.hosps.prevaxWeeklyObs for
+                                                                   county in self.counties.values()
+                                                               ] + [
+                                                                   county.pandemicOutcomes.deaths.prevaxWeeklyObs for
+                                                                   county in self.counties.values()
+                                                               ])
+
+        print(f"State before pre weekly cases: {self.pandemicOutcomes.cases.prevaxWeeklyObs}")
+        print(f"State pre weekly deaths: {self.pandemicOutcomes.deaths.prevaxWeeklyObs}")
+        print(f"State pre weekly hospitalizations: {self.pandemicOutcomes.hosps.prevaxWeeklyObs}")
+
+        self.pandemicOutcomes.cases.add_traj(weekly_obs=county.pandemicOutcomes.cases.prevaxWeeklyObs)
+        self.pandemicOutcomes.hosps.add_traj(weekly_obs=county.pandemicOutcomes.hosps.prevaxWeeklyObs)
+        self.pandemicOutcomes.deaths.add_traj(weekly_obs=county.pandemicOutcomes.deaths.prevaxWeeklyObs)
+
+        print(f"State after pre weekly cases: {self.pandemicOutcomes.cases.prevaxWeeklyObs}")
+        print(f"State pre weekly deaths: {self.pandemicOutcomes.deaths.prevaxWeeklyObs}")
+        print(f"State pre weekly hospitalizations: {self.pandemicOutcomes.hosps.prevaxWeeklyObs}")
+
+        self.pandemicOutcomes.postvaxWeeklyObs = np.concatenate([
+            self.pandemicOutcomes.cases.postvaxWeeklyObs,
+            self.pandemicOutcomes.hosps.postvaxWeeklyObs,
+            self.pandemicOutcomes.deaths.postvaxWeeklyObs
+        ])
+        '''
 
     def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight):
         """
@@ -252,17 +298,17 @@ class State:
         """
         return self.pandemicOutcomes.weeklyQALYLoss
 
-    def get_weekly_vax_qaly_loss(self):
+    def get_vax_overall_qaly_loss(self):
         """
-        Retrieves pre-vaccination QALY loss for the State, across outcomes.
-        """
-        return self.pandemicOutcomes.prevaxWeeklyQALYLoss, self.pandemicOutcomes.postvaxWeeklyQALYLoss
-
-    def get_overall_vax_qaly_loss(self):
-        """
-        Retrieves pre-vaccination QALY loss for the State, across outcomes.
+        Retrieves overall QALY loss before and after vaccination for the County, across outcomes.
         """
         return self.pandemicOutcomes.prevaxTotalQALYLoss, self.pandemicOutcomes.postvaxTotalQALYLoss
+
+    def get_vax_weekly_qaly_loss(self):
+        """
+        Retrieves weekly QALY loss before and after vaccination for the County, across outcomes.
+        """
+        return self.pandemicOutcomes.prevaxWeeklyQALYLoss, self.pandemicOutcomes.postvaxWeeklyQALYLoss
 
 
 class AllStates:
@@ -315,6 +361,7 @@ class AllStates:
                 weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
                 weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs)
 
+
             # create a new state if not already in the dictionary of states
             if state not in self.states:
                 self.states[state] = State(name=state, num_weeks=self.numWeeks)
@@ -322,6 +369,29 @@ class AllStates:
             # add the new county to the state
             self.states[state].add_county(county)
 
+
+
+        for state in self.states.values():
+            print("State Weekly cases:", state.name, state.pandemicOutcomes.cases.weeklyObs)
+            print("State Prevax Weekly cases:", state.name, state.pandemicOutcomes.cases.prevaxWeeklyObs)
+        '''
+        # Update prevaxWeeklyObs for each state
+        for state in self.states.values():
+            state.pandemicOutcomes.cases.prevaxWeeklyObs = np.concatenate([
+                county.pandemicOutcomes.cases.prevaxWeeklyObs for county in state.counties.values()
+            ])
+
+            state.pandemicOutcomes.cases.postvaxWeeklyObs = np.concatenate([
+                county.pandemicOutcomes.cases.postvaxWeeklyObs for county in state.counties.values()
+            ])
+        for state_name, state_obj in self.states.items():
+            print("Alt calling method", state_obj.name, state_obj.pandemicOutcomes.cases.weeklyObs)
+            print("Alt calling method-- pre",state_obj.name, state_obj.pandemicOutcomes.cases.prevaxWeeklyObs)
+            #for county in state.counties.values():
+                #print("County Weekly Obs:",county.name, county.pandemicOutcomes.cases.weeklyObs)
+                #print("County Pre Weekly Obs:", county.name, county.pandemicOutcomes.cases.prevaxWeeklyObs)
+                #print("County Post Weekly Obs:", county.name, county.pandemicOutcomes.cases.postvaxWeeklyObs)
+        '''
 
 
     def calculate_qaly_loss(self, param_values):
@@ -717,6 +787,43 @@ class AllStates:
         total_dQAlY_loss_by_age = deaths_by_age * param_gen.parameters['dQALY_loss_by_age'].value
         return total_dQAlY_loss_by_age
 
+
+    def get_prevax_overall_qaly_loss_by_state_cases(self):
+        overall_prevax_qaly_loss_cases_by_state = {}
+        for state_name, state_obj in self.states.items():
+            overall_prevax_qaly_loss_cases_by_state[state_name] = state_obj.pandemicOutcomes.cases.prevaxTotalQALYLoss
+        return  overall_prevax_qaly_loss_cases_by_state
+
+    def get_prevax_overall_qaly_loss_by_state_hosps(self):
+        overall_prevax_qaly_loss_hosps_by_state = {}
+        for state_name, state_obj in self.states.items():
+            overall_prevax_qaly_loss_hosps_by_state[state_name] = state_obj.pandemicOutcomes.hosps.prevaxTotalQALYLoss
+        return  overall_prevax_qaly_loss_hosps_by_state
+
+    def get_prevax_overall_qaly_loss_by_state_deaths(self):
+        overall_prevax_qaly_loss_deaths_by_state = {}
+        for state_name, state_obj in self.states.items():
+            overall_prevax_qaly_loss_deaths_by_state[state_name] = state_obj.pandemicOutcomes.deaths.prevaxTotalQALYLoss
+        return  overall_prevax_qaly_loss_deaths_by_state
+
+    def get_postvax_overall_qaly_loss_by_state_cases(self):
+        overall_postvax_qaly_loss_cases_by_state = {}
+        for state_name, state_obj in self.states.items():
+            overall_postvax_qaly_loss_cases_by_state[state_name] = state_obj.pandemicOutcomes.cases.postvaxTotalQALYLoss
+        return overall_postvax_qaly_loss_cases_by_state
+
+    def get_postvax_overall_qaly_loss_by_state_hosps(self):
+        overall_postvax_qaly_loss_hosps_by_state = {}
+        for state_name, state_obj in self.states.items():
+            overall_postvax_qaly_loss_hosps_by_state[state_name] = state_obj.pandemicOutcomes.hosps.postvaxTotalQALYLoss
+        return overall_postvax_qaly_loss_hosps_by_state
+
+    def get_postvax_overall_qaly_loss_by_state_deaths(self):
+        overall_postvax_qaly_loss_deaths_by_state = {}
+        for state_name, state_obj in self.states.items():
+            overall_postvax_qaly_loss_deaths_by_state[state_name] = state_obj.pandemicOutcomes.deaths.postvaxTotalQALYLoss
+        return overall_postvax_qaly_loss_deaths_by_state
+
     def get_prevax_total_qaly_loss_by_state(self):
         return {state_name: state_obj.pandemicOutcomes.prevaxTotalQALYLoss for state_name, state_obj in self.states.items()}
 
@@ -728,7 +835,6 @@ class AllStates:
 
     def get_postvax_weekly_qaly_loss_by_state(self):
         return {state_name: state_obj.pandemicOutcomes.postvaxWeeklyQALYLoss for state_name, state_obj in self.states.items()}
-
 
 
 
@@ -757,13 +863,14 @@ class SummaryOutcomes:
 
         self.overallQALYlossessByStateandOutcome =[]
 
-        self.prevaxOverallQALYlossesCasesByState = []
-        self.prevaxOverallQALYlossesHospsByState = []
-        self.prevaxOverallQALYlossesDeathsByState = []
+        self.prevaxOverallQALYLossesCasesByState = []
+        self.prevaxOverallQALYLossesHospsByState = []
+        self.prevaxOverallQALYLossesDeathsByState = []
 
-        self.postvaxOverallQALYlossesCasesByState = []
-        self.postvaxOverallQALYlossesHospsByState = []
-        self.postvaxOverallQALYlossesDeathsByState = []
+        self.postvaxOverallQALYLossesCasesByState = []
+        self.postvaxOverallQALYLossesHospsByState = []
+        self.postvaxOverallQALYLossesDeathsByState = []
+
 
         self.statOverallQALYLoss = None
         self.statOverallQALYLossCases = None
@@ -796,14 +903,13 @@ class SummaryOutcomes:
         self.overallQALYlossesHospsByState.append(simulated_model.get_overall_qaly_loss_by_state_hosps())
         self.overallQALYlossesDeathsByState.append(simulated_model.get_overall_qaly_loss_by_state_deaths())
 
-        self.prevaxOverallQALYlossesCasesByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_cases())
-        self.prevaxOverallQALYlossesHospsByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_hosps())
-        self.prevaxOverallQALYlossesDeathsByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_deaths())
+        self.prevaxOverallQALYLossesCasesByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_cases())
+        self.prevaxOverallQALYLossesHospsByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_hosps())
+        self.prevaxOverallQALYLossesDeathsByState.append(simulated_model.get_prevax_overall_qaly_loss_by_state_deaths())
 
-        self.postvaxOverallQALYlossesCasesByState.append(simulated_model.get_postvax_overall_qaly_loss_by_state_cases())
-        self.postvaxOverallQALYlossesHospsByState.append(simulated_model.get_postvax_overall_qaly_loss_by_state_hosps())
-        self.postvaxOverallQALYlossesDeathsByState.append(
-            simulated_model.get_postvax_overall_qaly_loss_by_state_deaths())
+        self.postvaxOverallQALYLossesCasesByState.append(simulated_model.get_postvax_overall_qaly_loss_by_state_cases())
+        self.postvaxOverallQALYLossesHospsByState.append(simulated_model.get_postvax_overall_qaly_loss_by_state_hosps())
+        self.postvaxOverallQALYLossesDeathsByState.append(simulated_model.get_postvax_overall_qaly_loss_by_state_deaths())
 
         self.deathQALYLossByAge.append(simulated_model.get_death_QALY_loss_by_age(param_gen))
 
@@ -851,8 +957,7 @@ class ProbabilisticAllStates:
 
         rng = np.random.RandomState(1)
         param_gen = ParameterGenerator()
-        self.age_group = param_gen.parameters['Age Group'].values
-        #self.age_group = param_gen.parameters['Age Group'].value
+        self.age_group = param_gen.parameters['Age Group'].value
 
 
         for i in range(n):
@@ -868,7 +973,6 @@ class ProbabilisticAllStates:
             self.summaryOutcomes.extract_outcomes(simulated_model=self.allStates, param_gen=param_gen)
 
         self.summaryOutcomes.summarize()
-
 
     def plot_qaly_loss_from_deaths_by_age(self):
 
@@ -899,6 +1003,7 @@ class ProbabilisticAllStates:
         mean_deaths = self.allStates.pandemicOutcomes.deaths.totalObs
 
 
+        print("weekly national hosps", self.allStates.pandemicOutcomes.hosps.totalObs)
         print('Overall Outcomes:')
         print('  Mean Cases: {:,.0f}'.format(mean_cases))
         print('  Mean Hospitalizations: {:,.0f}'.format(mean_hosps))
@@ -1609,189 +1714,6 @@ class ProbabilisticAllStates:
     def plot_map_of_hsa_outcomes_by_county_per_100K(self):
         """
         Generates sub-plotted maps of the number of cases, hospital admissions, and deaths per 100,000 population for each county.
-        """
-
-        # Load HSA data
-        hsa_data = read_csv_rows(file_name='C:/Users/fm478/Pictures/Health.Service.Areas.csv',
-                                 if_ignore_first_row=True)
-
-        # Create a dictionary for FIPS to HSA mapping
-        fips_to_hsa_mapping = {str(entry[3]).lstrip('0'): entry[0] for entry in hsa_data}
-
-
-        # Read the aggregated_totals.csv file
-        aggregated_totals_df = pd.read_csv(ROOT_DIR + '/_playground/support/csv_files/aggregated_totals.csv')
-
-        # Create a mapping between HSA Number and total cases
-        hsa_totals_mapping = {
-            int(row['HSA Number']): {
-                'Total Cases': row['Total Cases'],
-                'Total Hospitalizations': row['Total Hospitalizations'],
-                'Total Deaths': row['Total Deaths'],
-                'Population': row['Population']
-            }
-            for _, row in aggregated_totals_df.iterrows()
-        }
-
-        print(hsa_totals_mapping)
-
-        # Initialize county_outcomes_data
-        county_outcomes_data = {
-            "COUNTY": [],
-            "FIPS": [],
-            "Cases per 100K": [],
-            "Hosps per 100K": [],
-            "Deaths per 100K": [],
-            "HSA Number": [],
-            "HSA Total Cases per 100K": [],
-            "HSA Total Hospitalizations per 100K": [],
-            "HSA Total Deaths per 100K": []
-        }
-
-        # Iterate over all states and counties
-        for state in self.allStates.states.values():
-            for county in state.counties.values():
-                fips_code = county.fips
-                hsa_number = fips_to_hsa_mapping.get(fips_code, None)
-
-                if hsa_number is not None:
-                    hsa_number = int(hsa_number)
-                else:
-                    hsa_number = None
-
-                # Get HSA totals from the mapping
-                if hsa_number is not None:
-                    try:
-                        hsa_totals = hsa_totals_mapping[hsa_number]
-                    except KeyError:
-                        hsa_totals = {'Total Cases': 0, 'Total Hospitalizations': 0, 'Total Deaths': 0, 'Population': 1}
-                        print(f"KeyError: HSA Number {hsa_number} not found in hsa_totals_mapping")
-
-                    # Check if HSA total deaths, cases, and hospitalizations per 100k are greater than 0
-                    if (hsa_totals['Total Deaths'] > 0 and
-                            hsa_totals['Total Cases'] > 0 and
-                            hsa_totals['Total Hospitalizations'] > 0):
-                        # Append county data to the list
-                        county_outcomes_data["HSA Number"].append(hsa_number)
-                        county_outcomes_data["COUNTY"].append(county.name)
-                        county_outcomes_data["FIPS"].append(fips_code)
-                        county_outcomes_data["Cases per 100K"].append(
-                            (county.pandemicOutcomes.cases.totalObs / county.population) * 100000)
-                        county_outcomes_data["Hosps per 100K"].append(
-                            (county.pandemicOutcomes.hosps.totalObs / county.population) * 100000)
-                        county_outcomes_data["Deaths per 100K"].append(
-                            (county.pandemicOutcomes.deaths.totalObs / county.population) * 100000)
-
-                        # Calculate HSA total cases, hospitalizations, deaths, and population per 100K
-                        hsa_total_cases_per_100K = (hsa_totals['Total Cases'] / float(
-                            hsa_totals['Population'])) * 100000
-                        hsa_total_hospitalizations_per_100K = (hsa_totals['Total Hospitalizations'] / float(
-                            hsa_totals['Population'])) * 100000
-                        hsa_total_deaths_per_100K = (hsa_totals['Total Deaths'] / float(
-                            hsa_totals['Population'])) * 100000
-
-                        # Append HSA data to the list
-                        county_outcomes_data["HSA Total Cases per 100K"].append(hsa_total_cases_per_100K)
-                        county_outcomes_data["HSA Total Hospitalizations per 100K"].append(
-                            hsa_total_hospitalizations_per_100K)
-                        county_outcomes_data["HSA Total Deaths per 100K"].append(hsa_total_deaths_per_100K)
-                else:
-                    # Handle the case when hsa_number is None
-                    continue  # Skip this county if HSA number is None
-
-        # Create a DataFrame from the county data
-        county_outcomes_df = pd.DataFrame(county_outcomes_data)
-
-        county_outcomes_df.to_csv(ROOT_DIR + '/csv_files/county_outcomes.csv', index=False)
-
-        # Merge the county QALY loss data with the geometry data
-        geoData = gpd.read_file(
-            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
-        )
-        geoData['STATE'] = geoData['STATE'].str.lstrip('0')
-        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
-        merged_geo_data = geoData.merge(county_outcomes_df, left_on='FIPS', right_on='FIPS', how='left')
-
-        # Remove counties where there is no data
-        merged_geo_data = merged_geo_data.dropna(subset=["HSA Total Deaths per 100K"])
-
-        # Remove Alaska, HI, Puerto Rico (to be plotted later)
-        stateToRemove = ["2", "15", "72"]
-        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
-
-        # Explode the MultiPolygon geometries into individual polygons
-        merged_geo_data_mainland = merged_geo_data_mainland.explode()
-
-        # Plot the map
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(18, 5), subplot_kw={'aspect': 'equal'})
-
-        ax3.axis('off')
-        ax3.set_title('HSA Total Deaths per 100K', fontsize=15)
-
-        scheme = mc.Quantiles(merged_geo_data_mainland["HSA Total Deaths per 100K"], k=10)
-
-        gplt.choropleth(
-            merged_geo_data_mainland,
-            hue="HSA Total Deaths per 100K",
-            linewidth=0.1,
-            scheme=scheme,
-            cmap="viridis",
-            legend=True,
-            legend_kwargs={'title': 'HSA Total Deaths per 100K', 'fontsize': 8, 'bbox_to_anchor': (0.95, 0.5),
-                           'loc': 'center left'},
-            legend_labels=None,
-            edgecolor="black",
-            ax=ax3
-        )
-
-        ax1.axis('off')
-        ax1.set_title("HSA Total Cases per 100K", fontsize=15)
-
-        scheme_cases = mc.Quantiles(merged_geo_data_mainland["HSA Total Cases per 100K"], k=10)
-
-        gplt.choropleth(
-            merged_geo_data_mainland,
-            hue="HSA Total Cases per 100K",
-            linewidth=0.1,
-            scheme=scheme_cases,
-            cmap="viridis",
-            legend=True,
-            legend_kwargs={'title': "HSA Total Cases per 100K", 'fontsize': 8, 'bbox_to_anchor': (0.95, 0.5),
-                           'loc': 'center left'},
-            legend_labels=None,
-            edgecolor="black",
-            ax=ax1
-        )
-
-        ax2.axis('off')
-        ax2.set_title("HSA Total Hospitalizations per 100K", fontsize=15)
-
-        scheme_hosps = mc.Quantiles(merged_geo_data_mainland["HSA Total Hospitalizations per 100K"], k=10)
-
-        gplt.choropleth(
-            merged_geo_data_mainland,
-            hue="HSA Total Hospitalizations per 100K",
-            linewidth=0.1,
-            scheme=scheme_hosps,
-            cmap="viridis",
-            legend=True,
-            legend_kwargs={'title': '"HSA Total Hospitalizations per 100K"', 'fontsize': 8,
-                           'bbox_to_anchor': (0.95, 0.5),
-                           'loc': 'center left'},
-            legend_labels=None,
-            edgecolor="black",
-            ax=ax2
-        )
-
-        plt.tight_layout()
-
-        output_figure(fig, filename=ROOT_DIR + '/figs/map_county_outcomes_per_100K.png')
-
-        return fig
-
-    def plot_map_of_hsa_outcomes_by_county_per_100K_alt(self):
-        """
-        Generates sub-plotted maps of the number of cases, hospital admissions, and deaths per 100,000 population for each county.
         Values are computed per HSA (aggregate of county values for all counties within an HSA), but plotted by county.
         """
 
@@ -1865,7 +1787,7 @@ class ProbabilisticAllStates:
                             "Population": hsa_population
                         }
                     hsa_aggregated_data[hsa_number]["Total Cases"] += county.pandemicOutcomes.cases.totalObs
-                    hsa_aggregated_data[hsa_number]["Total Hospitalizations"] += county.pandemicOutcomes.hosps.totalObs
+                    #hsa_aggregated_data[hsa_number]["Total Hospitalizations"] += county.pandemicOutcomes.hosps.totalObs
                     hsa_aggregated_data[hsa_number]["Total Deaths"] += county.pandemicOutcomes.deaths.totalObs
 
                 else:
@@ -1887,9 +1809,11 @@ class ProbabilisticAllStates:
                 hsa_number = int(hsa_number)
                 hsa_total_cases_per_100K = (hsa_aggregated_data[hsa_number]["Total Cases"] / float(
                     hsa_aggregated_data[hsa_number]["Population"])) * 100000
-                hsa_total_hospitalizations_per_100K = (hsa_aggregated_data[hsa_number][
-                                                           "Total Hospitalizations"] / float(
-                    hsa_aggregated_data[hsa_number]["Population"])) * 100000
+                #hsa_total_hospitalizations_per_100K = (hsa_aggregated_data[hsa_number][
+                                                           #"Total Hospitalizations"] / float(
+                    #hsa_aggregated_data[hsa_number]["Population"])) * 100000
+                hsa_total_hospitalizations_per_100K = county_outcomes_data["Hosps"][i] / float (
+                    hsa_aggregated_data[hsa_number]["Population"]) * 100000
                 hsa_total_deaths_per_100K = (hsa_aggregated_data[hsa_number]["Total Deaths"] / float(
                     hsa_aggregated_data[hsa_number]["Population"])) * 100000
 
@@ -2132,7 +2056,7 @@ class ProbabilisticAllStates:
 
         plt.tight_layout()
 
-        output_figure(fig, filename=ROOT_DIR + '/figs/map_county_outcomes_per_100K_alt.png')
+        output_figure(fig, filename=ROOT_DIR + '/figs/map_county_outcomes_per_100K.png')
 
     def plot_weekly_outcomes(self):
         """
@@ -2904,6 +2828,21 @@ class ProbabilisticAllStates:
         num_states = len(self.allStates.states)
         states_list = list(self.allStates.states.values())
 
+        # To sort states by overall QALY loss
+        sorted_states = sorted(
+            states_list,
+            key=lambda state_obj: (self.get_mean_ui_overall_qaly_loss_by_state(
+                state_name=state_obj.name, alpha=0.05)[0] / state_obj.population) * 100000)
+
+        # Set up the positions for the bars
+        y_pos = range(len(sorted_states))
+
+        democratic_states = ['AZ', 'CA', 'CO', 'CT', 'DE', 'HI', 'IL', 'KS', 'KY', 'ME', 'MD', 'MA', 'MI', 'MN', 'NJ',
+                             'NM', 'NY', 'NC', 'OR', 'PA', 'RI', 'WA', 'WI']
+        republican_states = ['AL', 'AK', 'AR', 'FL', 'GA', 'ID', 'IN', 'IA', 'LA', 'MI', 'MS', 'MO', 'MT', 'NE', 'NH',
+                             'NV', 'ND', 'OH', 'OK', 'SC', 'SD', 'TN', 'TX',
+                             'UT', 'VT', 'VA', 'WV', 'WY']
+
         # Set up the figure and axis for three subplots
         fig, axs = plt.subplots(3, 1, figsize=(12, 18), sharex=True)
 
@@ -2915,38 +2854,64 @@ class ProbabilisticAllStates:
 
         # Set up colors for each segment and vaccination status
         pre_vax_color = 'lightblue'
-        post_vax_color = 'orange'
-        cases_color = 'blue'
-        deaths_color = 'red'
-        hosps_color = 'green'
+        post_vax_color = 'black'
 
         # Iterate through each state
-        for i, state_obj in enumerate(states_list):
-            # Calculate the heights for each segment for pre-vaccination
-            pre_vax_cases_height = (state_obj.pandemicOutcomes.cases.totalQALYLoss / state_obj.population) * 100000
-            pre_vax_deaths_height = (state_obj.pandemicOutcomes.deaths.totalQALYLoss / state_obj.population) * 100000
-            pre_vax_hosps_height = (state_obj.pandemicOutcomes.hosps.totalQALYLoss / state_obj.population) * 100000
+        for i, state_obj in enumerate(sorted_states):
+            # Calculate the heights for each segment
+            prevax_mean_cases, prevax_ui_cases, prevax_mean_hosps, prevax_ui_hosps, prevax_mean_deaths, \
+                prevax_ui_deaths, postvax_mean_cases, postvax_ui_cases, postvax_mean_hosps, postvax_ui_hosps, \
+                postvax_mean_deaths, postvax_ui_deaths = (
+                self.get_mean_ui_overall_vax_qaly_loss_by_outcome_and_state(state_obj.name, alpha=0.05))
+
+            prevax_cases_height = (prevax_mean_cases / state_obj.population) * 100000
+            postvax_cases_height = (postvax_mean_cases / state_obj.population) * 100000
+
+            prevax_hosps_height = (prevax_mean_hosps / state_obj.population) * 100000
+            postvax_hosps_height = (postvax_mean_hosps / state_obj.population) * 100000
+
+            prevax_deaths_height = (prevax_mean_deaths / state_obj.population) * 100000
+            postvax_deaths_height = (postvax_mean_deaths / state_obj.population) * 100000
+
+            mean_total, ui_total = self.get_mean_ui_overall_qaly_loss_by_state(state_obj.name, alpha=0.05)
+            total_height = (mean_total / state_obj.population) * 100000
+
+            # Converting UI into error bars
+            prevax_cases_ui = (prevax_ui_cases / state_obj.population) * 100000
+            postvax_cases_ui = (postvax_ui_cases / state_obj.population) * 100000
+            prevax_hosps_ui = (prevax_ui_hosps / state_obj.population) * 100000
+            postvax_hosps_ui = (postvax_ui_hosps / state_obj.population) * 100000
+            prevax_deaths_ui = (prevax_ui_deaths / state_obj.population) * 100000
+            postvax_deaths_ui = (postvax_ui_deaths / state_obj.population) * 100000
+
+            prevax_xterr_cases = [[prevax_cases_height - prevax_cases_ui[0]],
+                                  [prevax_cases_ui[1] - prevax_cases_height]]
+            postvax_xterr_cases = [[postvax_cases_height - postvax_cases_ui[0]],
+                                   [postvax_cases_ui[1] - postvax_cases_height]]
+            prevax_xterr_hosps = [[prevax_hosps_height - prevax_hosps_ui[0]],
+                                  [prevax_hosps_ui[1] - prevax_hosps_height]]
+            postvax_xterr_hosps = [[postvax_hosps_height - postvax_hosps_ui[0]],
+                                   [postvax_hosps_ui[1] - postvax_hosps_height]]
+            prevax_xterr_deaths = [[prevax_deaths_height - prevax_deaths_ui[0]],
+                                   [prevax_deaths_ui[1] - prevax_deaths_height]]
+            postvax_xterr_deaths = [[postvax_deaths_height - postvax_deaths_ui[0]],
+                                    [postvax_deaths_ui[1] - postvax_deaths_height]]
 
             # Plot the segments for pre-vaccination
-            axs[0].bar(2 * i, pre_vax_cases_height, color=pre_vax_color, width=bar_width, align='center',
-                       label='Pre-Vax' if i == 0 else "")
-            axs[1].bar(2 * i, pre_vax_deaths_height, color=pre_vax_color, width=bar_width, align='center',
-                       label='Pre-Vax' if i == 0 else "")
-            axs[2].bar(2 * i, pre_vax_hosps_height, color=pre_vax_color, width=bar_width, align='center',
-                       label='Pre-Vax' if i == 0 else "")
-
-            # Calculate the heights for each segment for post-vaccination
-            post_vax_cases_height = (state_obj.pandemicOutcomes.cases.totalQALYLoss_post_vax / state_obj.population) * 100000
-            post_vax_deaths_height = (state_obj.pandemicOutcomes.deaths.totalQALYLoss_post_vax / state_obj.population) * 100000
-            post_vax_hosps_height = (state_obj.pandemicOutcomes.hosps.totalQALYLoss_post_vax / state_obj.population) * 100000
+            axs[0].bar(2 * i, prevax_cases_height, color=pre_vax_color, width=bar_width, align='center',
+                       yerr=prevax_xterr_cases, capsize=5, label='Pre-Vax' if i == 0 else "")
+            axs[1].bar(2 * i, prevax_deaths_height, color=pre_vax_color, width=bar_width, align='center',
+                       yerr=prevax_xterr_deaths, capsize=5, label='Pre-Vax' if i == 0 else "")
+            axs[2].bar(2 * i, prevax_hosps_height, color=pre_vax_color, width=bar_width, align='center',
+                       yerr=prevax_xterr_hosps, capsize=5, label='Pre-Vax' if i == 0 else "")
 
             # Plot the segments for post-vaccination
-            axs[0].bar(2 * i + 1, post_vax_cases_height, color=post_vax_color, width=bar_width, align='center',
-                       label='Post-Vax' if i == 0 else "")
-            axs[1].bar(2 * i + 1, post_vax_deaths_height, color=post_vax_color, width=bar_width, align='center',
-                       label='Post-Vax' if i == 0 else "")
-            axs[2].bar(2 * i + 1, post_vax_hosps_height, color=post_vax_color, width=bar_width, align='center',
-                       label='Post-Vax' if i == 0 else "")
+            axs[0].bar(2 * i + 1, postvax_cases_height, color=post_vax_color, width=bar_width, align='center',
+                       yerr=postvax_xterr_cases, capsize=5, label='Post-Vax' if i == 0 else "")
+            axs[1].bar(2 * i + 1, postvax_deaths_height, color=post_vax_color, width=bar_width, align='center',
+                       yerr=postvax_xterr_deaths, capsize=5, label='Post-Vax' if i == 0 else "")
+            axs[2].bar(2 * i + 1, postvax_hosps_height, color=post_vax_color, width=bar_width, align='center',
+                       yerr=postvax_xterr_hosps, capsize=5, label='Post-Vax' if i == 0 else "")
 
         # Set the labels for each state and vaccination status
         axs[2].set_xticks(2 * bar_positions)
@@ -2967,5 +2932,281 @@ class ProbabilisticAllStates:
         plt.tight_layout()
         # Add the appropriate path to save the figure
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome_and_vax_status_subplots.png')
+
+    def plot_qaly_loss_by_state_and_vax_status_subplots_alt(self):
+        """
+        Generate three subplots, one for each health outcome, with bar graphs representing total QALY loss per 100,000 pop
+        for each state. Each subplot has pre-vaccination and post-vaccination QALY loss values separated by state.
+        """
+
+        num_states = len(self.allStates.states)
+        states_list = list(self.allStates.states.values())
+
+        # To sort states by overall QALY loss
+        sorted_states = sorted(
+            states_list,
+            key=lambda state_obj: (self.get_mean_ui_overall_qaly_loss_by_state(
+                state_name=state_obj.name, alpha=0.05)[0] / state_obj.population) * 100000)
+
+            # Set up the positions for the bars
+        x_pos = range(len(sorted_states))
+
+        democratic_states = ['AZ', 'CA', 'CO', 'CT', 'DE', 'HI', 'IL', 'KS', 'KY', 'ME', 'MD', 'MA', 'MI', 'MN',
+                                 'NJ', 'NM', 'NY', 'NC', 'OR', 'PA', 'RI', 'WA', 'WI']
+        republican_states = ['AL', 'AK', 'AR', 'FL', 'GA', 'ID', 'IN', 'IA', 'LA', 'MI', 'MS', 'MO', 'MT', 'NE',
+                                 'NH', 'NV', 'ND', 'OH', 'OK', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WV', 'WY']
+
+        # Set up the figure and axis for three subplots
+        fig, axs = plt.subplots(1, 3, figsize=(18, 8), sharey=False)
+
+        # Set up the positions for the bars
+        bar_positions = np.arange(num_states)
+
+        # Set up the width for each state bar
+        bar_width = 0.8
+
+        # Set up colors for each segment and vaccination status
+        pre_vax_color = 'lightblue'
+        post_vax_color = 'orange'
+
+        # Iterate through each state
+        for i, state_obj in enumerate(sorted_states):
+                # Calculate the total QALY loss for each outcome
+            total_qaly_loss = (self.get_mean_ui_overall_qaly_loss_by_state(state_obj.name, alpha=0.05)[
+                                    0] / state_obj.population) * 100000
+
+                # Plot the bar for pre-vaccination
+            axs[0].barh(i, total_qaly_loss, color=pre_vax_color, height=bar_width,
+                        label='Pre-Vax' if i == 0 else "")
+
+                # Plot the bar for post-vaccination
+            axs[1].barh(i, total_qaly_loss, color=post_vax_color, height=bar_width,
+                        label='Post-Vax' if i == 0 else "")
+
+                # Plot the bar for total QALY loss
+            axs[2].barh(i, total_qaly_loss, color=[pre_vax_color, post_vax_color], height=bar_width,
+                        edgecolor='black', linewidth=0.5, label=['Pre-Vax', 'Post-Vax'] if i == 0 else "")
+
+            # Set the labels for each state and vaccination status
+        axs[2].set_yticks(bar_positions)
+        axs[2].set_yticklabels([state_obj.name for state_obj in states_list], fontsize=8, ha='right')
+
+            # Set the labels and title for each subplot
+        axs[0].set_xlabel('Cases QALY Loss per 100,000')
+        axs[1].set_xlabel('Deaths QALY Loss per 100,000')
+        axs[2].set_xlabel('Hospitalizations QALY Loss per 100,000')
+        axs[2].set_ylabel('States')
+        axs[0].set_title('Total QALY Loss by State and Outcome (Pre-Vaccination)')
+        axs[1].set_title('Total QALY Loss by State and Outcome (Post-Vaccination)')
+
+            # Show the legend with unique labels for each subplot
+        axs[0].legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Pre-Vax'])
+        axs[1].legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Post-Vax'])
+        axs[2].legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Pre-Vax', 'Post-Vax'])
+
+        plt.tight_layout()
+            # Add the appropriate path to save the figure
+        output_figure(fig,filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome_and_vax_status_subplots_alt.png')
+
+    def plot_qaly_loss_by_state_and_by_outcome_alt_2(self):
+        """
+        Generate subplots for each health outcome with scatter plots of the total QALY loss per 100,000 pop for each state,
+        including pre-vaccination and post-vaccination contributions.
+        """
+
+        num_states = len(self.allStates.states)
+        states_list = list(self.allStates.states.values())
+
+        # Set up the figure and axis for three subplots
+        fig, axs = plt.subplots(3, 1, figsize=(12, 18), sharex=False)
+
+        # Set up the positions for the y-axis
+        y_pos = np.arange(num_states)
+
+        # Set up the width for each state scatter plot
+        scatter_size = 50
+
+        # Set up colors for each segment and vaccination status
+        pre_vax_color = 'lightblue'
+        post_vax_color = 'orange'
+
+        # Iterate through each state
+        for i, state_obj in enumerate(states_list):
+            # Calculate the heights for each segment
+            (prevax_mean_cases, prevax_ui_cases, prevax_mean_hosps, prevax_ui_hosps, prevax_mean_deaths,
+             prevax_ui_deaths, postvax_mean_cases, postvax_ui_cases, postvax_mean_hosps, postvax_ui_hosps,
+             postvax_mean_deaths, postvax_ui_deaths) = (self.get_mean_ui_overall_vax_qaly_loss_by_outcome_and_state(state_obj, alpha=0.05))
+
+            prevax_cases_height = (prevax_mean_cases / state_obj.population) * 100000
+            postvax_cases_height = (postvax_mean_cases/ state_obj.population) * 100000
+
+            prevax_hosps_height = (prevax_mean_hosps / state_obj.population) * 100000
+            postvax_hosps_height = (postvax_mean_hosps/ state_obj.population) * 100000
+
+            prevax_deaths_height = (prevax_mean_deaths / state_obj.population) * 100000
+            postvax_deaths_height = (postvax_mean_deaths / state_obj.population) * 100000
+
+            # Converting UI into error bars
+            prevax_cases_ui = (prevax_ui_cases / state_obj.population) * 100000
+            prevax_deaths_ui = (prevax_ui_deaths / state_obj.population) * 100000
+            prevax_hosps_ui = (prevax_ui_hosps / state_obj.population) * 100000
+            postvax_cases_ui = (postvax_ui_cases / state_obj.population) * 100000
+            postvax_deaths_ui = (postvax_ui_deaths / state_obj.population) * 100000
+            postvax_hosps_ui = (postvax_ui_hosps / state_obj.population) * 100000
+
+
+            xterr_prevax_cases = [[prevax_cases_height - prevax_cases_ui[0]], [prevax_cases_ui[1] - prevax_cases_height]]
+            xterr_prevax_deaths = [[prevax_deaths_height - prevax_deaths_ui[0]], [prevax_deaths_ui[1] - prevax_deaths_height]]
+            xterr_prevax_hosps = [[prevax_hosps_height - prevax_hosps_ui[0]], [prevax_hosps_ui[1] - prevax_hosps_height]]
+
+            xterr_postvax_cases = [[postvax_cases_height - postvax_cases_ui[0]],
+                                  [postvax_cases_ui[1] - postvax_cases_height]]
+            xterr_postvax_deaths = [[postvax_deaths_height - postvax_deaths_ui[0]],
+                                   [postvax_deaths_ui[1] - postvax_deaths_height]]
+            xterr_postvax_hosps = [[postvax_hosps_height - postvax_hosps_ui[0]],
+                                  [postvax_hosps_ui[1] - postvax_hosps_height]]
+
+            # Plot the scatter points for pre-vaccination cases
+            axs[0].scatter(prevax_cases_height, i, color=pre_vax_color, s=scatter_size,
+                           label='Pre-Vax' if i == 0 else "")
+            # Plot the error bars for pre-vaccination cases
+            axs[0].errorbar(prevax_cases_height, i, xerr=xterr_prevax_cases, fmt='none', color=pre_vax_color, capsize=0,
+                            alpha=0.4)
+
+            # Plot the scatter points for post-vaccination cases
+            axs[0].scatter(postvax_cases_height, i, color=post_vax_color, s=scatter_size,
+                           label='Post-Vax' if i == 0 else "")
+            # Plot the error bars for post-vaccination cases
+            axs[0].errorbar(postvax_cases_height, i, xerr=xterr_postvax_cases, fmt='none', color=post_vax_color,
+                            capsize=0,
+                            alpha=0.4)
+
+            # Plot the scatter points for pre-vaccination cases
+            axs[1].scatter(prevax_hosps_height, i, color=pre_vax_color, s=scatter_size,
+                           label='Pre-Vax' if i == 0 else "")
+            # Plot the error bars for pre-vaccination cases
+            axs[1].errorbar(prevax_hosps_height, i, xerr=xterr_prevax_hosps, fmt='none', color=pre_vax_color, capsize=0,
+                            alpha=0.4)
+
+            # Plot the scatter points for post-vaccination cases
+            axs[1].scatter(postvax_hosps_height, i, color=post_vax_color, s=scatter_size,
+                           label='Post-Vax' if i == 0 else "")
+            # Plot the error bars for post-vaccination cases
+            axs[1].errorbar(postvax_hosps_height, i, xerr=xterr_postvax_hosps, fmt='none', color=post_vax_color,
+                            capsize=0,
+                            alpha=0.4)
+
+            # Plot the scatter points for pre-vaccination cases
+            axs[2].scatter(prevax_deaths_height, i, color=pre_vax_color, s=scatter_size,
+                           label='Pre-Vax' if i == 0 else "")
+            # Plot the error bars for pre-vaccination cases
+            axs[2].errorbar(prevax_deaths_height, i, xerr=xterr_prevax_deaths, fmt='none', color=pre_vax_color,
+                            capsize=0,
+                            alpha=0.4)
+
+            # Plot the scatter points for post-vaccination cases
+            axs[2].scatter(postvax_deaths_height, i, color=post_vax_color, s=scatter_size,
+                           label='Post-Vax' if i == 0 else "")
+            # Plot the error bars for post-vaccination cases
+            axs[2].errorbar(postvax_deaths_height, i, xerr=xterr_postvax_deaths, fmt='none', color=post_vax_color,
+                            capsize=0,
+                            alpha=0.4)
+
+        # Set the labels for each state and vaccination status on the y-axis
+        axs[0].set_yticks(y_pos)
+        axs[0].set_yticklabels([state_obj.name for state_obj in states_list], fontsize=8, ha='right')
+        axs[1].set_yticks(y_pos)
+        axs[1].set_yticklabels([state_obj.name for state_obj in states_list], fontsize=8, ha='right')
+        axs[2].set_yticks(y_pos)
+        axs[2].set_yticklabels([state_obj.name for state_obj in states_list], fontsize=8, ha='right')
+
+        # Set the labels and title for the first subplot
+        axs[0].set_xlabel('QALY Loss per 100,000')
+        axs[0].set_title('Cases QALY Loss by State (Pre-Post Vaccination)')
+        axs[0].legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Pre-Vax', 'Post-Vax'])
+
+        axs[1].set_xlabel('QALY Loss per 100,000')
+        axs[1].set_ylabel('States')  # Add y-axis label for the second subplot
+        axs[1].set_title('Hospitalizations QALY Loss by State (Pre-Post Vaccination)')
+        axs[1].legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Pre-Vax', 'Post-Vax'])
+
+        axs[2].set_xlabel('QALY Loss per 100,000')
+        axs[2].set_ylabel('States')  # Add y-axis label for the third subplot
+        axs[2].set_title('Deaths QALY Loss by State (Pre-Post Vaccination)')
+        axs[2].legend(loc='upper left', bbox_to_anchor=(1, 1), labels=['Pre-Vax', 'Post-Vax'])
+
+        plt.tight_layout()
+        # Add the appropriate path to save the figure
+        output_figure(fig, filename=ROOT_DIR + '/figs/qaly_loss_by_state_and_outcome_scatter_plots.png')
+
+    def get_mean_ui_overall_vax_qaly_loss_by_outcome_and_state(self, state_obj, alpha=0.05):
+        """
+        :param alpha: (float) significance value for calculating uncertainty intervals
+        :return: mean and uncertainty interval for the weekly QALY loss
+        """
+        prevax_state_cases_qaly_losses = [qaly_loss[state_obj.name] for qaly_loss in
+                                          self.summaryOutcomes.prevaxOverallQALYLossesCasesByState]
+        prevax_state_hosps_qaly_losses = [qaly_loss[state_obj.name] for qaly_loss in
+                                          self.summaryOutcomes.prevaxOverallQALYLossesHospsByState]
+        prevax_state_deaths_qaly_losses = [qaly_loss[state_obj.name] for qaly_loss in
+                                          self.summaryOutcomes.prevaxOverallQALYLossesDeathsByState]
+        postvax_state_cases_qaly_losses = [qaly_loss[state_obj.name] for qaly_loss in
+                                          self.summaryOutcomes.postvaxOverallQALYLossesCasesByState]
+        postvax_state_hosps_qaly_losses = [qaly_loss[state_obj.name] for qaly_loss in
+                                          self.summaryOutcomes.postvaxOverallQALYLossesHospsByState]
+        postvax_state_deaths_qaly_losses = [qaly_loss[state_obj.name] for qaly_loss in
+                                           self.summaryOutcomes.postvaxOverallQALYLossesDeathsByState]
+
+        prevax_mean_cases, prevax_ui_cases = get_overall_mean_ui(prevax_state_cases_qaly_losses, alpha =alpha)
+        prevax_mean_hosps, prevax_ui_hosps = get_overall_mean_ui(prevax_state_hosps_qaly_losses, alpha=alpha)
+        prevax_mean_deaths, prevax_ui_deaths = get_overall_mean_ui(prevax_state_deaths_qaly_losses, alpha=alpha)
+
+        postvax_mean_cases, postvax_ui_cases = get_overall_mean_ui(postvax_state_cases_qaly_losses, alpha=alpha)
+        postvax_mean_hosps, postvax_ui_hosps = get_overall_mean_ui(postvax_state_hosps_qaly_losses, alpha=alpha)
+        postvax_mean_deaths, postvax_ui_deaths = get_overall_mean_ui(postvax_state_deaths_qaly_losses, alpha=alpha)
+
+        return (prevax_mean_cases, prevax_ui_cases,prevax_mean_hosps, prevax_ui_hosps,prevax_mean_deaths,
+                prevax_ui_deaths, postvax_mean_cases, postvax_ui_cases,postvax_mean_hosps, postvax_ui_hosps,
+                postvax_mean_deaths, postvax_ui_deaths)
+
+
+    def print_state_prevax_values(self):
+        """
+        Generate pre-vaccination and post-vaccination CSV files for each county.
+        """
+
+        for state in self.allStates.states.values():
+            print("prevax cases:", state.name, state.pandemicOutcomes.cases.prevaxWeeklyObs)
+            print("cases:", state.name, state.pandemicOutcomes.cases.weeklyObs)
+            print("QALY cases:",state.name, state.pandemicOutcomes.cases.weeklyQALYLoss)
+            print("Total Cases QALY Loss per 100K:", state.name, (state.pandemicOutcomes.cases.totalQALYLoss/state.population)*100000)
+            print("prevax hosps:", state.name, state.pandemicOutcomes.hosps.prevaxWeeklyObs)
+            print("prevax deaths:", state.name, state.pandemicOutcomes.deaths.prevaxWeeklyObs)
+
+            print("prevax QALY cases:", state.name, state.pandemicOutcomes.cases.prevaxWeeklyQALYLoss)
+            print("prevax total cases:", state.name, state.pandemicOutcomes.cases.prevaxTotalObs)
+            print("prevax total QALY cases per 100K:", state.name, (state.pandemicOutcomes.cases.prevaxTotalQALYLoss/state.population)*100000)
+
+    def print_county_prevax_values(self):
+        """
+        Generate pre-vaccination and post-vaccination CSV files for each county.
+        """
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                print("prevax cases:", county.name, county.pandemicOutcomes.cases.prevaxWeeklyObs)
+                print("cases:", county.name, county.pandemicOutcomes.cases.weeklyObs)
+                print("QALY cases:",county.name, county.pandemicOutcomes.cases.weeklyQALYLoss)
+                print("Total Cases QALY Loss:", county.name, county.pandemicOutcomes.cases.totalQALYLoss)
+                print("prevax hosps:", county.name, county.pandemicOutcomes.hosps.prevaxWeeklyObs)
+                print("prevax deaths:", county.name, county.pandemicOutcomes.deaths.prevaxWeeklyObs)
+
+                print("prevax QALY cases:", county.name, county.pandemicOutcomes.cases.prevaxWeeklyQALYLoss)
+                print("prevax total cases:", county.name, county.pandemicOutcomes.cases.prevaxTotalObs)
+                print("prevax total QALY cases:", county.name, county.pandemicOutcomes.cases.prevaxTotalQALYLoss)
+
+
+
+
 
 
