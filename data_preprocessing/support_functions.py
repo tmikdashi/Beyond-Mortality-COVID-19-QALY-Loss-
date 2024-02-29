@@ -257,10 +257,13 @@ def generate_deaths_by_age_group():
 
 def generate_hsa_mapped_county_hosp_data():
     # Load county hosp data
-    county_hosp_data = pd.read_csv(ROOT_DIR+'/csv_files/county_hospitalizations.csv', skiprows=0)
+
+    #county_hosp_data = pd.read_csv(ROOT_DIR+'/csv_files/county_hospitalizations.csv', skiprows=0)
+    county_hosp_data=pd.read_csv(ROOT_DIR +'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv',skiprows=0)
 
     # Load HSA data
-    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
+    #hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
+    hsa_data=pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv',skiprows=0)
 
 
 
@@ -316,10 +319,11 @@ def generate_hsa_mapped_county_hosp_data():
             'Population Proportion'].values[:, None]
 
     # Create a new dataframe with adjusted values
-    adjusted_data = pd.concat([merged_data[
-                                   ['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values], axis=1)
+    adjusted_data = pd.concat([merged_data[['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values],
+                              axis=1)
 
-    print(adjusted_data)
+    # Replace NaN values with 'nan' to match the behavior in generate_county_data
+    adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
 
     # Save the adjusted data to a new CSV
     adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv', index=False)
