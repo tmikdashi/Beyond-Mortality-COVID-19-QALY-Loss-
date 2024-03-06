@@ -348,3 +348,69 @@ def generate_hsa_mapped_county_hosp_data():
     adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv', index=False)
 
     print("Hospitalization data has been updated to based on HSA")
+
+
+
+def generate_hosps_by_age_group():
+    """
+    This function generates a csv containing information on the number of deaths associated with each age group.
+    A crucial step in this process is redefining the age bands to match the dQALY age groups in the Briggs paper.
+    Calculation for the number of deaths in each age band are based on Briggs spreadsheet tool
+
+    :return: A csv of COVID-19 hosps by age group.
+    """
+
+    data = pd.read_csv('/C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240306.csv')
+
+    #deaths_by_age = data.groupby(['state','date']).sum().reset_index() #TODO" A REVOIR TO ENSURE THAT THE data is aggregated over state and dates
+
+    age_band_mapping = {
+        '0-9': ['previous_day_admission_pediatric_covid_confirmed_0_4', 'previous_day_admission_pediatric_covid_confirmed_5_11'],
+        '10-19': ['previous_day_admissions_pediatric_covid_confirmed_5-11', 'previous_day_admission_pediatric_covid_confirmed_12_17','previous_day_admission_adult_covid_confirmed_18-19'],
+        '20-29': ['previous_day_admission_adult_covid_confirmed_20-29'],
+        '30-39': ['previous_day_admission_adult_covid_confirmed_30-39'],
+        '40-49': ['previous_day_admission_adult_covid_confirmed_40-49'],
+        '50-59': ['previous_day_admission_adult_covid_confirmed_50-59'],
+        '60-69': ['previous_day_admission_adult_covid_confirmed_60-69'],
+        '70-79': ['previous_day_admission_adult_covid_confirmed_70-79'],
+        '80-90': ['previous_day_admission_adult_covid_confirmed_80+'],
+        '90-100': ['previous_day_admission_adult_covid_confirmed_80+']
+    }
+
+
+    new_age_data = {'Age Group': [], 'COVID-19 Hosps': []}
+
+    for age_band, age_groups in age_band_mapping.items():
+        total_hosps = 0
+
+        for age_group in age_groups:
+            # Check if the columns exist in the DataFrame
+            if age_group in data.columns:
+                total_hosps += data.groupby(['date'])[age_group].sum().sum()
+
+        if age_band == '0-9':
+            # Sum 'previous_day_admission_pediatric_covid_confirmed_0_4' and 'previous_day_admission_pediatric_covid_confirmed_5_11'
+            total_hosps = data.groupby(['date'])[['previous_day_admission_pediatric_covid_confirmed_0_4', 'previous_day_admission_pediatric_covid_confirmed_5_11']].sum().sum().sum()
+            # Add 2/3 of 'previous_day_admission_pediatric_covid_confirmed_5_11'
+            total_hosps += (2 / 3) * data.groupby(['date'])['previous_day_admission_pediatric_covid_confirmed_5_11'].sum().sum()
+        elif age_band == '10-19':
+            # Sum 'previous_day_admission_pediatric_covid_confirmed_12_17', 'previous_day_admission_adult_covid_confirmed_18-19'
+            total_hosps = data.groupby(['date'])[['previous_day_admission_pediatric_covid_confirmed_12_17', 'previous_day_admission_adult_covid_confirmed_18-19']].sum().sum().sum()
+            # Add 2/3 of 'previous_day_admission_pediatric_covid_confirmed_5_11'
+            total_hosps += (2 / 3) * data.groupby(['date'])['previous_day_admission_pediatric_covid_confirmed_5_11'].sum().sum()
+        else:
+            total_hosps = data.groupby(['date'])[age_groups].sum().sum().sum()
+
+        new_age_data['Age Group'].append(age_band)
+        new_age_data['COVID-19 Hosps'].append(total_hosps)
+
+    # Create a DataFrame for the new age bands
+    new_age_df = pd.DataFrame(new_age_data)
+    new_age_df['COVID-19 Hosps'] = pd.to_numeric(new_age_df['COVID-19 Hosps'], errors='coerce').fillna(0)
+
+    # Select relevant columns
+    hosps_by_age_group = new_age_df[['Age Group', 'COVID-19 Hosps']]
+
+    # Save the data as a CSV file
+    hosps_by_age_group.to_csv(ROOT_DIR + '/csv_files/hosps_by_age.csv', index=False)
+
