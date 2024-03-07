@@ -360,7 +360,7 @@ def generate_hosps_by_age_group():
     :return: A csv of COVID-19 hosps by age group.
     """
 
-    data = pd.read_csv('/C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240306.csv')
+    data = pd.read_csv('C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
 
     #deaths_by_age = data.groupby(['state','date']).sum().reset_index() #TODO" A REVOIR TO ENSURE THAT THE data is aggregated over state and dates
 
@@ -398,6 +398,10 @@ def generate_hosps_by_age_group():
             total_hosps = data.groupby(['date'])[['previous_day_admission_pediatric_covid_confirmed_12_17', 'previous_day_admission_adult_covid_confirmed_18-19']].sum().sum().sum()
             # Add 2/3 of 'previous_day_admission_pediatric_covid_confirmed_5_11'
             total_hosps += (2 / 3) * data.groupby(['date'])['previous_day_admission_pediatric_covid_confirmed_5_11'].sum().sum()
+        elif age_band =='80-90':
+            total_hosps= (1/2)*data.groupby(['date'])['previous_day_admission_adult_covid_confirmed_80+'].sum().sum()
+        elif age_band =='90-100':
+            total_hosps= (1/2)*data.groupby(['date'])['previous_day_admission_adult_covid_confirmed_80+'].sum().sum()
         else:
             total_hosps = data.groupby(['date'])[age_groups].sum().sum().sum()
 
@@ -413,4 +417,3 @@ def generate_hosps_by_age_group():
 
     # Save the data as a CSV file
     hosps_by_age_group.to_csv(ROOT_DIR + '/csv_files/hosps_by_age.csv', index=False)
-

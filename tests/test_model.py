@@ -11,6 +11,7 @@ probabilisticModel.simulate(n=10)
 #probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
 probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
 probabilisticModel.plot_map_of_outcomes_per_county()
+probabilisticModel.plot_qaly_loss_by_age()
 #probabilisticModel.plot_map_of_outcomes_per_county_per_100K()
 #probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
 
