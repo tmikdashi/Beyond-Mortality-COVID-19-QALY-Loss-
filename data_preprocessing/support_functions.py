@@ -424,47 +424,50 @@ def generate_hosps_by_age_group():
         :return: A csv of COVID-19 cases by age group.
         """
 
-        data = pd.read_csv(
-            'C:/Users/fm478/Downloads/Rates_of_COVID-19_Cases_or_Deaths_by_Age_Group_and_Vaccination_Status_20240308.csv')
+        cases_by_age = pd.read_csv(
+            'C:/Users/fm478/Downloads/CA_cases_by_age.csv')
 
-        cases_by_age = data.groupby(['Age group'])['COVID-19 Deaths'].sum().reset_index()
 
         age_band_mapping = {
-            '0-9': ['17-Dec'],
-            '10-19': ['12-17', '18-29'],
-            '20-29': ['18-29'],
-            '30-39': ['30-49'],
-            '40-49': ['30-49'],
-            '50-59': ['50-64'],
-            '60-69': ['65 -79'],
-            '70-79': ['65 -79'],
-            '80-90': ['85+'],
-            '90-100': ['85+']
+            '0-9': ['<5??', '5-17'],
+            '10-19': ['5-17', '18-34'],
+            '20-29': ['18-34'],
+            '30-39': ['18-34','35-49'],
+            '40-49': ['35-49'],
+            '50-59': ['50-59'],
+            '60-69': ['60-64','65-69'],
+            '70-79': ['70-74','75-79'],
+            '80-90': ['80+'],
+            '90-100': ['80+']
         }
 
-        new_age_data = {'Age Group': [], 'COVID-19 Deaths': []}
+        new_age_data = {'Age Group': [], 'COVID-19 Cases': []}
 
         for age_band, age_groups in age_band_mapping.items():
-            total_deaths = sum(deaths_by_age[deaths_by_age['Age Group'].isin(age_groups)]['COVID-19 Deaths'])
+            total_cases = sum(cases_by_age[cases_by_age['Age Group'].isin(age_groups)]['No. Cases'])
 
             if age_band == '0-9':
                 # Sum 'Under 1 year' and '1-4 years'
-                total_deaths = sum(
-                    deaths_by_age[deaths_by_age['Age Group'].isin(['Under 1 year', '1-4 years'])]['COVID-19 Deaths'])
+                total_cases = sum(
+                    cases_by_age[cases_by_age['Age Group'].isin(['<5??'])]['No. Cases'])
                 # Add half of '5-14 years'
-                total_deaths += 0.5 * sum(deaths_by_age[deaths_by_age['Age Group'] == '5-14 years']['COVID-19 Deaths'])
-            else:
-                total_deaths /= 2
+                total_cases += (4/9) * sum(cases_by_age[cases_by_age['Age Group'] == '5-17 years']['No. Cases'])
+            elif age_band == '10-19':
+                total_cases = (5/9) * sum(cases_by_age[cases_by_age['Age Group'].isin(['5-17'])]['No. Cases'])
+                total_cases += (2/17) * sum(cases_by_age[cases_by_age['Age Group'] == '18-34']['No. Cases'])
+            elif age_band == '30-39':
+                total_cases = (15/17)*sum(cases_by_age[cases_by_age['Age Group'].isin(['5-17'])]['No. Cases'])
+                total_cases += (4/14) * sum(cases_by_age[cases_by_age['Age Group'].isin(['35-49'])]['No. Cases'])
 
             new_age_data['Age Group'].append(age_band)
-            new_age_data['COVID-19 Deaths'].append(total_deaths)
+            new_age_data['COVID-19 Cases'].append(total_cases)
 
         # Create a DataFrame for the new age bands
         new_age_df = pd.DataFrame(new_age_data)
-        new_age_df['COVID-19 Deaths'] = pd.to_numeric(new_age_df['COVID-19 Deaths'], errors='coerce').fillna(0)
+        new_age_df['COVID-19 Cases'] = pd.to_numeric(new_age_df['COVID-19 Cases'], errors='coerce').fillna(0)
 
         # Select relevant columns
-        deaths_by_age_group = new_age_df[['Age Group', 'COVID-19 Deaths']]
+        deaths_by_age_group = new_age_df[['Age Group', 'COVID-19 Cases']]
 
         # save the data as a csv file
-        deaths_by_age_group.to_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv', index=False)
+        deaths_by_age_group.to_csv(ROOT_DIR + '/csv_files/cases_by_age.csv', index=False)
