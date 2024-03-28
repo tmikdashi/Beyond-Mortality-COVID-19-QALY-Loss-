@@ -6,6 +6,8 @@ import pandas as pd
 from deampy.in_out_functions import write_csv, read_csv_rows
 from definitions import ROOT_DIR
 from datetime import datetime
+from scipy.stats import pearsonr
+
 
 
 def get_dict_of_county_data_by_type(data_type):
@@ -471,3 +473,114 @@ def generate_hosps_by_age_group():
 
         # save the data as a csv file
         deaths_by_age_group.to_csv(ROOT_DIR + '/csv_files/cases_by_age.csv', index=False)
+
+
+def generate_correlation_matrix_timeseries():
+
+    cases_data_tuple = get_dict_of_county_data_by_type('cases')
+    hosps_data_tuple = get_dict_of_county_data_by_type('hospitalizations')
+    deaths_data_tuple = get_dict_of_county_data_by_type('deaths')
+
+    print('cases data', cases_data_tuple)
+    print('hosps data', hosps_data_tuple)
+
+    cases_data = cases_data_tuple[0] if cases_data_tuple else {}  # Accessing the dictionary from the tuple
+    hosps_data = hosps_data_tuple[0] if hosps_data_tuple else {}  # Accessing the dictionary from the tuple
+    deaths_data = deaths_data_tuple[0] if deaths_data_tuple else {}  # Accessing the dictionary from the tuple
+
+    print('cases', cases_data)
+    print('hosps', hosps_data)
+
+    # Combine data for all counties into a single dataset
+    combined_data = {'Cases': [], 'Deaths': [], 'Hospitalizations': []}
+    for key in cases_data:
+        cases_total = sum(cases_data[key])
+        deaths_total = sum(deaths_data.get(key, [0]))  # Use 0 if no deaths data available
+        hospitalizations_total = sum(hosps_data.get(key, [0]))  # Use 0 if no hospitalizations data available
+        combined_data['Cases'].append(cases_total)
+        combined_data['Deaths'].append(deaths_total)
+        combined_data['Hospitalizations'].append(hospitalizations_total)
+
+    # Convert combined data to DataFrame
+    combined_df = pd.DataFrame(combined_data)
+
+    # Calculate correlation matrix
+    correlation_matrix = combined_df.corr()
+
+    return correlation_matrix
+
+
+
+def generate_correlation_matrix_total_per_capita():
+
+    cases_data_tuple = get_dict_of_county_data_by_type('cases')
+    hosps_data_tuple = get_dict_of_county_data_by_type('hospitalizations')
+    deaths_data_tuple = get_dict_of_county_data_by_type('deaths')
+
+    cases_data = cases_data_tuple[0] if cases_data_tuple else {}
+    hosps_data = hosps_data_tuple[0] if hosps_data_tuple else {}
+    deaths_data = deaths_data_tuple[0] if deaths_data_tuple else {}
+
+    # Create a dictionary to store total observed values per 100K individuals for each health outcome
+    total_outcomes_per_100k_data = {
+        "Cases per 100K": [],
+        "Hosps per 100K": [],
+        "Deaths per 100K": [],
+    }
+
+    # Calculate the total observed values per 100K individuals for each health outcome
+    for key in cases_data:
+        population = int(key[3])  # Assuming population is the fourth element in the key
+        cases_total_per_100k = (sum(cases_data[key]) / population) * 100000
+        deaths_total_per_100k = (sum(deaths_data.get(key, [0])) / population) * 100000
+        hosps_total_per_100k = (sum(hosps_data.get(key, [0])) / population) * 100000
+        total_outcomes_per_100k_data['Cases per 100K'].append(cases_total_per_100k)
+        total_outcomes_per_100k_data['Deaths per 100K'].append(deaths_total_per_100k)
+        total_outcomes_per_100k_data['Hosps per 100K'].append(hosps_total_per_100k)
+
+    # Convert total outcomes per 100K data to DataFrame
+    total_outcomes_per_100k_df = pd.DataFrame(total_outcomes_per_100k_data)
+
+    # Calculate correlation matrix for total outcomes per 100K
+    correlation_matrix = total_outcomes_per_100k_df.corr()
+    print('Per capita correlation matrix', correlation_matrix)
+
+    return correlation_matrix
+
+
+def generate_correlation_matrix_total():
+
+    cases_data_tuple = get_dict_of_county_data_by_type('cases')
+    hosps_data_tuple = get_dict_of_county_data_by_type('hospitalizations')
+    deaths_data_tuple = get_dict_of_county_data_by_type('deaths')
+
+    cases_data = cases_data_tuple[0] if cases_data_tuple else {}
+    hosps_data = hosps_data_tuple[0] if hosps_data_tuple else {}
+    deaths_data = deaths_data_tuple[0] if deaths_data_tuple else {}
+
+    # Create a dictionary to store total observed values for each health outcome
+    total_outcomes_data = {
+        "Cases": [],
+        "Hosps": [],
+        "Deaths": [],
+    }
+
+    # Calculate the total observed values for each health outcome
+    for key in cases_data:
+        cases_total = sum(cases_data[key])
+        deaths_total = sum(deaths_data.get(key, [0]))  # Use 0 if no deaths data available
+        hospitalizations_total = sum(hosps_data.get(key, [0]))  # Use 0 if no hospitalizations data available
+        total_outcomes_data['Cases'].append(cases_total)
+        total_outcomes_data['Deaths'].append(deaths_total)
+        total_outcomes_data['Hosps'].append(hospitalizations_total)
+
+    # Convert total outcomes data to DataFrame
+    total_outcomes_df = pd.DataFrame(total_outcomes_data)
+
+    print (total_outcomes_df)
+
+    # Calculate correlation matrix for total outcomes
+    correlation_matrix = total_outcomes_df.corr()
+    print('Total correlation matrix', correlation_matrix)
+
+    return correlation_matrix
