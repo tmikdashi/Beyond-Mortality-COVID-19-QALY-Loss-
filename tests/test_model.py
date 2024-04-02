@@ -4,14 +4,18 @@ from classes.model import ProbabilisticAllStates
 probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=10)
 
+
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
+probabilisticModel.generate_correlation_matrix_total()
+probabilisticModel.generate_correlation_matrix_per_capita()
+
+#probabilisticModel.generate_scatter_plots()
 #probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 #probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
 #probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
 #probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
-#probabilisticModel.generate_correlation_matrix_total()
-#probabilisticModel.generate_correlation_matrix_per_capita()
+
 #probabilisticModel.plot_qaly_loss_by_state_and_by_outcome_state_pol()
 probabilisticModel.generate_correlation_matrices()
 #probabilisticModel.plot_map_of_outcomes_per_county()
