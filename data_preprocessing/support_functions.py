@@ -58,19 +58,20 @@ def generate_county_data_csv(data_type='cases'):
         'cases': 5,
         'deaths': 6,
         'hospitalizations': 20,
-        'icu admissions': 23,
+        'icu': 23,
         'cases per 100,000': 17,
         'deaths per 100,000': 18,
         'hospitalizations per 100,000': 22,
-        'icu admissions per 100,000': 24,
+        'icu occupancy per 100,000': 24,
+        'longcovid': (5,6)
     }
 
     # Ensure the specified data_type is valid
     if data_type not in data_type_mapping:
         raise ValueError(
             "Invalid data_type. Choose from 'cases', 'deaths', 'hospitalizations', "
-            "'icu admissions', 'cases per 100,000', "
-            "'deaths per 100,000', 'hospitalizations per 100,000', 'icu admissions per 100,000'.")
+            "'icu', 'cases per 100,000', "
+            "'deaths per 100,000', 'hospitalizations per 100,000', 'icu occupancy per 100,000'.")
 
     # Read the data
     #rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
@@ -95,20 +96,47 @@ def generate_county_data_csv(data_type='cases'):
         # Check if the date is before or on November 2, 2022
         date = datetime.strptime(date_str, "%Y-%m-%d")
         if date <= datetime(2022, 11, 2):
-            data_value = row[data_type_mapping[data_type]]
+            if data_type == 'longcovid':
+                cases_index, deaths_index = data_type_mapping[data_type]
+                cases = row[data_type_mapping['cases']]
+                deaths = row[data_type_mapping['deaths']]
 
-            # Removing PR from analysis
-            if state == 'NA':
-                data_value = np.nan
-            # Check if data_value is empty or 'NA' and assign np.nan
-            if data_value == '' or data_value == 'NA':
-                data_value = np.nan
+                # Removing PR from analysis
+                if state == 'NA':
+                    cases = np.nan
+                    deaths = np.nan
+
+                # Check if data_value is empty or 'NA' and assign np.nan
+                if cases == '' or cases == 'NA':
+                    cases = np.nan
+                else:
+                    cases = float(cases) * 7
+
+                if deaths == '' or deaths == 'NA':
+                    deaths = np.nan
+                else:
+                    deaths = float(deaths) * 7
+
+                longcovid = cases - deaths
+
+                # Append the data to the respective county's time series
+                county_data_time_series[(county, state, fips, population)].append((date_str, longcovid))
+
             else:
-                # Convert other values to float
-                data_value = float(data_value) * 7
+                data_value = row[data_type_mapping[data_type]]
 
-            # Append the data to the respective county's time series
-            county_data_time_series[(county, state, fips, population)].append((date_str, data_value))
+                # Removing PR from analysis
+                if state == 'NA':
+                    data_value = np.nan
+                # Check if data_value is empty or 'NA' and assign np.nan
+                if data_value == '' or data_value == 'NA':
+                    data_value = np.nan
+                else:
+                    # Convert other values to float
+                 data_value = float(data_value) * 7
+
+                # Append the data to the respective county's time series
+                county_data_time_series[(county, state, fips, population)].append((date_str, data_value))
 
     # Create a list of unique dates across all counties
     unique_dates = sorted(set(date for time_series in county_data_time_series.values() for date, _ in time_series))
@@ -348,6 +376,79 @@ def generate_hsa_mapped_county_hosp_data():
     adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv', index=False)
 
     print("Hospitalization data has been updated to based on HSA")
+
+def generate_hsa_mapped_county_icu_data():
+    # Load county hosp data
+
+    county_icu_data = pd.read_csv(ROOT_DIR+'/csv_files/county_icu.csv', skiprows=0)
+    #county_hosp_data=pd.read_csv(ROOT_DIR +'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv',skiprows=0)
+
+    # Load HSA data
+    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
+    #hsa_data=pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv',skiprows=0)
+
+    # Ensure the FIPS column has the same data type in both dataframes
+    county_icu_data['FIPS'] = county_icu_data['FIPS'].astype(str)
+    hsa_data['county_fips'] = hsa_data['county_fips'].astype(str)
+
+    new_fips_values = [{'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
+                       {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
+                       {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
+                       {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
+                       {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
+                       {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
+                       {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
+                       {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'}]
+
+
+    for county_update in new_fips_values:
+        county_name = county_update['County']
+        state_name = county_update['State']
+        new_fips = county_update['NewFIPS']
+
+        # Update FIPS values for the specified county and state in county_hosp_data
+        condition = (county_icu_data['County'] == county_name) & (county_icu_data['State'] == state_name)
+        county_icu_data.loc[condition, 'FIPS'] = new_fips
+
+    # Merge county_hosp_data with hsa_data based on FIPS
+    merged_data = pd.merge(county_icu_data, hsa_data, left_on='FIPS', right_on='county_fips', how='left')
+
+    # Extract the necessary columns for computation
+    selected_columns = ['County', 'State', 'FIPS', 'Population', 'health_service_area_number',
+                        'health_service_area_population']
+    selected_columns += county_icu_data.columns[4:].to_list()  # Add the date columns
+
+    merged_data = merged_data[selected_columns]
+
+    # Convert 'Population' and 'health_service_area_population' columns to numeric
+    merged_data['Population'] = pd.to_numeric(merged_data['Population'], errors='coerce')
+    merged_data['health_service_area_population'] = pd.to_numeric(
+        merged_data['health_service_area_population'].str.replace(',', ''), errors='coerce')
+
+    # Calculate the Population Proportion
+    merged_data['Population Proportion'] = merged_data['Population']/ merged_data['health_service_area_population']
+
+    adjusted_weekly_hosp_values = None  # Initialize the variable
+
+    if (merged_data[county_icu_data.columns[4:]] == '').any().any():
+        # Replace empty strings with NaN
+        merged_data[county_icu_data.columns[4:]] = merged_data[county_icu_data.columns[4:]].replace('', np.nan)
+
+    else:
+        adjusted_weekly_hosp_values = merged_data[county_icu_data.columns[4:]] * merged_data[
+            'Population Proportion'].values[:, None]
+
+    # Create a new dataframe with adjusted values
+    adjusted_data = pd.concat([merged_data[['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values],
+                              axis=1)
+
+    # Replace NaN values with 'nan' to match the behavior in generate_county_data
+    adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
+
+    # Save the adjusted data to a new CSV
+    adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_icu.csv', index=False)
+
+    print("ICU data has been updated to based on HSA")
 
 
 
