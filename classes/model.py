@@ -584,7 +584,8 @@ class AllStates:
         # Plot the lines for each outcome
         weeks = range(1, len(self.pandemicOutcomes.cases.weeklyQALYLoss) + 1)
         ax.plot(weeks, self.pandemicOutcomes.cases.weeklyQALYLoss, label='Cases', color='blue')
-        ax.plot(weeks, self.pandemicOutcomes.hosps.weeklyQALYLoss, label='Hospitalizations', color='green')
+        ax.plot(weeks, self.pandemicOutcomes.hosps.weeklyQALYLoss + self.pandemicOutcomes.icu.weeklyQALYLoss,
+                label='Hospitalizations (including ICU)', color='green')
         ax.plot(weeks, self.pandemicOutcomes.deaths.weeklyQALYLoss, label='Deaths', color='red')
         ax.plot(weeks, self.pandemicOutcomes.icu.weeklyQALYLoss, label ='ICU', color = 'darkgreen')
         ax.plot(weeks, self.pandemicOutcomes.longCovid.weeklyQALYLoss, label='Long COVID', color = 'lightblue')
@@ -1055,17 +1056,17 @@ class ProbabilisticAllStates:
                 label='Cases', linewidth=2, color='blue')
         ax.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
 
-        ax.plot(self.allStates.dates, mean_hosps,
-                label='Hospital admissions', linewidth=2, color='green')
-        ax.fill_between(self.allStates.dates, ui_hosps[0], ui_hosps[1], color='grey', alpha=0.25)
+        ax.plot(self.allStates.dates, mean_hosps + mean_icu,
+                label='Hospital admissions (including ICU)', linewidth=2, color='green')
+        ax.fill_between(self.allStates.dates, ui_hosps[0]+ui_icu[0], ui_hosps[1]+ui_icu[1], color='grey', alpha=0.25)
 
         ax.plot(self.allStates.dates, mean_deaths,
                 label='Deaths', linewidth=2, color='red')
         ax.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='orange', alpha=0.25)
 
-        ax.plot(self.allStates.dates, mean_icu,
-                label='ICU', linewidth=2, color='orange')
-        ax.fill_between(self.allStates.dates, ui_icu[0], ui_icu[1], color='grey', alpha=0.25)
+        #ax.plot(self.allStates.dates, mean_icu,
+                #label='ICU', linewidth=2, color='orange')
+        #ax.fill_between(self.allStates.dates, ui_icu[0], ui_icu[1], color='grey', alpha=0.25)
 
         ax.plot(self.allStates.dates, mean_lc,
                 label='Long COVID', linewidth=2, color='purple')
@@ -1074,13 +1075,13 @@ class ProbabilisticAllStates:
         [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
 
         ax.plot(self.allStates.dates, mean,
-                label='All health states', linewidth=2, color='black')
+                label='Total', linewidth=2, color='black')
         ax.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
         ax.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")  # delta variant
         ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")  # omicron variant
 
-        ax.axvline("2021-03-24", linestyle='--', color='grey', label='70% of 65+ years population vaccinated')
-        ax.axvline("2021-08-11", linestyle='--', color='black', label='70% of population vaccinated')
+        #ax.axvline("2021-03-24", linestyle='--', color='grey', label='70% of 65+ years population vaccinated')
+        #ax.axvline("2021-08-11", linestyle='--', color='black', label='70% of population vaccinated')
 
         ax.set_title('National Weekly QALY Loss by Health State')
         ax.set_xlabel('Date')
@@ -1760,6 +1761,102 @@ class ProbabilisticAllStates:
         # Show the legend with unique labels
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1),
                   labels=['Cases', 'Hospital Admissions', 'Deaths', "Total"])
+
+        plt.tight_layout()
+        output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome_pol.png')
+
+
+    def plot_qaly_loss_by_state_and_by_outcome_state_pol_combined(self):
+        """
+        Generate a bar graph of the total QALY loss per 100,000 pop for each state, with each outcome's contribution
+        represented in a different color based on governors political affiliation November 2018-November 2022 (see 2018 gubernatorial election results)
+        """
+        # Set up the figure and axis
+        fig, ax = plt.subplots(figsize=(8, 10))
+
+        states_list = list(self.allStates.states.values())
+        # To sort states by overall QALY loss
+        sorted_states = sorted(
+            states_list,
+            key=lambda state_obj: (self.get_mean_ui_overall_qaly_loss_by_state(
+                state_name=state_obj.name, alpha=0.05)[0] / state_obj.population) * 100000)
+
+        # Set up the positions for the bars
+
+        y_pos = (range(len(sorted_states)))
+
+        democratic_states = ['CA', 'CO', 'CT','DC', 'DE', 'HI', 'IL', 'ME', 'MD', 'MA', 'MI', 'MN', 'NJ','NV',
+                             'NM', 'NY', 'OR', 'RI', 'VT', 'VA', 'WA','WI']
+        republican_states = ['AL', 'AK', 'AR', 'AZ', 'FL', 'GA', 'ID', 'IN', 'IA', 'KS', 'KY','LA', 'MS', 'MO', 'MT','NE', 'NH',
+                              'NC','ND', 'OH', 'OK', 'PA', 'SC', 'SD', 'TN', 'TX',
+                             'UT', 'WV', 'WY']
+
+        # Iterate through each state
+
+        for i, state_obj in enumerate(sorted_states):
+            # Calculate the heights for each segment
+            mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths, mean_icu, ui_icu, mean_lc, ui_lc = (
+                self.get_mean_ui_overall_qaly_loss_by_outcome_and_by_state(state_name=state_obj.name, alpha=0.05))
+            mean_total, ui_total = self.get_mean_ui_overall_qaly_loss_by_state(state_obj.name, alpha=0.05)
+            cases_height = (mean_cases / state_obj.population) * 100000
+            deaths_height = (mean_deaths / state_obj.population) * 100000
+            hosps_icu_height = ((mean_hosps+mean_icu) / state_obj.population) * 100000
+            #icu_height = (mean_icu /state_obj.population)* 100000
+            lc_height = (mean_lc / state_obj.population) * 100000
+            total_height = (mean_total / state_obj.population) * 100000
+
+            # Converting UI into error bars
+            cases_ui = (ui_cases / state_obj.population) * 100000
+            deaths_ui = (ui_deaths / state_obj.population) * 100000
+            hosps_icu_ui = ((ui_hosps + ui_icu) / state_obj.population) * 100000
+            #icu_ui = (ui_icu / state_obj.population) * 100000
+            lc_ui = (ui_lc / state_obj.population) * 100000
+            total_ui = (ui_total / state_obj.population) * 100000
+
+            xterr_cases = [[cases_height - cases_ui[0]], [cases_ui[1] - cases_height]]
+
+            xterr_deaths = [[deaths_height - deaths_ui[0]], [deaths_ui[1] - deaths_height]]
+            xterr_hosps_icu = [[hosps_icu_height - hosps_icu_ui[0]], [hosps_icu_ui[1] - hosps_icu_height]]
+            #xterr_icu = [[icu_height - icu_ui[0], icu_ui[1]-icu_height]]
+            xterr_lc = [[lc_height - lc_ui[0]], [lc_ui[1]- lc_height]]
+            xterr_total = [[total_height - total_ui[0]], [total_ui[1] - total_height]]
+
+            ax.scatter(cases_height, [state_obj.name], marker='o', color='blue', label='cases')
+            ax.errorbar(cases_height, [state_obj.name], xerr=xterr_cases, fmt='none', color='blue', capsize=0,
+                        alpha=0.4)
+            ax.scatter(hosps_icu_height, [state_obj.name], marker='o', color='green', label='hospital admissions')
+            ax.errorbar(hosps_icu_height, [state_obj.name], xerr= xterr_hosps_icu, fmt='none', color='green', capsize=0,
+                        alpha=0.4)
+            ax.scatter(deaths_height, [state_obj.name], marker='o', color='red', label='deaths')
+            ax.errorbar(deaths_height, [state_obj.name], xerr=xterr_deaths, fmt='none', color='red', capsize=0,
+                        alpha=0.4)
+            #ax.scatter(icu_height, [state_obj.name], marker='o', color='red', label='icu')
+            #ax.errorbar(icu_height, [state_obj.name], xerr=xterr_icu, fmt='none', color='red', capsize=0,
+                        #alpha=0.4)
+            ax.scatter(lc_height, [state_obj.name], marker='o', color='purple', label='Long COVID')
+            ax.errorbar(lc_height, [state_obj.name], xerr=xterr_lc, fmt='none', color='purple', capsize=0,
+                        alpha=0.4)
+            ax.scatter(total_height, [state_obj.name], marker='o', color='black', label='total')
+            ax.errorbar(total_height, [state_obj.name], xerr=xterr_total, fmt='none', color='black', capsize=0,
+                        alpha=0.4)
+
+        # Set the labels for each state
+        ax.set_yticks(y_pos)
+        y_tick_colors = ['blue' if state_obj.name in democratic_states else 'red' for state_obj in sorted_states]
+        ax.set_yticklabels([state_obj.name for state_obj in sorted_states], fontsize=12, rotation=0)
+
+        # Set the colors for ticks
+        for tick, color in zip(ax.yaxis.get_major_ticks(), y_tick_colors):
+            tick.label1.set_color(color)
+
+        # Set the labels and title
+        ax.set_ylabel('States', fontsize=14)
+        ax.set_xlabel('QALY Loss per 100,000 Population', fontsize=14)
+        ax.set_title('State-level QALY Loss by Health State')
+
+        # Show the legend with unique labels
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1),
+                  labels=['Cases', 'Hospital Admissions (including ICU)', 'Deaths', 'Long COVID',"Total"])
 
         plt.tight_layout()
         output_figure(fig, filename=ROOT_DIR + '/figs/total_qaly_loss_by_state_and_outcome_pol.png')
@@ -2746,7 +2843,7 @@ class ProbabilisticAllStates:
         ax.set_yticks(range(len(correlation_matrix)))
         ax.set_xticklabels(correlation_matrix.columns, rotation=45)
         ax.set_yticklabels(correlation_matrix.columns)
-        ax.set_title('Correlation Matrix')
+        ax.set_title('Correlation Matrix for Health States per 100,000 Population ')
 
         # Save the figure as a PNG file
         plt.savefig('correlation_matrix.png', dpi=300)
@@ -2757,6 +2854,59 @@ class ProbabilisticAllStates:
         print('correlation matrix per capita', correlation_matrix)
         return correlation_matrix
 
+    def generate_correlation_matrix_per_capita_alt(self):
+        county_outcomes_data = {
+            "Cases per 100K": [],
+            "Hosps per 100K": [],
+            "Deaths per 100K": [],
+        }
+
+        # Iterate over all states and counties
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                # Append county data to the list
+                county_outcomes_data["Cases per 100K"].append(
+                    (county.pandemicOutcomes.cases.totalObs / county.population) * 100000)
+                county_outcomes_data["Hosps per 100K"].append(
+                    (county.pandemicOutcomes.hosps.totalObs / county.population) * 100000)
+                county_outcomes_data["Deaths per 100K"].append(
+                    (county.pandemicOutcomes.deaths.totalObs / county.population) * 100000)
+
+        # Convert the dictionary to a DataFrame
+        df = pd.DataFrame(county_outcomes_data)
+
+        # Calculate correlation matrix
+        correlation_matrix = df.corr()
+
+        # Set upper triangle values to NaN
+        correlation_matrix = correlation_matrix.where(np.tril(np.ones(correlation_matrix.shape)).astype(np.bool_))
+
+        # Create a figure for the correlation matrix
+        fig, ax = plt.subplots(figsize=(8, 6))
+        cax = ax.imshow(correlation_matrix, cmap='coolwarm', interpolation='nearest')
+        fig.colorbar(cax, ax=ax)
+        ax.set_xticks(range(len(correlation_matrix)))
+        ax.set_yticks(range(len(correlation_matrix)))
+        ax.set_xticklabels(correlation_matrix.columns, rotation=45)
+        ax.set_yticklabels(correlation_matrix.columns)
+        ax.set_title('Correlation Matrix for Health States per 100,000 Population ')
+
+
+        # Remove gridlines
+        ax.grid(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+
+        # Save the figure as a PNG file
+        #plt.savefig('correlation_matrix_alt.png', dpi=300)
+
+        # Optional: Display the plot in PyCharm
+        #plt.show()
+
+        print('correlation matrix per capita', correlation_matrix)
+        return correlation_matrix
 
     def generate_correlation_matrices(self):
         county_outcomes_data_per_capita = {
@@ -2825,7 +2975,7 @@ class ProbabilisticAllStates:
         plt.tight_layout()
 
         # Save the figure as a PNG file
-        plt.savefig('correlation_matrices.png', dpi=300)
+        plt.savefig('correlation_matrices_alt.png', dpi=300)
 
         # Display the plot
         plt.show()

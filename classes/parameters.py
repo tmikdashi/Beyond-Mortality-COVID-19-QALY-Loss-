@@ -37,7 +37,8 @@ class ParameterGenerator:
         self.parameters['hosp_dur_stay'] = Gamma(mean=6/365.25, st_dev=3.704/365.25) # assuming SD = IQR/1.35
         self.parameters['hosp_weight'] = Beta(mean=0.5, st_dev=0.05)
         self.parameters['hosps_age_dist'] = Dirichlet(par_ns=hosp_data['COVID-19 Hosps'])
-        self.parameters['hosps_prob_non_icu'] = Beta(mean=0.8, st_dev=0.115) #TODO
+        #self.parameters['hosps_prob_non_icu'] = 1 - (self.parameters['icu_prob'].value)
+        #self.parameters['hosps_prob_non_icu'] = Beta(mean=0.8, st_dev=0.115) #TODO
 
         # parameters to calculate the QALY loss due to a death
         data = pd.read_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv')
@@ -46,15 +47,15 @@ class ParameterGenerator:
         self.parameters['Age Group']= ConstantArray(values=data['Age Group'])
 
         #parameters to calculate the QALY loss due to a ICU hopsitalization
-        self.parameters['icu_prob'] = Beta(mean=0.174, st_dev = 0.02) #TODO: this should likely be complementary to hosps_prob_non_icu
-        self.parameters['icu_weight']= Beta(mean=0.60, st_dev = 0.1) #TODO
-        #self.parameters['occupancy_dur'] = Gamma(mean=)
+        self.parameters['icu_prob'] = Beta(mean=0.174, st_dev = 0.02) #TODO: A revoir
+        self.parameters['icu_weight']= Beta(mean=0.60, st_dev = 0.1)
+        self.parameters['occupancy_dur'] = ConstantArray(values=(7/365))
 
 
         # parameters to calculate the QALY loss due to long COVID
-        self.parameters['long_covid_dur'] = Beta(mean=28/365.25, st_dev=1/365.25) #TODO
-        self.parameters['long_covid_prob'] = Beta(mean=0.332, st_dev=0.011) #TODO
-        self.parameters['long_covid_weight'] = Beta(mean=0.29, st_dev =0.015) #TODO
+        self.parameters['long_covid_dur'] = Beta(mean=61/365.25, st_dev=1/365.25)
+        self.parameters['long_covid_prob'] = Beta(mean=0.343, st_dev=0.0065)
+        self.parameters['long_covid_weight'] = Beta(mean=0.29, st_dev =0.033)
 
 
     def generate(self, rng):
@@ -90,15 +91,15 @@ class ParameterGenerator:
                              * self.parameters['case_dur_symp'].value)
 
         param.qWeightHosp = (self.parameters['hosp_dur_stay'].value
-                             * self.parameters['hosp_weight'].value)
+                             * self.parameters['hosp_weight'].value
+                             * (1-self.parameters['icu_prob'].value))
 
         param.qWeightDeath = np.dot(
             self.parameters['death_age_dist'].value,
             self.parameters['dQALY_loss_by_age'].value)
 
-        param.qWeightICU = (self.parameters['icu_prob'].value
-                            * self.parameters['icu_weight'].value)
-                            #* self.parameters['occupancy_dur'].value)
+        param.qWeightICU = (self.parameters['icu_weight'].value
+                            * self.parameters['occupancy_dur'].value)
 
         param.qWeightLongCOVID = (self.parameters['long_covid_dur'].value
                                   * self.parameters['long_covid_prob'].value
