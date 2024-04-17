@@ -19,8 +19,8 @@ def get_dict_of_county_data_by_type(data_type):
     """
 
     # Construct the file path based on the data type
-    #file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
-    file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    #file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
@@ -77,11 +77,11 @@ def generate_county_data_csv(data_type='cases'):
     #rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
                          #if_ignore_first_row=True)
 
-    #rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
-                         #if_ignore_first_row=True)
-
-    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
+    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
+
+    #rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
+                         #if_ignore_first_row=True)
 
 
     # Creating a dictionary to store the time series of data for each county
@@ -307,12 +307,12 @@ def generate_deaths_by_age_group():
 def generate_hsa_mapped_county_hosp_data():
     # Load county hosp data
 
-    #county_hosp_data = pd.read_csv(ROOT_DIR+'/csv_files/county_hospitalizations.csv', skiprows=0)
-    county_hosp_data=pd.read_csv(ROOT_DIR +'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv',skiprows=0)
+    county_hosp_data = pd.read_csv(ROOT_DIR+'/csv_files/county_hospitalizations.csv', skiprows=0)
+    #county_hosp_data=pd.read_csv(ROOT_DIR +'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv',skiprows=0)
 
     # Load HSA data
-    #hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
-    hsa_data=pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv',skiprows=0)
+    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
+    #hsa_data=pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv',skiprows=0)
 
     # Ensure the FIPS column has the same data type in both dataframes
     county_hosp_data['FIPS'] = county_hosp_data['FIPS'].astype(str)
@@ -380,12 +380,12 @@ def generate_hsa_mapped_county_hosp_data():
 def generate_hsa_mapped_county_icu_data():
     # Load county hosp data
 
-    #county_icu_data = pd.read_csv(ROOT_DIR+'/csv_files/county_icu.csv', skiprows=0)
-    county_icu_data=pd.read_csv(ROOT_DIR +'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv',skiprows=0)
+    county_icu_data = pd.read_csv(ROOT_DIR+'/csv_files/county_icu.csv', skiprows=0)
+    #county_icu_data=pd.read_csv(ROOT_DIR +'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv',skiprows=0)
 
     # Load HSA data
-    #hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
-    hsa_data=pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv',skiprows=0)
+    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
+    #hsa_data=pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv',skiprows=0)
 
     # Ensure the FIPS column has the same data type in both dataframes
     county_icu_data['FIPS'] = county_icu_data['FIPS'].astype(str)
@@ -461,8 +461,8 @@ def generate_hosps_by_age_group():
     :return: A csv of COVID-19 hosps by age group.
     """
 
-    #data = pd.read_csv('C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
-    data = pd.read_csv('/Users/timamikdashi/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
+    data = pd.read_csv('C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
+    #data = pd.read_csv('/Users/timamikdashi/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
 
     #deaths_by_age = data.groupby(['state','date']).sum().reset_index() #TODO" A REVOIR TO ENSURE THAT THE data is aggregated over state and dates
 
@@ -520,61 +520,137 @@ def generate_hosps_by_age_group():
     # Save the data as a CSV file
     hosps_by_age_group.to_csv(ROOT_DIR + '/csv_files/hosps_by_age.csv', index=False)
 
-    def generate_cases_by_age_group():
-        """
-        This function generates a csv containing information on the number of cases associated with each age group.
-        The underlying data used is a CDC spreadsheet of Rates of COVID-19 Cases or Deaths by Age Group and Vaccination Status
 
-        :return: A csv of COVID-19 cases by age group.
-        """
+def generate_cases_by_age_group():
+    """
+    This function generates a csv containing information on the number of cases associated with each age group.
+    The underlying data used is a CDC spreadsheet of Rates of COVID-19 Cases or Deaths by Age Group and Vaccination Status
 
-        cases_by_age = pd.read_csv(
-            'C:/Users/fm478/Downloads/CA_cases_by_age.csv')
+    :return: A csv of COVID-19 cases by age group.
+    """
+
+    # Read the data from CSV file
+    cases_by_age = pd.read_csv(
+        'C:/Users/fm478/Downloads/Rates_of_COVID-19_Cases_or_Deaths_by_Age_Group_and_Vaccination_Status_20240417 (1).csv')
+
+    # Group by Age Group and sum the values
+    cases_by_age = cases_by_age.groupby(['Age group']).sum().reset_index()
+
+    # Define age band mapping
+    age_band_mapping = {
+        '0-9': ['11-May'],
+        '10-19': ['17-Dec', '18-29'],
+        '20-29': ['18-29'],
+        '30-39': ['30-49'],
+        '40-49': ['30-49'],
+        '50-59': ['50-64'],
+        '60-69': ['50-64', '65-79'],
+        '70-79': ['65-79'],
+        '80-90': ['80+'],
+        '90-100': ['80+']
+    }
+
+    # Initialize a dictionary to store new age data
+    new_age_data = {'Age Group': [], 'COVID-19 Cases': []}
+
+    # Iterate over age band mapping
+    for age_band, age_groups in age_band_mapping.items():
+        total_cases = 0
+
+        # Iterate over age groups in each band
+        for group in age_groups:
+            if group in cases_by_age['Age group'].values:
+                # Sum vaccinated and unvaccinated cases for each age group
+                total_cases += cases_by_age.loc[
+                    (cases_by_age['Age group'] == group), 'Vaccinated with outcome'].sum()
+                total_cases += cases_by_age.loc[
+                    (cases_by_age['Age group'] == group), 'Unvaccinated with outcome'].sum()
+
+        # Handle specific calculations for each age band
+        if age_band == '0-9':
+            # Specific calculation for age band 0-9
+            total_cases += (8 / 10) * cases_by_age.loc[
+                (cases_by_age['Age group'] == '11-May'), 'Vaccinated with outcome'].sum()
+            total_cases += (8 / 10) * cases_by_age.loc[
+                (cases_by_age['Age group'] == '11-May'), 'Unvaccinated with outcome'].sum()
+        elif age_band == '10-19':
+            # Specific calculation for age band 10-19
+            total_cases += (8 / 10) * cases_by_age.loc[
+                (cases_by_age['Age group'] == '17-Dec'), 'Vaccinated with outcome'].sum()
+            total_cases += (8 / 10) * cases_by_age.loc[
+                (cases_by_age['Age group'] == '18-29'), 'Vaccinated with outcome'].sum()
+            total_cases += (8 / 10) * cases_by_age.loc[
+                (cases_by_age['Age group'] == '17-Dec'), 'Unvaccinated with outcome'].sum()
+            total_cases += (8 / 10) * cases_by_age.loc[
+                (cases_by_age['Age group'] == '18-29'), 'Unvaccinated with outcome'].sum()
+        elif age_band == '20-29':
+            # Specific calculation for age band 20-29
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '18-29'), 'Vaccinated with outcome'].sum()
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '18-29'), 'Unvaccinated with outcome'].sum()
+        elif age_band == '30-39':
+            # Specific calculation for age band 30-39
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '30-49'), 'Vaccinated with outcome'].sum()
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '30-49'), 'Unvaccinated with outcome'].sum()
+        elif age_band == '40-49':
+            # Specific calculation for age band 40-49
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '30-49'), 'Vaccinated with outcome'].sum()
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '30-49'), 'Unvaccinated with outcome'].sum()
+        elif age_band == '50-59':
+            # Specific calculation for age band 50-59
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '50-64'), 'Vaccinated with outcome'].sum()
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '50-64'), 'Unvaccinated with outcome'].sum()
+        elif age_band == '60-69':
+            # Specific calculation for age band 60-69
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '50-64'), 'Vaccinated with outcome'].sum()
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '50-64'), 'Vaccinated with outcome'].sum()
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '65-79'), 'Unvaccinated with outcome'].sum()
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '65-79'), 'Unvaccinated with outcome'].sum()
+        elif age_band == '70-79':
+            # Specific calculation for age band 70-79
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '65-79'), 'Vaccinated with outcome'].sum()
+            total_cases += cases_by_age.loc[
+                (cases_by_age['Age group'] == '65-79'), 'Unvaccinated with outcome'].sum()
+        elif age_band == '80-90':
+            # Specific calculation for age band 80-90
+            total_cases += (1 / 2) * cases_by_age.loc[
+                (cases_by_age['Age group'] == '80+'), 'Vaccinated with outcome'].sum()
+            total_cases += (1 / 2) * cases_by_age.loc[
+                (cases_by_age['Age group'] == '80+'), 'Unvaccinated with outcome'].sum()
+        elif age_band == '90-100':
+            # Specific calculation for age band 90-100
+            total_cases += (1 / 2) * cases_by_age.loc[
+                (cases_by_age['Age group'] == '80+'), 'Vaccinated with outcome'].sum()
+            total_cases += (1 / 2) * cases_by_age.loc[
+                (cases_by_age['Age group'] == '80+'), 'Unvaccinated with outcome'].sum()
+
+        # Append total cases to the new_age_data dictionary
+        new_age_data['Age Group'].append(age_band)
+        new_age_data['COVID-19 Cases'].append(total_cases)
+
+    # Create a DataFrame from new_age_data
+    new_age_df = pd.DataFrame(new_age_data)
+
+    # Select relevant columns
+    cases_by_age_group = new_age_df[['Age Group', 'COVID-19 Cases']]
+
+    # Save the data as a CSV file
+    cases_by_age_group.to_csv('cases_by_age.csv', index=False)
 
 
-        age_band_mapping = {
-            '0-9': ['<5??', '5-17'],
-            '10-19': ['5-17', '18-34'],
-            '20-29': ['18-34'],
-            '30-39': ['18-34','35-49'],
-            '40-49': ['35-49'],
-            '50-59': ['50-59'],
-            '60-69': ['60-64','65-69'],
-            '70-79': ['70-74','75-79'],
-            '80-90': ['80+'],
-            '90-100': ['80+']
-        }
 
-        new_age_data = {'Age Group': [], 'COVID-19 Cases': []}
-
-        for age_band, age_groups in age_band_mapping.items():
-            total_cases = sum(cases_by_age[cases_by_age['Age Group'].isin(age_groups)]['No. Cases'])
-
-            if age_band == '0-9':
-                # Sum 'Under 1 year' and '1-4 years'
-                total_cases = sum(
-                    cases_by_age[cases_by_age['Age Group'].isin(['<5??'])]['No. Cases'])
-                # Add half of '5-14 years'
-                total_cases += (4/9) * sum(cases_by_age[cases_by_age['Age Group'] == '5-17 years']['No. Cases'])
-            elif age_band == '10-19':
-                total_cases = (5/9) * sum(cases_by_age[cases_by_age['Age Group'].isin(['5-17'])]['No. Cases'])
-                total_cases += (2/17) * sum(cases_by_age[cases_by_age['Age Group'] == '18-34']['No. Cases'])
-            elif age_band == '30-39':
-                total_cases = (15/17)*sum(cases_by_age[cases_by_age['Age Group'].isin(['5-17'])]['No. Cases'])
-                total_cases += (4/14) * sum(cases_by_age[cases_by_age['Age Group'].isin(['35-49'])]['No. Cases'])
-
-            new_age_data['Age Group'].append(age_band)
-            new_age_data['COVID-19 Cases'].append(total_cases)
-
-        # Create a DataFrame for the new age bands
-        new_age_df = pd.DataFrame(new_age_data)
-        new_age_df['COVID-19 Cases'] = pd.to_numeric(new_age_df['COVID-19 Cases'], errors='coerce').fillna(0)
-
-        # Select relevant columns
-        deaths_by_age_group = new_age_df[['Age Group', 'COVID-19 Cases']]
-
-        # save the data as a csv file
-        deaths_by_age_group.to_csv(ROOT_DIR + '/csv_files/cases_by_age.csv', index=False)
 
 
 def generate_correlation_matrix_timeseries():
