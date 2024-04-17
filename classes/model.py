@@ -63,14 +63,16 @@ class PandemicOutcomes:
         self.cases = AnOutcome()
         self.hosps = AnOutcome()
         self.deaths = AnOutcome()
+        self.non_hosp_icu = AnOutcome()
+        self.hosp_icu = AnOutcome()
         self.icu = AnOutcome()
-        self.longCovid = AnOutcome() #TODO: review the syntax
+        self.longCovid = AnOutcome()
 
 
         self.weeklyQALYLoss = np.array([])
         self.totalQALYLoss = 0
 
-    def add_traj(self, weekly_cases, weekly_hosp, weekly_deaths, weekly_icu, weekly_longCovid):
+    def add_traj(self, weekly_cases, weekly_hosp, weekly_deaths, weekly_non_hosp_icu, weekly_hosp_icu,weekly_longCovid):
         """
         Add weekly cases, hospitalization, and deaths and calculate the total cases, hospitalizations, and deaths.
         :param weekly_cases: Weekly cases data as a numpy array.
@@ -81,11 +83,12 @@ class PandemicOutcomes:
         self.hosps.add_traj(weekly_obs=weekly_hosp)
         self.deaths.add_traj(weekly_obs=weekly_deaths)
 
-        self.icu.add_traj(weekly_obs=weekly_icu)
+        self.non_hosp_icu.add_traj(weekly_obs=weekly_non_hosp_icu)
+        self.hosp_icu.add_traj(weekly_obs=weekly_hosp_icu)
         self.longCovid.add_traj(weekly_obs=weekly_longCovid)
 
 
-    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight, icu_weight, long_covid_weight):
+    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight, icu_weight, hosp_icu_weight, long_covid_weight):
         """
         Calculates the weekly and overall QALY
         :param case_weight: cases-specific weight to be applied to each case in calculating QALY loss.
@@ -97,8 +100,12 @@ class PandemicOutcomes:
         self.hosps.calculate_qaly_loss(quality_weight=hosp_weight)
         self.deaths.calculate_qaly_loss(quality_weight=death_weight)
 
-        self.icu.calculate_qaly_loss(quality_weight=icu_weight)
+        self.non_hosp_icu.calculate_qaly_loss(quality_weight=icu_weight)
+        self.hosp_icu.calculate_qaly_loss(quality_weight=hosp_icu_weight)
         self.longCovid.calculate_qaly_loss(quality_weight=long_covid_weight)
+
+        self.icu.weeklyQALYLoss = self.non_hosp_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+        self.icu.totalQALYLoss = self.non_hosp_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
 
         self.weeklyQALYLoss = self.cases.weeklyQALYLoss + self.hosps.weeklyQALYLoss + self.deaths.weeklyQALYLoss +self.icu.weeklyQALYLoss + self.longCovid.weeklyQALYLoss
         self.totalQALYLoss = self.cases.totalQALYLoss + self.hosps.totalQALYLoss + self.deaths.totalQALYLoss + self.icu.totalQALYLoss + self.longCovid.totalQALYLoss
@@ -120,7 +127,7 @@ class County:
         self.population = int(population)
         self.pandemicOutcomes = PandemicOutcomes()
 
-    def add_traj(self, weekly_cases, weekly_deaths, weekly_hosp, weekly_icu, weekly_longCovid):
+    def add_traj(self, weekly_cases, weekly_deaths, weekly_hosp, weekly_non_hosp_icu,weekly_hosp_icu, weekly_longCovid):
         """
         Add weekly data to the County object.
         :param weekly_cases: Weekly cases data as a numpy array.
@@ -128,9 +135,9 @@ class County:
         :param weekly_deaths: Weekly deaths data as a numpy array.
         """
         self.pandemicOutcomes.add_traj(
-            weekly_cases=weekly_cases, weekly_hosp=weekly_hosp, weekly_deaths=weekly_deaths, weekly_icu=weekly_icu, weekly_longCovid= weekly_longCovid)
+            weekly_cases=weekly_cases, weekly_hosp=weekly_hosp, weekly_deaths=weekly_deaths, weekly_non_hosp_icu=weekly_non_hosp_icu,weekly_hosp_icu=weekly_hosp_icu, weekly_longCovid= weekly_longCovid)
 
-    def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight, icu_weight, long_covid_weight):
+    def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight, icu_weight, hosp_icu_weight, long_covid_weight):
         """
         Calculates the weekly and total QALY loss for the County.
 
@@ -141,7 +148,7 @@ class County:
         """
 
         self.pandemicOutcomes.calculate_qaly_loss(
-            case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight, icu_weight = icu_weight, long_covid_weight=long_covid_weight)
+            case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight, icu_weight=icu_weight, hosp_icu_weight=hosp_icu_weight, long_covid_weight=long_covid_weight)
 
     def get_overall_qaly_loss(self):
         """
@@ -181,12 +188,12 @@ class State:
             weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
             weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
             weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs,
-            weekly_icu = county.pandemicOutcomes.icu.weeklyObs,
+            weekly_non_hosp_icu=county.pandemicOutcomes.non_hosp_icu.weeklyObs,
+            weekly_hosp_icu=county.pandemicOutcomes.hosp_icu.weeklyObs,
             weekly_longCovid=county.pandemicOutcomes.longCovid.weeklyObs)
 
 
-
-    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight, long_covid_weight, icu_weight):
+    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight, icu_weight, hosp_icu_weight, long_covid_weight):
         """
         Calculates QALY loss for the State.
         :param case_weight: cases-specific weight to be applied to each case in calculating QALY loss.
@@ -194,14 +201,15 @@ class State:
         :param death_weight: death-specific weight to be applied to each death in calculating QALY loss.
         """
 
-        # calculate QALY loss for each county
         for county in self.counties.values():
             county.calculate_qaly_loss(
-                case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight, long_covid_weight = long_covid_weight, icu_weight=icu_weight)
+                case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight,icu_weight=icu_weight,
+                hosp_icu_weight=hosp_icu_weight,long_covid_weight=long_covid_weight)
 
-        # calculate QALY loss for the state
+            # Calculate QALY loss for the state
         self.pandemicOutcomes.calculate_qaly_loss(
-            case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight, long_covid_weight = long_covid_weight, icu_weight= icu_weight)
+            case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight,icu_weight=icu_weight,
+            hosp_icu_weight=hosp_icu_weight,long_covid_weight=long_covid_weight)
 
     def get_overall_qaly_loss(self):
         """
@@ -263,15 +271,16 @@ class AllStates:
 
             # Add weekly data to county object
             county.add_traj(
-                weekly_cases=case_values, weekly_deaths=death_values, weekly_hosp=hosp_values, weekly_icu=icu_values,
-                weekly_longCovid=longcovid_values)
+                weekly_cases=case_values, weekly_deaths=death_values, weekly_hosp=hosp_values, weekly_hosp_icu=hosp_values,
+                weekly_non_hosp_icu=icu_values,weekly_longCovid=longcovid_values)
 
             # update the nation pandemic outcomes based on the outcomes for this county
             self.pandemicOutcomes.add_traj(
                 weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
                 weekly_hosp=county.pandemicOutcomes.hosps.weeklyObs,
                 weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs,
-                weekly_icu=county.pandemicOutcomes.icu.weeklyObs,
+                weekly_hosp_icu= county.pandemicOutcomes.hosp_icu.weeklyObs,
+                weekly_non_hosp_icu=county.pandemicOutcomes.non_hosp_icu.weeklyObs,
                 weekly_longCovid= county.pandemicOutcomes.longCovid.weeklyObs)
 
             # create a new state if not already in the dictionary of states
@@ -280,7 +289,6 @@ class AllStates:
 
             # add the new county to the state
             self.states[state].add_county(county)
-
 
 
 
@@ -297,6 +305,7 @@ class AllStates:
                 hosp_weight=param_values.qWeightHosp,
                 death_weight=param_values.qWeightDeath,
                 icu_weight=param_values.qWeightICU,
+                hosp_icu_weight=param_values.qWeightICUHosp,
                 long_covid_weight= param_values.qWeightLongCOVID)
 
         print("hosp weight", param_values.qWeightHosp)
@@ -307,6 +316,7 @@ class AllStates:
             hosp_weight=param_values.qWeightHosp,
             death_weight=param_values.qWeightDeath,
             icu_weight=param_values.qWeightICU,
+            hosp_icu_weight=param_values.qWeightICUHosp,
             long_covid_weight=param_values.qWeightLongCOVID,)
 
     def get_overall_qaly_loss(self):
@@ -931,6 +941,26 @@ class ProbabilisticAllStates:
         fig.suptitle('QALY Loss by Age by Health State', size=20)
 
         output_figure(fig, filename=ROOT_DIR + '/figs/qaly_loss_by_age.png')
+
+    def calculate_death_qaly_loss_proportion(self):
+        """
+        Calculate death QALY loss by age group as a proportion of the total death QALY loss.
+
+        Returns:
+            A list containing the death QALY loss proportion for each age group.
+        """
+        # Get mean QALY loss for deaths by age group
+        deaths_mean, _ = get_mean_ui_of_a_time_series(self.summaryOutcomes.deathQALYLossByAge, alpha=0.05)
+
+        # Calculate total death QALY loss
+        total_death_qaly_loss = np.sum(deaths_mean)
+
+        # Calculate death QALY loss proportion for each age group
+        death_qaly_loss_proportion = [death_qaly_loss / total_death_qaly_loss for death_qaly_loss in deaths_mean]
+
+        print(death_qaly_loss_proportion)
+
+        return death_qaly_loss_proportion
 
     def plot_qaly_loss_by_age_same_scale(self):
 

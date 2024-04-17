@@ -14,6 +14,7 @@ class ParameterValues:
         self.qWeightHosp = None
         self.qWeightDeath = None
         self.qWeightICU = None
+        self.qWeightICUHosp=None
         self.qWeightLongCOVID = None
 
     def __str__(self):
@@ -53,7 +54,7 @@ class ParameterGenerator:
 
 
         # parameters to calculate the QALY loss due to long COVID
-        self.parameters['long_covid_dur'] = Beta(mean=61/365.25, st_dev=1/365.25)
+        self.parameters['long_covid_dur'] = Beta(mean=30/365.25, st_dev=1/365.25)
         self.parameters['long_covid_prob'] = Beta(mean=0.343, st_dev=0.0065)
         self.parameters['long_covid_weight'] = Beta(mean=0.29, st_dev =0.033)
 
@@ -100,6 +101,10 @@ class ParameterGenerator:
 
         param.qWeightICU = (self.parameters['icu_weight'].value
                             * self.parameters['occupancy_dur'].value)
+
+        param.qWeightICUHosp = (self.parameters['hosp_dur_stay'].value
+                                * self.parameters['hosp_weight'].value
+                                * self.parameters['icu_prob'].value)
 
         param.qWeightLongCOVID = (self.parameters['long_covid_dur'].value
                                   * self.parameters['long_covid_prob'].value
