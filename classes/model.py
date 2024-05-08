@@ -3095,4 +3095,145 @@ class ProbabilisticAllStates:
         plt.show()
 
 
+    def generate_combined_abstract_plots(self):
+        """
+        Generate a combined plot of state-level QALY loss by outcome and weekly national QALY loss by outcome.
+        """
 
+        # Set up the figure and axes
+        fig, axs = plt.subplots(2, 1, figsize=(12, 16))
+
+        # Plot weekly national QALY loss by outcome
+        ax1 = axs[0]
+        ax1.set_title('Weekly National QALY Loss by Outcome')
+        ax1.set_xlabel('Date')
+        ax1.set_ylabel('QALY Loss')
+
+        [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths, mean_icu, ui_icu, mean_lc, ui_lc] = (
+            self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
+
+        ax1.plot(self.allStates.dates, mean_cases,
+                 label='Cases', linewidth=2, color='blue')
+        ax1.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
+
+        ax1.plot(self.allStates.dates, mean_hosps + mean_icu,
+                 label='Hospital admissions (including ICU)', linewidth=2, color='green')
+        ax1.fill_between(self.allStates.dates, ui_hosps[0] + ui_icu[0], ui_hosps[1] + ui_icu[1], color='grey',
+                         alpha=0.25)
+
+        ax1.plot(self.allStates.dates, mean_deaths,
+                 label='Deaths', linewidth=2, color='red')
+        ax1.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='orange', alpha=0.25)
+
+        ax1.plot(self.allStates.dates, mean_lc,
+                 label='Long COVID', linewidth=2, color='purple')
+        ax1.fill_between(self.allStates.dates, ui_lc[0], ui_lc[1], color='grey', alpha=0.25)
+
+        [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
+
+        ax1.plot(self.allStates.dates, mean,
+                 label='Total', linewidth=2, color='black')
+        ax1.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
+        ax1.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")  # delta variant
+        ax1.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")  # omicron variant
+
+        ax1.set_title('National Weekly QALY Loss by Health State', fontsize=16)
+        ax1.set_xlabel('Date', fontsize =14)
+        ax1.set_ylabel('QALY Loss', fontsize =14)
+        #ax1.legend(loc='lower center', bbox_to_anchor=(0.5, -0.2), ncol=10)
+        #ax1.legend()
+
+        vals_y = ax1.get_yticks()
+        ax1.set_yticklabels(['{:,.{prec}f}'.format(x, prec=0) for x in vals_y])
+        # To label every other tick on the x-axis
+        [l.set_visible(False) for (i, l) in enumerate(ax1.xaxis.get_ticklabels()) if i % 4 != 0]
+        ax1.tick_params(axis='x', labelsize=10, rotation=30)
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight= 'bold', va='top')
+
+        #ax2.set_xticklabels([state_obj.name for state_obj in sorted_states], fontsize=9, rotation=0)
+
+        #plt.xticks(rotation=90)
+        #ax1.tick_params(axis='x', labelsize=6.5)
+
+        plt.subplots_adjust(top=0.45)
+
+        # Plot state-level QALY loss by outcome
+        ax2 = axs[1]
+        ax2.set_title('State-level QALY Loss by Health State', fontsize=16)
+        ax2.set_xlabel('States', fontsize=14)
+        ax2.set_ylabel('QALY Loss per 100,000 Population', fontsize=14)
+
+
+        # Your state-level plotting code here...
+        states_list = list(self.allStates.states.values())
+        sorted_states = sorted(
+            states_list,
+            key=lambda state_obj: (self.get_mean_ui_overall_qaly_loss_by_state(
+                state_name=state_obj.name, alpha=0.05)[0] / state_obj.population) * 100000)
+
+        x_pos = range(len(sorted_states))
+
+        democratic_states = ['CA', 'CO', 'CT', 'DC', 'DE', 'HI', 'IL', 'ME', 'MD', 'MA', 'MI', 'MN', 'NJ', 'NV',
+                             'NM', 'NY', 'OR', 'RI', 'VT', 'VA', 'WA', 'WI']
+        republican_states = ['AL', 'AK', 'AR', 'AZ', 'FL', 'GA', 'ID', 'IN', 'IA', 'KS', 'KY', 'LA', 'MS', 'MO', 'MT',
+                             'NE', 'NH',
+                             'NC', 'ND', 'OH', 'OK', 'PA', 'SC', 'SD', 'TN', 'TX',
+                             'UT', 'WV', 'WY']
+
+        for i, state_obj in enumerate(sorted_states):
+            mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths, mean_icu, ui_icu, mean_lc, ui_lc = (
+                self.get_mean_ui_overall_qaly_loss_by_outcome_and_by_state(state_name=state_obj.name, alpha=0.05))
+            mean_total, ui_total = self.get_mean_ui_overall_qaly_loss_by_state(state_obj.name, alpha=0.05)
+            cases_height = (mean_cases / state_obj.population) * 100000
+            deaths_height = (mean_deaths / state_obj.population) * 100000
+            hosps_icu_height = ((mean_hosps + mean_icu) / state_obj.population) * 100000
+            lc_height = (mean_lc / state_obj.population) * 100000
+            total_height = (mean_total / state_obj.population) * 100000
+
+            cases_ui = (ui_cases / state_obj.population) * 100000
+            deaths_ui = (ui_deaths / state_obj.population) * 100000
+            hosps_icu_ui = ((ui_hosps + ui_icu) / state_obj.population) * 100000
+            lc_ui = (ui_lc / state_obj.population) * 100000
+            total_ui = (ui_total / state_obj.population) * 100000
+
+            yterr_cases = [[cases_height - cases_ui[0]], [cases_ui[1] - cases_height]]
+
+            yterr_deaths = [[deaths_height - deaths_ui[0]], [deaths_ui[1] - deaths_height]]
+            yterr_hosps_icu = [[hosps_icu_height - hosps_icu_ui[0]], [hosps_icu_ui[1] - hosps_icu_height]]
+            yterr_lc = [[lc_height - lc_ui[0]], [lc_ui[1] - lc_height]]
+            yterr_total = [[total_height - total_ui[0]], [total_ui[1] - total_height]]
+
+            ax2.scatter([state_obj.name],cases_height, marker='o', color='blue', label='cases')
+            ax2.errorbar([state_obj.name],cases_height, yerr=yterr_cases, fmt='none', color='blue', capsize=0,
+                         alpha=0.4)
+            ax2.scatter([state_obj.name],hosps_icu_height, marker='o', color='green', label='hospital admissions')
+            ax2.errorbar([state_obj.name], hosps_icu_height, yerr=yterr_hosps_icu, fmt='none', color='green', capsize=0,
+                         alpha=0.4)
+            ax2.scatter([state_obj.name], deaths_height, marker='o', color='red', label='deaths')
+            ax2.errorbar([state_obj.name], deaths_height, yerr=yterr_deaths, fmt='none', color='red', capsize=0,
+                         alpha=0.4)
+            ax2.scatter([state_obj.name], lc_height, marker='o', color='purple', label='Long COVID')
+            ax2.errorbar([state_obj.name], lc_height, yerr=yterr_lc, fmt='none', color='purple', capsize=0,
+                         alpha=0.4)
+            ax2.scatter([state_obj.name], total_height, marker='o', color='black', label='total')
+            ax2.errorbar([state_obj.name], total_height, yerr=yterr_total, fmt='none', color='black', capsize=0,
+                         alpha=0.4)
+
+        ax2.set_xticks(x_pos)
+        x_tick_colors = ['blue' if state_obj.name in democratic_states else 'red' for state_obj in sorted_states]
+        ax2.set_xticklabels([state_obj.name for state_obj in sorted_states], fontsize=9, rotation=0)
+        ax2.legend(loc='lower center', bbox_to_anchor=(0.5, -0.15),
+                   labels=['Cases', 'Hospital Admissions (including ICU)', 'Deaths', 'Long COVID', "Total"],
+                   ncol=5, fancybox=True, shadow=True,  fontsize =12)
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight= 'bold',va='top')
+
+
+        for tick, color in zip(ax2.xaxis.get_major_ticks(), x_tick_colors):
+            tick.label1.set_color(color)
+
+        # Adjust layout
+        plt.tight_layout()
+
+        # Save the figure
+        output_figure(fig, filename=ROOT_DIR + '/figs/combined_abstract_plot.png')
+        plt.show()

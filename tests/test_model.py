@@ -6,6 +6,7 @@ probabilisticModel.simulate(n=10)
 
 #probabilisticModel.print_overall_qaly_loss_by_outcome()
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
+probabilisticModel.generate_combined_abstract_plots()
 #probabilisticModel.calculate_death_qaly_loss_proportion()
 #probabilisticModel.generate_correlation_matrix_total()
 #probabilisticModel.generate_correlation_matrix_per_capita()
