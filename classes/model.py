@@ -3146,9 +3146,21 @@ class ProbabilisticAllStates:
         vals_y = ax1.get_yticks()
         ax1.set_yticklabels(['{:,.{prec}f}'.format(x, prec=0) for x in vals_y])
         # To label every other tick on the x-axis
-        [l.set_visible(False) for (i, l) in enumerate(ax1.xaxis.get_ticklabels()) if i % 4 != 0]
-        ax1.tick_params(axis='x', labelsize=10, rotation=30)
+        #[l.set_visible(False) for (i, l) in enumerate(ax1.xaxis.get_ticklabels()) if i % 8 != 0]
+        #ax1.tick_params(axis='x', labelsize=10, rotation=45)
         ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight= 'bold', va='top')
+
+        # Adjust the tick positions to start labeling every 8th tick mark from the first date
+        date_range = self.allStates.dates
+        ax1.set_xticks(range(len(date_range)))
+        #ax1.set_xticklabels(date_range, fontsize=10, rotation=45)  # Start labeling from the first date
+
+        # Make the labeled tick marks longer
+        for i, label in enumerate(ax1.get_xticklabels()):
+            if i % 8 == 0:  # Every 8th tick mark
+                label.set_fontsize(12)  # Adjust font size for the labeled tick mark
+                label.set_weight('bold')  # Set the label to bold
+                label.set_rotation(45)  # Rotate the label if needed
 
         #ax2.set_xticklabels([state_obj.name for state_obj in sorted_states], fontsize=9, rotation=0)
 
