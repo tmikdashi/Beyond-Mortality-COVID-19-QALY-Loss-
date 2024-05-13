@@ -17,6 +17,7 @@ from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
 from matplotlib.ticker import ScalarFormatter
 from definitions import ROOT_DIR
+from matplotlib import rc
 
 
 class AnOutcome:
@@ -3094,14 +3095,13 @@ class ProbabilisticAllStates:
         # Display the plot
         plt.show()
 
-
     def generate_combined_abstract_plots(self):
         """
         Generate a combined plot of state-level QALY loss by outcome and weekly national QALY loss by outcome.
         """
 
         # Set up the figure and axes
-        fig, axs = plt.subplots(2, 1, figsize=(12, 16))
+        fig, axs = plt.subplots(2, 1, figsize=(12, 8))
 
         # Plot weekly national QALY loss by outcome
         ax1 = axs[0]
@@ -3136,45 +3136,48 @@ class ProbabilisticAllStates:
         ax1.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
         ax1.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")  # delta variant
         ax1.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")  # omicron variant
+        ax1.axvline(x="2021-08-04", color='black', linestyle='--')
 
         ax1.set_title('National Weekly QALY Loss by Health State', fontsize=16)
-        ax1.set_xlabel('Date', fontsize =14)
-        ax1.set_ylabel('QALY Loss', fontsize =14)
-        #ax1.legend(loc='lower center', bbox_to_anchor=(0.5, -0.2), ncol=10)
-        #ax1.legend()
+        ax1.set_xlabel('Date', fontsize=14)
+        ax1.set_ylabel('QALY Loss', fontsize=14)
+        # ax1.legend(loc='lower center', bbox_to_anchor=(0.5, -0.2), ncol=10)
+        # ax1.legend()
 
-        vals_y = ax1.get_yticks()
-        ax1.set_yticklabels(['{:,.{prec}f}'.format(x, prec=0) for x in vals_y])
-        # To label every other tick on the x-axis
-        #[l.set_visible(False) for (i, l) in enumerate(ax1.xaxis.get_ticklabels()) if i % 8 != 0]
-        #ax1.tick_params(axis='x', labelsize=10, rotation=45)
-        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight= 'bold', va='top')
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
 
-        # Adjust the tick positions to start labeling every 8th tick mark from the first date
         date_range = self.allStates.dates
-        ax1.set_xticks(range(len(date_range)))
-        #ax1.set_xticklabels(date_range, fontsize=10, rotation=45)  # Start labeling from the first date
+        tick_positions = range(0, len(date_range))
+        ax1.set_xticks(tick_positions)
+        ax1.set_xticklabels(
+            [date_range[i] if i % 4 == 0 else '' for i in tick_positions],  # Label every 4th tick mark
+            fontsize=10, rotation=45  # Rotate labels at 45 degrees
+        )
 
-        # Make the labeled tick marks longer
-        for i, label in enumerate(ax1.get_xticklabels()):
-            if i % 8 == 0:  # Every 8th tick mark
-                label.set_fontsize(12)  # Adjust font size for the labeled tick mark
-                label.set_weight('bold')  # Set the label to bold
-                label.set_rotation(45)  # Rotate the label if needed
+        # Make the labeled tick marks slightly longer and bold
+        for i, tick in enumerate(ax1.xaxis.get_major_ticks()):
+            if i % 4 == 0:  # Every 4th tick mark
+                tick.label1.set_fontsize(10)  # Adjust font size for the labeled tick mark
+                tick.label1.set_rotation(45)  # Rotate the label if needed
+                tick.label1.set_horizontalalignment('right')
+                tick.label1.set_weight('normal')
+                tick.tick1line.set_markersize(6)
+                tick.tick1line.set_linewidth(2)
+                tick.tick2line.set_markersize(6)
+                tick.tick2line.set_linewidth(2)
 
-        #ax2.set_xticklabels([state_obj.name for state_obj in sorted_states], fontsize=9, rotation=0)
+            else:
+                tick.label1.set_fontsize(10)  # Adjust font size for the non-labeled tick marks
+                tick.label1.set_weight('normal')  # Set the label to normal weight
 
-        #plt.xticks(rotation=90)
-        #ax1.tick_params(axis='x', labelsize=6.5)
-
-        plt.subplots_adjust(top=0.45)
+        plt.subplots_adjust(top=0.25)
+        plt.subplots_adjust(hspace=0.4)
 
         # Plot state-level QALY loss by outcome
         ax2 = axs[1]
         ax2.set_title('State-level QALY Loss by Health State', fontsize=16)
         ax2.set_xlabel('States', fontsize=14)
         ax2.set_ylabel('QALY Loss per 100,000 Population', fontsize=14)
-
 
         # Your state-level plotting code here...
         states_list = list(self.allStates.states.values())
@@ -3185,12 +3188,12 @@ class ProbabilisticAllStates:
 
         x_pos = range(len(sorted_states))
 
-        democratic_states = ['CA', 'CO', 'CT', 'DC', 'DE', 'HI', 'IL', 'ME', 'MD', 'MA', 'MI', 'MN', 'NJ', 'NV',
-                             'NM', 'NY', 'OR', 'RI', 'VT', 'VA', 'WA', 'WI']
-        republican_states = ['AL', 'AK', 'AR', 'AZ', 'FL', 'GA', 'ID', 'IN', 'IA', 'KS', 'KY', 'LA', 'MS', 'MO', 'MT',
-                             'NE', 'NH',
-                             'NC', 'ND', 'OH', 'OK', 'PA', 'SC', 'SD', 'TN', 'TX',
-                             'UT', 'WV', 'WY']
+        democratic_states = ['CA', 'CO', 'CT', 'DC', 'DE', 'HI', 'IL', 'KS', 'KY', 'ME', 'MI', 'MN', 'NC', 'NJ', 'NV',
+                             'NM', 'NY', 'OR', 'PA', 'RI', 'WA', 'WI']
+        republican_states = ['AL', 'AK', 'AR', 'AZ', 'FL', 'GA', 'ID', 'IN', 'IA', 'LA', 'MA', 'MD', 'MS', 'MO', 'MT',
+                             'NE', 'NH', 'ND', 'OH', 'OK', 'SC', 'SD', 'TN', 'TX',
+                             'UT', 'VT', 'WV', 'WY']
+        switch_states = ['VA']
 
         for i, state_obj in enumerate(sorted_states):
             mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths, mean_icu, ui_icu, mean_lc, ui_lc = (
@@ -3215,10 +3218,10 @@ class ProbabilisticAllStates:
             yterr_lc = [[lc_height - lc_ui[0]], [lc_ui[1] - lc_height]]
             yterr_total = [[total_height - total_ui[0]], [total_ui[1] - total_height]]
 
-            ax2.scatter([state_obj.name],cases_height, marker='o', color='blue', label='cases')
-            ax2.errorbar([state_obj.name],cases_height, yerr=yterr_cases, fmt='none', color='blue', capsize=0,
+            ax2.scatter([state_obj.name], cases_height, marker='o', color='blue', label='cases')
+            ax2.errorbar([state_obj.name], cases_height, yerr=yterr_cases, fmt='none', color='blue', capsize=0,
                          alpha=0.4)
-            ax2.scatter([state_obj.name],hosps_icu_height, marker='o', color='green', label='hospital admissions')
+            ax2.scatter([state_obj.name], hosps_icu_height, marker='o', color='green', label='hospital admissions')
             ax2.errorbar([state_obj.name], hosps_icu_height, yerr=yterr_hosps_icu, fmt='none', color='green', capsize=0,
                          alpha=0.4)
             ax2.scatter([state_obj.name], deaths_height, marker='o', color='red', label='deaths')
@@ -3232,16 +3235,37 @@ class ProbabilisticAllStates:
                          alpha=0.4)
 
         ax2.set_xticks(x_pos)
-        x_tick_colors = ['blue' if state_obj.name in democratic_states else 'red' for state_obj in sorted_states]
-        ax2.set_xticklabels([state_obj.name for state_obj in sorted_states], fontsize=9, rotation=0)
-        ax2.legend(loc='lower center', bbox_to_anchor=(0.5, -0.15),
-                   labels=['Cases', 'Hospital Admissions (including ICU)', 'Deaths', 'Long COVID', "Total"],
-                   ncol=5, fancybox=True, shadow=True,  fontsize =12)
-        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight= 'bold',va='top')
+        x_tick_colors = [
+            'blue' if state_obj in democratic_states else 'red' if state_obj in republican_states else 'purple'
+            for state_obj in [state_obj.name for state_obj in sorted_states]]
 
+        ax2.set_xticklabels([state_obj.name for state_obj in sorted_states], fontsize=10, rotation=45)
+        #ax2.tick.label1.set_horizontalalignment('right')
+        ax2.legend(loc='lower center', bbox_to_anchor=(0.5, -0.50),
+                   labels=['Cases', 'Hospital Admissions (including ICU)', 'Deaths', 'Long COVID', "Total"],
+                   ncol=5, fancybox=True, shadow=True, fontsize=12)
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
         for tick, color in zip(ax2.xaxis.get_major_ticks(), x_tick_colors):
             tick.label1.set_color(color)
+
+
+        caption_lines_1 = [
+            "Figure: QALY loss due to COVID-19 by health state over time (Panel A) and across US states (Panel B) between July 15, 2020, and November 2, 2022."]
+
+        caption_lines_2= [
+            "In Panel A, the region shaded in blue corresponds to the period when the delta variant was the dominant circulating strain, "
+            "and the region shaded in grey corresponds to when the omicron variant was the dominant circulating strain."
+            "The dotted line corresponds to when 70% of the total population was vaccinated with at least one dose."
+            "In Panel B, states with a Republican governor between July 15, 2020, and November 2, 2022, are colored red,"
+            "states with a Democratic governor are colored blue, and states with both Republican and Democratic governors are colored purple."
+        ]
+
+        caption_1 = '\n'.join(caption_lines_1)
+        fig.text(0.5, -0.045, caption_1, ha='center', fontsize=12, wrap=True,fontweight='bold')
+        caption_2 = '\n'.join(caption_lines_2)
+        fig.text(0.5, -0.15, caption_2, ha='center', fontsize=12, wrap=True)
+
 
         # Adjust layout
         plt.tight_layout()
@@ -3249,3 +3273,4 @@ class ProbabilisticAllStates:
         # Save the figure
         output_figure(fig, filename=ROOT_DIR + '/figs/combined_abstract_plot.png')
         plt.show()
+

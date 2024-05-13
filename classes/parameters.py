@@ -54,8 +54,10 @@ class ParameterGenerator:
 
 
         # parameters to calculate the QALY loss due to long COVID
-        self.parameters['long_covid_dur'] = Beta(mean=30/365.25, st_dev=1/365.25)
-        self.parameters['long_covid_prob'] = Beta(mean=0.343, st_dev=0.0065)
+        #self.parameters['long_covid_dur'] = Beta(mean=30/365.25, st_dev=1/365.25)
+        self.parameters['long_covid_dur'] = Beta(mean=3.99/12, st_dev=(0.4/12)/1.35)
+        #self.parameters['long_covid_prob'] = Beta(mean=0.343, st_dev=0.0065)
+        self.parameters['long_covid_prob'] = Beta(mean=0.037, st_dev=(0.066/1.35))
         self.parameters['long_covid_weight'] = Beta(mean=0.29, st_dev =0.033)
 
 
@@ -106,7 +108,7 @@ class ParameterGenerator:
                                 * self.parameters['hosp_weight'].value
                                 * self.parameters['icu_prob'].value)
 
-        param.qWeightLongCOVID = (self.parameters['long_covid_dur'].value
+        param.qWeightLongCOVID = ( self.parameters['long_covid_dur'].value
                                   * self.parameters['long_covid_prob'].value
                                   * self.parameters['long_covid_weight'].value)
 
