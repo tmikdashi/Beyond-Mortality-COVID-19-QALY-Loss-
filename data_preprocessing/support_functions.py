@@ -64,6 +64,7 @@ def generate_county_data_csv(data_type='cases'):
         'hospitalizations per 100,000': 22,
         'icu occupancy per 100,000': 24,
         'longcovid': (5,6)
+
     }
 
     # Ensure the specified data_type is valid
