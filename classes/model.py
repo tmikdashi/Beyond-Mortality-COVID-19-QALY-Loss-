@@ -74,6 +74,10 @@ class PandemicOutcomes:
         self.cases_lc_1 = AnOutcome()
         self.deaths_lc_1 = AnOutcome()
 
+        self.longCOVID_1_L = AnOutcome()
+        self.cases_lc_1_L = AnOutcome()
+        self.deaths_lc_1_L = AnOutcome()
+
         self.longCOVID_1_low = AnOutcome()
         self.cases_lc_1_low = AnOutcome()
         self.deaths_lc_1_low = AnOutcome()
@@ -90,11 +94,17 @@ class PandemicOutcomes:
         self.cases_lc_2_up = AnOutcome()
         self.deaths_lc_2_up = AnOutcome()
 
-        self.longCOVID_3= AnOutcome()
-        self.cases_lc_3 = AnOutcome()
-        self.hosps_lc_c_3 = AnOutcome()
-        self.hosps_lc_h_3 = AnOutcome()
-        self.hosps_lc_i_3 = AnOutcome()
+        self.longCOVID_3_low= AnOutcome()
+        self.cases_lc_c_3_low = AnOutcome()
+        self.hosps_lc_ch_3_low = AnOutcome()
+        self.hosps_lc_h_3_low = AnOutcome()
+        self.hosps_lc_i_3_low = AnOutcome()
+
+        self.longCOVID_3_up = AnOutcome()
+        self.cases_lc_c_3_up = AnOutcome()
+        self.hosps_lc_ch_3_up = AnOutcome()
+        self.hosps_lc_h_3_up = AnOutcome()
+        self.hosps_lc_i_3_up = AnOutcome()
 
         self.weeklyQALYLoss = np.array([])
         self.totalQALYLoss = 0
@@ -118,6 +128,9 @@ class PandemicOutcomes:
         self.cases_lc_1.add_traj(weekly_obs=weekly_cases)
         self.deaths_lc_1.add_traj(weekly_obs=weekly_deaths)
 
+        self.cases_lc_1_L.add_traj(weekly_obs=weekly_cases)
+        self.deaths_lc_1_L.add_traj(weekly_obs=weekly_deaths)
+
         self.cases_lc_1_low.add_traj(weekly_obs=weekly_cases)
         self.deaths_lc_1_low.add_traj(weekly_obs=weekly_deaths)
 
@@ -130,17 +143,23 @@ class PandemicOutcomes:
         self.cases_lc_2_up.add_traj(weekly_obs=weekly_cases)
         self.deaths_lc_2_up.add_traj(weekly_obs=weekly_deaths)
 
-        self.cases_lc_3.add_traj(weekly_obs= weekly_cases)
-        self.hosps_lc_c_3.add_traj(weekly_obs=weekly_cases)
-        self.hosps_lc_h_3.add_traj(weekly_obs=weekly_hosp)
-        self.hosps_lc_i_3.add_traj(weekly_obs=weekly_hosp)
+        self.cases_lc_c_3_low.add_traj(weekly_obs= weekly_cases)
+        self.hosps_lc_ch_3_low.add_traj(weekly_obs=weekly_hosp)
+        self.hosps_lc_h_3_low.add_traj(weekly_obs=weekly_hosp)
+        self.hosps_lc_i_3_low.add_traj(weekly_obs=weekly_hosp)
+
+        self.cases_lc_c_3_up.add_traj(weekly_obs=weekly_cases)
+        self.hosps_lc_ch_3_up.add_traj(weekly_obs=weekly_hosp)
+        self.hosps_lc_h_3_up.add_traj(weekly_obs=weekly_hosp)
+        self.hosps_lc_i_3_up.add_traj(weekly_obs=weekly_hosp)
 
 
 
-    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight, icu_weight, hosp_icu_weight, long_covid_weight,long_covid_weight_1_c,long_covid_weight_1_d,
+    def calculate_qaly_loss(self, case_weight, hosp_weight, death_weight, icu_weight, hosp_icu_weight, long_covid_weight,long_covid_weight_1_c,long_covid_weight_1_d, long_covid_weight_1_c_L,long_covid_weight_1_d_L,
                             long_covid_weight_1_c_low,long_covid_weight_1_d_low,long_covid_weight_1_c_up,long_covid_weight_1_d_up,
                             long_covid_weight_2_c_low,long_covid_weight_2_d_low,long_covid_weight_2_c_up,long_covid_weight_2_d_up,
-                            long_covid_weight_3_c, long_covid_weight_3_ch, long_covid_weight_3_h,long_covid_weight_3_icu):
+                            long_covid_weight_3_c_low, long_covid_weight_3_ch_low, long_covid_weight_3_h_low,long_covid_weight_3_icu_low,
+                            long_covid_weight_3_c_up, long_covid_weight_3_ch_up, long_covid_weight_3_h_up,long_covid_weight_3_icu_up):
 
         """
         Calculates the weekly and overall QALY
@@ -170,6 +189,12 @@ class PandemicOutcomes:
         self.longCOVID_1.weeklyQALYLoss = self.cases_lc_1.weeklyQALYLoss - self.deaths_lc_1.weeklyQALYLoss
         self.longCOVID_1.totalQALYLoss = self.cases_lc_1.totalQALYLoss - self.deaths_lc_1.totalQALYLoss
 
+        self.cases_lc_1_L.calculate_qaly_loss(quality_weight=long_covid_weight_1_c_L)
+        self.deaths_lc_1_L.calculate_qaly_loss(quality_weight=long_covid_weight_1_d_L)
+
+        self.longCOVID_1_L.weeklyQALYLoss = self.cases_lc_1_L.weeklyQALYLoss - self.deaths_lc_1_L.weeklyQALYLoss
+        self.longCOVID_1_L.totalQALYLoss = self.cases_lc_1_L.totalQALYLoss - self.deaths_lc_1_L.totalQALYLoss
+
         self.cases_lc_1_low.calculate_qaly_loss(quality_weight=long_covid_weight_1_c_low)
         self.deaths_lc_1_low.calculate_qaly_loss(quality_weight=long_covid_weight_1_d_low)
         self.longCOVID_1_low.weeklyQALYLoss = self.cases_lc_1_low.weeklyQALYLoss - self.deaths_lc_1_low.weeklyQALYLoss
@@ -193,12 +218,21 @@ class PandemicOutcomes:
         self.longCOVID_2_up.totalQALYLoss = self.cases_lc_2_up.totalQALYLoss - self.deaths_lc_2_up.totalQALYLoss
 
 
-        self.cases_lc_3.calculate_qaly_loss(quality_weight=long_covid_weight_3_c)
-        self.hosps_lc_c_3.calculate_qaly_loss(quality_weight=long_covid_weight_3_ch)
-        self.hosps_lc_h_3.calculate_qaly_loss(quality_weight=long_covid_weight_3_h)
-        self.hosps_lc_i_3.calculate_qaly_loss(quality_weight=long_covid_weight_3_icu)
-        self.longCOVID_3.weeklyQALYLoss= self.cases_lc_3.weeklyQALYLoss -self.hosps_lc_c_3.weeklyQALYLoss + self.hosps_lc_h_3.weeklyQALYLoss + self.hosps_lc_i_3.weeklyQALYLoss
-        self.longCOVID_3.totalQALYLoss = self.cases_lc_3.totalQALYLoss -self.hosps_lc_c_3.totalQALYLoss + self.hosps_lc_h_3.totalQALYLoss + self.hosps_lc_i_3.totalQALYLoss
+        self.cases_lc_c_3_low.calculate_qaly_loss(quality_weight=long_covid_weight_3_c_low)
+        self.hosps_lc_ch_3_low.calculate_qaly_loss(quality_weight=long_covid_weight_3_ch_low)
+        self.hosps_lc_h_3_low.calculate_qaly_loss(quality_weight=long_covid_weight_3_h_low)
+        self.hosps_lc_i_3_low.calculate_qaly_loss(quality_weight=long_covid_weight_3_icu_low)
+        self.longCOVID_3_low.weeklyQALYLoss= self.cases_lc_c_3_low.weeklyQALYLoss + self.hosps_lc_h_3_low.weeklyQALYLoss + self.hosps_lc_i_3_low.weeklyQALYLoss -self.hosps_lc_ch_3_low.weeklyQALYLoss
+        self.longCOVID_3_low.totalQALYLoss = self.cases_lc_c_3_low.totalQALYLoss+ self.hosps_lc_h_3_low.totalQALYLoss + self.hosps_lc_i_3_low.totalQALYLoss -self.hosps_lc_ch_3_low.totalQALYLoss
+
+        self.cases_lc_c_3_up.calculate_qaly_loss(quality_weight=long_covid_weight_3_c_up)
+        self.hosps_lc_ch_3_up.calculate_qaly_loss(quality_weight=long_covid_weight_3_ch_up)
+        self.hosps_lc_h_3_up.calculate_qaly_loss(quality_weight=long_covid_weight_3_h_up)
+        self.hosps_lc_i_3_up.calculate_qaly_loss(quality_weight=long_covid_weight_3_icu_up)
+        self.longCOVID_3_up.weeklyQALYLoss = self.cases_lc_c_3_up.weeklyQALYLoss + self.hosps_lc_h_3_up.weeklyQALYLoss + self.hosps_lc_i_3_up.weeklyQALYLoss - self.hosps_lc_ch_3_up.weeklyQALYLoss
+        self.longCOVID_3_up.totalQALYLoss = self.cases_lc_c_3_up.totalQALYLoss+ self.hosps_lc_h_3_up.totalQALYLoss + self.hosps_lc_i_3_up.totalQALYLoss - self.hosps_lc_ch_3_up.totalQALYLoss
+
+
 
 
 class County:
@@ -228,9 +262,10 @@ class County:
             weekly_cases=weekly_cases, weekly_hosp=weekly_hosp, weekly_deaths=weekly_deaths, weekly_non_hosp_icu=weekly_non_hosp_icu,weekly_hosp_icu=weekly_hosp_icu, weekly_longCovid= weekly_longCovid)
 
     def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight, icu_weight, hosp_icu_weight, long_covid_weight,
-                            long_covid_weight_1_c,long_covid_weight_1_d, long_covid_weight_1_c_low,long_covid_weight_1_d_low,long_covid_weight_1_c_up,long_covid_weight_1_d_up,
+                            long_covid_weight_1_c,long_covid_weight_1_d, long_covid_weight_1_c_L,long_covid_weight_1_d_L, long_covid_weight_1_c_low,long_covid_weight_1_d_low,long_covid_weight_1_c_up,long_covid_weight_1_d_up,
                             long_covid_weight_2_c_low,long_covid_weight_2_d_low,long_covid_weight_2_c_up,long_covid_weight_2_d_up,
-                            long_covid_weight_3_c, long_covid_weight_3_ch, long_covid_weight_3_h,long_covid_weight_3_icu):
+                            long_covid_weight_3_c_low, long_covid_weight_3_ch_low, long_covid_weight_3_h_low,long_covid_weight_3_icu_low,
+                            long_covid_weight_3_c_up, long_covid_weight_3_ch_up, long_covid_weight_3_h_up,long_covid_weight_3_icu_up):
         """
         Calculates the weekly and total QALY loss for the County.
 
@@ -242,10 +277,11 @@ class County:
 
         self.pandemicOutcomes.calculate_qaly_loss(
             case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight, icu_weight=icu_weight, hosp_icu_weight=hosp_icu_weight, long_covid_weight=long_covid_weight,
-        long_covid_weight_1_c=long_covid_weight_1_c,long_covid_weight_1_d=long_covid_weight_1_d,
+        long_covid_weight_1_c=long_covid_weight_1_c,long_covid_weight_1_d=long_covid_weight_1_d,long_covid_weight_1_c_L=long_covid_weight_1_c_L,long_covid_weight_1_d_L=long_covid_weight_1_d_L,
         long_covid_weight_1_c_low=long_covid_weight_1_c_low,long_covid_weight_1_d_low=long_covid_weight_1_d_low,long_covid_weight_1_c_up=long_covid_weight_1_c_up,long_covid_weight_1_d_up=long_covid_weight_1_d_up,
         long_covid_weight_2_c_low=long_covid_weight_2_c_low,long_covid_weight_2_d_low=long_covid_weight_2_d_low,long_covid_weight_2_c_up=long_covid_weight_2_c_up,long_covid_weight_2_d_up=long_covid_weight_2_d_up,
-        long_covid_weight_3_c=long_covid_weight_3_c, long_covid_weight_3_ch=long_covid_weight_3_ch, long_covid_weight_3_h= long_covid_weight_3_h,long_covid_weight_3_icu=long_covid_weight_3_icu)
+        long_covid_weight_3_c_low=long_covid_weight_3_c_low, long_covid_weight_3_ch_low=long_covid_weight_3_ch_low, long_covid_weight_3_h_low= long_covid_weight_3_h_low,long_covid_weight_3_icu_low=long_covid_weight_3_icu_low,
+        long_covid_weight_3_c_up=long_covid_weight_3_c_up, long_covid_weight_3_ch_up=long_covid_weight_3_ch_up, long_covid_weight_3_h_up= long_covid_weight_3_h_up,long_covid_weight_3_icu_up=long_covid_weight_3_icu_up)
 
     def get_overall_qaly_loss(self):
         """
@@ -291,9 +327,10 @@ class State:
 
 
     def calculate_qaly_loss(self, case_weight, death_weight, hosp_weight, icu_weight, hosp_icu_weight, long_covid_weight,
-                            long_covid_weight_1_c,long_covid_weight_1_d, long_covid_weight_1_c_low,long_covid_weight_1_d_low,long_covid_weight_1_c_up,long_covid_weight_1_d_up,
+                            long_covid_weight_1_c,long_covid_weight_1_d,long_covid_weight_1_c_L,long_covid_weight_1_d_L, long_covid_weight_1_c_low,long_covid_weight_1_d_low,long_covid_weight_1_c_up,long_covid_weight_1_d_up,
                             long_covid_weight_2_c_low,long_covid_weight_2_d_low,long_covid_weight_2_c_up,long_covid_weight_2_d_up,
-                            long_covid_weight_3_c, long_covid_weight_3_ch, long_covid_weight_3_h,long_covid_weight_3_icu):
+                            long_covid_weight_3_c_low, long_covid_weight_3_ch_low, long_covid_weight_3_h_low,long_covid_weight_3_icu_low,
+                            long_covid_weight_3_c_up, long_covid_weight_3_ch_up, long_covid_weight_3_h_up, long_covid_weight_3_icu_up):
         """
         Calculates QALY loss for the State.
         :param case_weight: cases-specific weight to be applied to each case in calculating QALY loss.
@@ -304,18 +341,20 @@ class State:
         for county in self.counties.values():
             county.calculate_qaly_loss(
             case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight, icu_weight=icu_weight, hosp_icu_weight=hosp_icu_weight, long_covid_weight=long_covid_weight,
-        long_covid_weight_1_c=long_covid_weight_1_c,long_covid_weight_1_d=long_covid_weight_1_d,
+        long_covid_weight_1_c=long_covid_weight_1_c,long_covid_weight_1_d=long_covid_weight_1_d,  long_covid_weight_1_c_L=long_covid_weight_1_c_L,long_covid_weight_1_d_L=long_covid_weight_1_d_L,
         long_covid_weight_1_c_low=long_covid_weight_1_c_low,long_covid_weight_1_d_low=long_covid_weight_1_d_low,long_covid_weight_1_c_up=long_covid_weight_1_c_up,long_covid_weight_1_d_up=long_covid_weight_1_d_up,
         long_covid_weight_2_c_low=long_covid_weight_2_c_low,long_covid_weight_2_d_low=long_covid_weight_2_d_low,long_covid_weight_2_c_up=long_covid_weight_2_c_up,long_covid_weight_2_d_up=long_covid_weight_2_d_up,
-        long_covid_weight_3_c=long_covid_weight_3_c, long_covid_weight_3_ch=long_covid_weight_3_ch, long_covid_weight_3_h= long_covid_weight_3_h,long_covid_weight_3_icu=long_covid_weight_3_icu)
+        long_covid_weight_3_c_low=long_covid_weight_3_c_low,long_covid_weight_3_ch_low=long_covid_weight_3_ch_low,long_covid_weight_3_h_low=long_covid_weight_3_h_low,long_covid_weight_3_icu_low=long_covid_weight_3_icu_low,
+        long_covid_weight_3_c_up=long_covid_weight_3_c_up, long_covid_weight_3_ch_up=long_covid_weight_3_ch_up,long_covid_weight_3_h_up=long_covid_weight_3_h_up,long_covid_weight_3_icu_up=long_covid_weight_3_icu_up)
 
             # Calculate QALY loss for the state
         self.pandemicOutcomes.calculate_qaly_loss(
             case_weight=case_weight, hosp_weight=hosp_weight, death_weight=death_weight, icu_weight=icu_weight, hosp_icu_weight=hosp_icu_weight, long_covid_weight=long_covid_weight,
-        long_covid_weight_1_c=long_covid_weight_1_c,long_covid_weight_1_d=long_covid_weight_1_d,
+        long_covid_weight_1_c=long_covid_weight_1_c,long_covid_weight_1_d=long_covid_weight_1_d,long_covid_weight_1_c_L=long_covid_weight_1_c_L,long_covid_weight_1_d_L=long_covid_weight_1_d_L,
         long_covid_weight_1_c_low=long_covid_weight_1_c_low,long_covid_weight_1_d_low=long_covid_weight_1_d_low,long_covid_weight_1_c_up=long_covid_weight_1_c_up,long_covid_weight_1_d_up=long_covid_weight_1_d_up,
         long_covid_weight_2_c_low=long_covid_weight_2_c_low,long_covid_weight_2_d_low=long_covid_weight_2_d_low,long_covid_weight_2_c_up=long_covid_weight_2_c_up,long_covid_weight_2_d_up=long_covid_weight_2_d_up,
-        long_covid_weight_3_c=long_covid_weight_3_c, long_covid_weight_3_ch=long_covid_weight_3_ch, long_covid_weight_3_h= long_covid_weight_3_h,long_covid_weight_3_icu=long_covid_weight_3_icu)
+        long_covid_weight_3_c_low=long_covid_weight_3_c_low, long_covid_weight_3_ch_low=long_covid_weight_3_ch_low,long_covid_weight_3_h_low=long_covid_weight_3_h_low,long_covid_weight_3_icu_low=long_covid_weight_3_icu_low,
+        long_covid_weight_3_c_up=long_covid_weight_3_c_up, long_covid_weight_3_ch_up=long_covid_weight_3_ch_up,long_covid_weight_3_h_up=long_covid_weight_3_h_up, long_covid_weight_3_icu_up=long_covid_weight_3_icu_up)
 
     def get_overall_qaly_loss(self):
         """
@@ -414,11 +453,13 @@ class AllStates:
                 hosp_icu_weight=param_values.qWeightICUHosp,
                 long_covid_weight= param_values.qWeightLongCOVID,
                 long_covid_weight_1_c=param_values.qWeightLongCOVID_1_c,long_covid_weight_1_d=param_values.qWeightLongCOVID_1_d,
+                long_covid_weight_1_c_L=param_values.qWeightLongCOVID_1_c_L, long_covid_weight_1_d_L=param_values.qWeightLongCOVID_1_d_L,
                 long_covid_weight_1_c_low=param_values.qWeightLongCOVID_1_c_low, long_covid_weight_1_d_low=param_values.qWeightLongCOVID_1_d_low,
                 long_covid_weight_1_c_up=param_values.qWeightLongCOVID_1_c_up, long_covid_weight_1_d_up=param_values.qWeightLongCOVID_1_d_up,
                 long_covid_weight_2_c_low=param_values.qWeightLongCOVID_2_c_low, long_covid_weight_2_d_low=param_values.qWeightLongCOVID_2_d_low,
                 long_covid_weight_2_c_up=param_values.qWeightLongCOVID_2_c_up, long_covid_weight_2_d_up=param_values.qWeightLongCOVID_2_d_up,
-                long_covid_weight_3_c=param_values.qWeightLongCOVID_3_c, long_covid_weight_3_ch=param_values.qWeightLongCOVID_3_ch, long_covid_weight_3_h= param_values.qWeightLongCOVID_3_h, long_covid_weight_3_icu=param_values.qWeightLongCOVID_3_icu)
+                long_covid_weight_3_c_low=param_values.qWeightLongCOVID_3_c_low, long_covid_weight_3_ch_low=param_values.qWeightLongCOVID_3_ch_low, long_covid_weight_3_h_low= param_values.qWeightLongCOVID_3_h_low, long_covid_weight_3_icu_low=param_values.qWeightLongCOVID_3_icu_low,
+                long_covid_weight_3_c_up = param_values.qWeightLongCOVID_3_c_up, long_covid_weight_3_ch_up = param_values.qWeightLongCOVID_3_ch_up, long_covid_weight_3_h_up = param_values.qWeightLongCOVID_3_h_up, long_covid_weight_3_icu_up = param_values.qWeightLongCOVID_3_icu_up)
 
 
 
@@ -433,12 +474,13 @@ class AllStates:
                 hosp_icu_weight=param_values.qWeightICUHosp,
                 long_covid_weight= param_values.qWeightLongCOVID,
                 long_covid_weight_1_c=param_values.qWeightLongCOVID_1_c,long_covid_weight_1_d=param_values.qWeightLongCOVID_1_d,
+                long_covid_weight_1_c_L=param_values.qWeightLongCOVID_1_c_L,long_covid_weight_1_d_L=param_values.qWeightLongCOVID_1_d_L,
                 long_covid_weight_1_c_low=param_values.qWeightLongCOVID_1_c_low, long_covid_weight_1_d_low=param_values.qWeightLongCOVID_1_d_low,
                 long_covid_weight_1_c_up=param_values.qWeightLongCOVID_1_c_up, long_covid_weight_1_d_up=param_values.qWeightLongCOVID_1_d_up,
                 long_covid_weight_2_c_low=param_values.qWeightLongCOVID_2_c_low, long_covid_weight_2_d_low=param_values.qWeightLongCOVID_2_d_low,
                 long_covid_weight_2_c_up=param_values.qWeightLongCOVID_2_c_up, long_covid_weight_2_d_up=param_values.qWeightLongCOVID_2_d_up,
-                long_covid_weight_3_c=param_values.qWeightLongCOVID_3_c, long_covid_weight_3_ch=param_values.qWeightLongCOVID_3_ch, long_covid_weight_3_h= param_values.qWeightLongCOVID_3_h, long_covid_weight_3_icu=param_values.qWeightLongCOVID_3_icu)
-
+                long_covid_weight_3_c_low=param_values.qWeightLongCOVID_3_c_low, long_covid_weight_3_ch_low=param_values.qWeightLongCOVID_3_ch_low, long_covid_weight_3_h_low= param_values.qWeightLongCOVID_3_h_low, long_covid_weight_3_icu_low=param_values.qWeightLongCOVID_3_icu_low,
+                long_covid_weight_3_c_up=param_values.qWeightLongCOVID_3_c_up,long_covid_weight_3_ch_up=param_values.qWeightLongCOVID_3_ch_up, long_covid_weight_3_h_up=param_values.qWeightLongCOVID_3_h_up,long_covid_weight_3_icu_up=param_values.qWeightLongCOVID_3_icu_up)
 
     def get_overall_qaly_loss(self):
         """
@@ -462,11 +504,13 @@ class AllStates:
                         'icu': self.pandemicOutcomes.icu.totalQALYLoss,
                         'longcovid': self.pandemicOutcomes.longCovid.totalQALYLoss,
                         'longcovid_1': self.pandemicOutcomes.longCOVID_1.totalQALYLoss,
+                        'longcovid_1_L': self.pandemicOutcomes.longCOVID_1_L.totalQALYLoss,
                         'longcovid_1_low': self.pandemicOutcomes.longCOVID_1_low.totalQALYLoss,
                         'longcovid_1_up': self.pandemicOutcomes.longCOVID_1_up.totalQALYLoss,
                         'longcovid_2_low': self.pandemicOutcomes.longCOVID_2_low.totalQALYLoss,
                         'longcovid_2_up': self.pandemicOutcomes.longCOVID_2_up.totalQALYLoss,
-                        'longcovid_3': self.pandemicOutcomes.longCOVID_3.totalQALYLoss
+                        'longcovid_3_low': self.pandemicOutcomes.longCOVID_3_low.totalQALYLoss,
+                        'longcovid_3_up': self.pandemicOutcomes.longCOVID_3_up.totalQALYLoss
                         } #TODO
 
         return dict_results
@@ -854,6 +898,15 @@ class AllStates:
         for state_name, state_obj in self.states.items():
             overall_qaly_loss_long_covid_1_by_state[state_name] = state_obj.pandemicOutcomes.longCOVID_1.totalQALYLoss
         return overall_qaly_loss_long_covid_1_by_state
+
+    def get_overall_qaly_loss_by_state_long_covid_1_L(self):
+        """
+        :return: (dictionary) Overall QALY loss from deaths by states (as dictionary key)
+        """
+        overall_qaly_loss_long_covid_1_L_by_state = {}
+        for state_name, state_obj in self.states.items():
+            overall_qaly_loss_long_covid_1_L_by_state[state_name] = state_obj.pandemicOutcomes.longCOVID_1_L.totalQALYLoss
+        return overall_qaly_loss_long_covid_1_L_by_state
     def get_overall_qaly_loss_by_state_long_covid_1_low(self):
         """
         :return: (dictionary) Overall QALY loss from deaths by states (as dictionary key)
@@ -888,14 +941,23 @@ class AllStates:
             overall_qaly_loss_long_covid_2_up_by_state[state_name] = state_obj.pandemicOutcomes.longCOVID_2_up.totalQALYLoss
         return overall_qaly_loss_long_covid_2_up_by_state
 
-    def get_overall_qaly_loss_by_state_long_covid_3(self):
+    def get_overall_qaly_loss_by_state_long_covid_3_low(self):
         """
         :return: (dictionary) Overall QALY loss from deaths by states (as dictionary key)
         """
-        overall_qaly_loss_long_covid_3_by_state = {}
+        overall_qaly_loss_long_covid_3_low_by_state = {}
         for state_name, state_obj in self.states.items():
-            overall_qaly_loss_long_covid_3_by_state[state_name] = state_obj.pandemicOutcomes.longCOVID_3.totalQALYLoss
-        return overall_qaly_loss_long_covid_3_by_state
+            overall_qaly_loss_long_covid_3_low_by_state[state_name] = state_obj.pandemicOutcomes.longCOVID_3_low.totalQALYLoss
+        return overall_qaly_loss_long_covid_3_low_by_state
+
+    def get_overall_qaly_loss_by_state_long_covid_3_up(self):
+        """
+        :return: (dictionary) Overall QALY loss from deaths by states (as dictionary key)
+        """
+        overall_qaly_loss_long_covid_3_up_by_state = {}
+        for state_name, state_obj in self.states.items():
+            overall_qaly_loss_long_covid_3_up_by_state[state_name] = state_obj.pandemicOutcomes.longCOVID_3_up.totalQALYLoss
+        return overall_qaly_loss_long_covid_3_up_by_state
 
 
     def get_death_QALY_loss_by_age(self, param_gen):
@@ -929,11 +991,13 @@ class SummaryOutcomes:
         self.overallQALYlossesICU = []
         self.overallQALYlossesLongCOVID = []
         self.overallQALYlossesLongCOVID_1 = []
+        self.overallQALYlossesLongCOVID_1_L = []
         self.overallQALYlossesLongCOVID_1_low = []
         self.overallQALYlossesLongCOVID_1_up = []
         self.overallQALYlossesLongCOVID_2_low = []
         self.overallQALYlossesLongCOVID_2_up= []
-        self.overallQALYlossesLongCOVID_3 = []
+        self.overallQALYlossesLongCOVID_3_low = []
+        self.overallQALYlossesLongCOVID_3_up = []
 
         self.weeklyQALYlosses = []
         self.weeklyQALYlossesByState = []
@@ -943,11 +1007,13 @@ class SummaryOutcomes:
         self.weeklyQALYlossesICU= []
         self.weeklyQALYlossesLongCOVID = []
         self.weeklyQALYlossesLongCOVID_1 = []
+        self.weeklyQALYlossesLongCOVID_1_L = []
         self.weeklyQALYlossesLongCOVID_1_low = []
         self.weeklyQALYlossesLongCOVID_1_up = []
         self.weeklyQALYlossesLongCOVID_2_low = []
         self.weeklyQALYlossesLongCOVID_2_up = []
-        self.weeklyQALYlossesLongCOVID_3 = []
+        self.weeklyQALYlossesLongCOVID_3_low = []
+        self.weeklyQALYlossesLongCOVID_3_up = []
 
         self.overallQALYlossesCasesByState = []
         self.overallQALYlossesHospsByState = []
@@ -955,11 +1021,13 @@ class SummaryOutcomes:
         self.overallQALYlossesICUByState =[]
         self.overallQALYlossesLongCOVIDByState = []
         self.overallQALYlossesLongCOVID_1_ByState = []
+        self.overallQALYlossesLongCOVID_1_L_ByState = []
         self.overallQALYlossesLongCOVID_1_low_ByState = []
         self.overallQALYlossesLongCOVID_1_up_ByState = []
         self.overallQALYlossesLongCOVID_2_low_ByState = []
         self.overallQALYlossesLongCOVID_2_up_ByState = []
-        self.overallQALYlossesLongCOVID_3_ByState = []
+        self.overallQALYlossesLongCOVID_3_low_ByState = []
+        self.overallQALYlossesLongCOVID_3_up_ByState = []
 
 
         self.overallQALYlossessByStateandOutcome =[]
@@ -971,11 +1039,13 @@ class SummaryOutcomes:
         self.statOverallQALYLossICU = None
         self.statOverallQALYLossLongCOVID = None
         self.statOverallQALYLossLongCOVID_1 = None
+        self.statOverallQALYLossLongCOVID_1_L = None
         self.statOverallQALYLossLongCOVID_1_low = None
         self.statOverallQALYLossLongCOVID_1_up = None
         self.statOverallQALYLossLongCOVID_2_low = None
         self.statOverallQALYLossLongCOVID_2_up = None
-        self.statOverallQALYLossLongCOVID_3 = None
+        self.statOverallQALYLossLongCOVID_3_low = None
+        self.statOverallQALYLossLongCOVID_3_up = None
 
 
         self.deathQALYLossByAge = []
@@ -1000,11 +1070,13 @@ class SummaryOutcomes:
         self.weeklyQALYlossesICU.append(simulated_model.pandemicOutcomes.icu.weeklyQALYLoss)
         self.weeklyQALYlossesLongCOVID.append(simulated_model.pandemicOutcomes.longCovid.weeklyQALYLoss)
         self.weeklyQALYlossesLongCOVID_1.append(simulated_model.pandemicOutcomes.longCOVID_1.weeklyQALYLoss)
+        self.weeklyQALYlossesLongCOVID_1_L.append(simulated_model.pandemicOutcomes.longCOVID_1_L.weeklyQALYLoss)
         self.weeklyQALYlossesLongCOVID_1_low.append(simulated_model.pandemicOutcomes.longCOVID_1_low.weeklyQALYLoss)
         self.weeklyQALYlossesLongCOVID_1_up.append(simulated_model.pandemicOutcomes.longCOVID_1_up.weeklyQALYLoss)
         self.weeklyQALYlossesLongCOVID_2_low.append(simulated_model.pandemicOutcomes.longCOVID_2_low.weeklyQALYLoss)
         self.weeklyQALYlossesLongCOVID_2_up.append(simulated_model.pandemicOutcomes.longCOVID_2_up.weeklyQALYLoss)
-        self.weeklyQALYlossesLongCOVID_3.append(simulated_model.pandemicOutcomes.longCOVID_3.weeklyQALYLoss)
+        self.weeklyQALYlossesLongCOVID_3_low.append(simulated_model.pandemicOutcomes.longCOVID_3_low.weeklyQALYLoss)
+        self.weeklyQALYlossesLongCOVID_3_up.append(simulated_model.pandemicOutcomes.longCOVID_3_up.weeklyQALYLoss)
 
         self.overallQALYlossesCases.append(simulated_model.pandemicOutcomes.cases.totalQALYLoss)
         self.overallQALYlossesHosps.append(simulated_model.pandemicOutcomes.hosps.totalQALYLoss)
@@ -1012,11 +1084,13 @@ class SummaryOutcomes:
         self.overallQALYlossesICU.append(simulated_model.pandemicOutcomes.icu.totalQALYLoss)
         self.overallQALYlossesLongCOVID.append(simulated_model.pandemicOutcomes.longCovid.totalQALYLoss)
         self.overallQALYlossesLongCOVID_1.append(simulated_model.pandemicOutcomes.longCOVID_1.totalQALYLoss)
+        self.overallQALYlossesLongCOVID_1_L.append(simulated_model.pandemicOutcomes.longCOVID_1_L.totalQALYLoss)
         self.overallQALYlossesLongCOVID_1_low.append(simulated_model.pandemicOutcomes.longCOVID_1_low.totalQALYLoss)
         self.overallQALYlossesLongCOVID_1_up.append(simulated_model.pandemicOutcomes.longCOVID_1_up.totalQALYLoss)
         self.overallQALYlossesLongCOVID_2_low.append(simulated_model.pandemicOutcomes.longCOVID_2_low.totalQALYLoss)
         self.overallQALYlossesLongCOVID_2_up.append(simulated_model.pandemicOutcomes.longCOVID_2_up.totalQALYLoss)
-        self.overallQALYlossesLongCOVID_3.append(simulated_model.pandemicOutcomes.longCOVID_3.totalQALYLoss)
+        self.overallQALYlossesLongCOVID_3_low.append(simulated_model.pandemicOutcomes.longCOVID_3_low.totalQALYLoss)
+        self.overallQALYlossesLongCOVID_3_up.append(simulated_model.pandemicOutcomes.longCOVID_3_up.totalQALYLoss)
 
         self.overallQALYlossesCasesByState.append(simulated_model.get_overall_qaly_loss_by_state_cases())
         self.overallQALYlossesHospsByState.append(simulated_model.get_overall_qaly_loss_by_state_hosps())
@@ -1024,11 +1098,13 @@ class SummaryOutcomes:
         self.overallQALYlossesICUByState.append(simulated_model.get_overall_qaly_loss_by_state_icu())
         self.overallQALYlossesLongCOVIDByState.append(simulated_model.get_overall_qaly_loss_by_state_long_covid())
         self.overallQALYlossesLongCOVID_1_ByState.append(simulated_model.get_overall_qaly_loss_by_state_long_covid_1())
+        self.overallQALYlossesLongCOVID_1_L_ByState.append(simulated_model.get_overall_qaly_loss_by_state_long_covid_1_L())
         self.overallQALYlossesLongCOVID_1_low_ByState.append(simulated_model.get_overall_qaly_loss_by_state_long_covid_1_low())
         self.overallQALYlossesLongCOVID_1_up_ByState.append(simulated_model.get_overall_qaly_loss_by_state_long_covid_1_up())
         self.overallQALYlossesLongCOVID_2_low_ByState.append(simulated_model.get_overall_qaly_loss_by_state_long_covid_2_low())
         self.overallQALYlossesLongCOVID_2_up_ByState.append(simulated_model.get_overall_qaly_loss_by_state_long_covid_2_up())
-        self.overallQALYlossesLongCOVID_3_ByState.append(simulated_model.get_overall_qaly_loss_by_state_long_covid_3())
+        self.overallQALYlossesLongCOVID_3_low_ByState.append(simulated_model.get_overall_qaly_loss_by_state_long_covid_3_low())
+        self.overallQALYlossesLongCOVID_3_up_ByState.append(simulated_model.get_overall_qaly_loss_by_state_long_covid_3_up())
 
 
         self.deathQALYLossByAge.append(simulated_model.get_death_QALY_loss_by_age(param_gen))
@@ -1045,6 +1121,13 @@ class SummaryOutcomes:
         self.statOverallQALYLossICU= SummaryStat(data=self.overallQALYlossesICU)
         self.statOverallQALYLossLongCOVID = SummaryStat(data=self.overallQALYlossesLongCOVID)
         self.statOverallQALYLossLongCOVID_1 = SummaryStat(data=self.overallQALYlossesLongCOVID_1)
+        self.statOverallQALYLossLongCOVID_1_L = SummaryStat(data=self.overallQALYlossesLongCOVID_1_L)
+        self.statOverallQALYLossLongCOVID_1_low = SummaryStat(data=self.overallQALYlossesLongCOVID_1_low)
+        self.statOverallQALYLossLongCOVID_1_up = SummaryStat(data=self.overallQALYlossesLongCOVID_1_up)
+        self.statOverallQALYLossLongCOVID_2_low = SummaryStat(data=self.overallQALYlossesLongCOVID_2_low)
+        self.statOverallQALYLossLongCOVID_2_up = SummaryStat(data=self.overallQALYlossesLongCOVID_2_up)
+        self.statOverallQALYLossLongCOVID_3_low = SummaryStat(data=self.overallQALYlossesLongCOVID_3_low)
+        self.statOverallQALYLossLongCOVID_3_up = SummaryStat(data=self.overallQALYlossesLongCOVID_3_up)
 
     def get_mean_ci_ui_overall_qaly_loss(self):
         """
@@ -1071,6 +1154,9 @@ class SummaryOutcomes:
                 self.statOverallQALYLossLongCOVID_1.get_mean(),
                 self.statOverallQALYLossLongCOVID_1.get_t_CI(alpha=0.05),
                 self.statOverallQALYLossLongCOVID_1.get_PI(alpha=0.05),
+                self.statOverallQALYLossLongCOVID_1_L.get_mean(),
+                self.statOverallQALYLossLongCOVID_1_L.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossLongCOVID_1_L.get_PI(alpha=0.05),
                 self.statOverallQALYLossLongCOVID_1_low.get_mean(),
                 self.statOverallQALYLossLongCOVID_1_low.get_t_CI(alpha=0.05),
                 self.statOverallQALYLossLongCOVID_1_low.get_PI(alpha=0.05),
@@ -1083,9 +1169,13 @@ class SummaryOutcomes:
                 self.statOverallQALYLossLongCOVID_2_up.get_mean(),
                 self.statOverallQALYLossLongCOVID_2_up.get_t_CI(alpha=0.05),
                 self.statOverallQALYLossLongCOVID_2_up.get_PI(alpha=0.05),
-                self.statOverallQALYLossLongCOVID_3.get_mean(),
-                self.statOverallQALYLossLongCOVID_3.get_t_CI(alpha=0.05),
-                self.statOverallQALYLossLongCOVID_3.get_PI(alpha=0.05) )
+                self.statOverallQALYLossLongCOVID_3_low.get_mean(),
+                self.statOverallQALYLossLongCOVID_3_low.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossLongCOVID_3_low.get_PI(alpha=0.05),
+                self.statOverallQALYLossLongCOVID_3_up.get_mean(),
+                self.statOverallQALYLossLongCOVID_3_up.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossLongCOVID_3_up.get_PI(alpha=0.05)
+                )
 
 
 class ProbabilisticAllStates:
@@ -1121,7 +1211,7 @@ class ProbabilisticAllStates:
             self.allStates.get_cases_QALY_loss_by_age(param_gen=param_gen, param_values=params)
 
             # extract outcomes from the simulated all states
-            self.summaryOutcomes.extract_outcomes(simulated_model=self.allStates, param_gen=param_gen, param_values=params)
+            self.summaryOutcomes.extract_outcomes(simulated_model=self.allStates, param_gen=param_gen, param_values=params) #TODO: A REVOIR
 
         self.summaryOutcomes.summarize()
 
@@ -1266,7 +1356,10 @@ class ProbabilisticAllStates:
         print('  Mean Long COVID: {:,.0f}'.format(mean_lc))
 
         (mean, ci, ui,  mean_cases, ci_c, ui_c,mean_hosps, ci_h, ui_h,mean_deaths, ci_d, ui_d,
-         mean_icu, ci_icu, ui_icu, mean_lc, ci_lc, ui_lc, mean_lc_1, ci_lc_1, ui_lc_1,mean_lc_1, ci_lc_1, ui_lc_1)= self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss()
+         mean_icu, ci_icu, ui_icu, mean_lc, ci_lc, ui_lc,
+         mean_lc_1, ci_lc_1, ui_lc_1, mean_lc_1_L, ci_lc_1_L, ui_lc_1_L,mean_lc_1_low, ci_lc_1_low, ui_lc_1_low,mean_lc_1_up, ci_lc_1_up, ui_lc_1_up,
+         mean_lc_2_low, ci_lc_2_low, ui_lc_2_low,mean_lc_2_up, ci_lc_2_up, ui_lc_2_up,
+         mean_lc_3_low, ci_lc_3_low, ui_lc_3_low,mean_lc_3_up, ci_lc_3_up, ui_lc_3_up)= self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss()
 
         print('Overall QALY loss:')
         print('  Mean: {:,.0f}'.format(mean))
@@ -1305,9 +1398,14 @@ class ProbabilisticAllStates:
         print('  95% Uncertainty Interval:', format_interval(ui_lc, deci=0, format=','))
 
         print('Overall QALY loss:')
-        print('  Mean long covid 1: {:,.0f}'.format(mean_lc_1))
+        print('  Mean long covid 1 (updated duration): {:,.0f}'.format(mean_lc_1))
         print('  95% Confidence Interval:', format_interval(ci_lc_1, deci=0, format=','))
         print('  95% Uncertainty Interval:', format_interval(ui_lc_1, deci=0, format=','))
+
+        print('Overall QALY loss:')
+        print('  Mean long covid 1: {:,.0f}'.format(mean_lc_1_L))
+        print('  95% Confidence Interval:', format_interval(ci_lc_1_L, deci=0, format=','))
+        print('  95% Uncertainty Interval:', format_interval(ui_lc_1_L, deci=0, format=','))
 
         print('Overall QALY loss:')
         print('  Mean long covid 1 (low): {:,.0f}'.format(mean_lc_1_low))
@@ -1320,9 +1418,24 @@ class ProbabilisticAllStates:
         print('  95% Uncertainty Interval:', format_interval(ui_lc_1_up, deci=0, format=','))
 
         print('Overall QALY loss:')
-        print('  Mean long covid 1: {:,.0f}'.format(mean_lc_1))
-        print('  95% Confidence Interval:', format_interval(ci_lc_1, deci=0, format=','))
-        print('  95% Uncertainty Interval:', format_interval(ui_lc_1, deci=0, format=','))
+        print('  Mean long covid 2 (low): {:,.0f}'.format(mean_lc_2_low))
+        print('  95% Confidence Interval:', format_interval(ci_lc_2_low, deci=0, format=','))
+        print('  95% Uncertainty Interval:', format_interval(ui_lc_2_low, deci=0, format=','))
+
+        print('Overall QALY loss:')
+        print('  Mean long covid 2 (up): {:,.0f}'.format(mean_lc_2_up))
+        print('  95% Confidence Interval:', format_interval(ci_lc_2_up, deci=0, format=','))
+        print('  95% Uncertainty Interval:', format_interval(ui_lc_2_up, deci=0, format=','))
+
+        print('Overall QALY loss:')
+        print('  Mean long covid 3 (low): {:,.0f}'.format(mean_lc_3_low))
+        print('  95% Confidence Interval:', format_interval(ci_lc_3_low, deci=0, format=','))
+        print('  95% Uncertainty Interval:', format_interval(ui_lc_3_low, deci=0, format=','))
+
+        print('Overall QALY loss:')
+        print('  Mean long covid 3 (up): {:,.0f}'.format(mean_lc_3_up))
+        print('  95% Confidence Interval:', format_interval(ci_lc_3_up, deci=0, format=','))
+        print('  95% Uncertainty Interval:', format_interval(ui_lc_3_up, deci=0, format=','))
 
 
 
@@ -1343,8 +1456,8 @@ class ProbabilisticAllStates:
         fig, ax = plt.subplots(figsize=(12, 6))
 
         [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths , mean_icu, ui_icu, mean_lc, ui_lc,
-                mean_lc_1, ui_lc_1,mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up,mean_lc_2_low, ui_lc_2_low,
-                mean_lc_2_up, ui_lc_2_up,mean_lc_3, ui_lc_3] = (
+                mean_lc_1, ui_lc_1,  mean_lc_1_L, ui_lc_1_L, mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up,mean_lc_2_low, ui_lc_2_low,
+                mean_lc_2_up, ui_lc_2_up,mean_lc_3_low, ui_lc_3_low,mean_lc_3_up, ui_lc_3_up] = (
             self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
 
         ax.plot(self.allStates.dates, mean_cases,
@@ -1367,6 +1480,10 @@ class ProbabilisticAllStates:
                 label='Long COVID 1', linewidth=2, color='maroon')
         #ax.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='orange', alpha=0.25)
 
+        ax.plot(self.allStates.dates, mean_lc_1_L,
+                label='Long COVID 1 (adjusted duration)', linewidth=2, color='yellow')
+        # ax.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='orange', alpha=0.25)
+
         ax.plot(self.allStates.dates, mean_lc_1_low,
                 label='Long COVID 1 (lower parameters)', linewidth=2, color='salmon')
         #ax.fill_between(self.allStates.dates, ui_lc_1_low[0], ui_lc_1_low[1], color='brown', alpha=0.25)
@@ -1383,9 +1500,13 @@ class ProbabilisticAllStates:
                 label='Long COVID 2 (upper parameters)', linewidth=2, color='cyan')
         #ax.fill_between(self.allStates.dates, ui_lc_2_up[0], ui_lc_2_up[1], color='cyan', alpha=0.25)
 
-        ax.plot(self.allStates.dates, mean_lc_3,
-                label='Long COVID 3', linewidth=2, color='olive')
+        ax.plot(self.allStates.dates, mean_lc_3_low,
+                label='Long COVID 3 (lower parameters)', linewidth=2, color='olive')
         #ax.fill_between(self.allStates.dates, ui_lc_3[0], ui_lc_3[1], color='olive', alpha=0.25)
+
+        ax.plot(self.allStates.dates, mean_lc_3_up,
+                label='Long COVID 3 (upper parameters)', linewidth=2, color='gold')
+        # ax.fill_between(self.allStates.dates, ui_lc_3[0], ui_lc_3[1], color='olive', alpha=0.25)
 
 
         [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
@@ -1421,9 +1542,9 @@ class ProbabilisticAllStates:
         # Create a plot
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths , mean_icu, ui_icu, mean_lc, ui_lc,
-                mean_lc_1, ui_lc_1,mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up,mean_lc_2_low, ui_lc_2_low,
-                mean_lc_2_up, ui_lc_2_up,mean_lc_3, ui_lc_3] = (
+        [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths, mean_icu, ui_icu, mean_lc, ui_lc,
+         mean_lc_1, ui_lc_1, mean_lc_1_L, ui_lc_1_L, mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up,
+         mean_lc_2_low, ui_lc_2_low,mean_lc_2_up, ui_lc_2_up, mean_lc_3_low, ui_lc_3_low, mean_lc_3_up, ui_lc_3_up] = (
             self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
 
         ax.plot(self.allStates.dates, mean_cases,
@@ -1441,6 +1562,10 @@ class ProbabilisticAllStates:
         ax.plot(self.allStates.dates, mean_lc_1,
                 label='Long COVID 1', linewidth=2, color='maroon')
         #ax.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='orange', alpha=0.25)
+
+        ax.plot(self.allStates.dates, mean_lc_1_L,
+                label='Long COVID 1 (adjusted duration', linewidth=2, color='yellow')
+        # ax.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='orange', alpha=0.25)
 
         ax.plot(self.allStates.dates, mean_lc_1_low,
                 label='Long COVID 1 (lower parameters)', linewidth=2, color='salmon')
@@ -1474,9 +1599,9 @@ class ProbabilisticAllStates:
         # Create a plot
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths , mean_icu, ui_icu, mean_lc, ui_lc,
-                mean_lc_1, ui_lc_1,mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up,mean_lc_2_low, ui_lc_2_low,
-                mean_lc_2_up, ui_lc_2_up,mean_lc_3, ui_lc_3] = (
+        [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths, mean_icu, ui_icu, mean_lc, ui_lc,
+         mean_lc_1, ui_lc_1, mean_lc_1_L, ui_lc_1_L, mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up, mean_lc_2_low, ui_lc_2_low,
+         mean_lc_2_up, ui_lc_2_up, mean_lc_3_low, ui_lc_3_low, mean_lc_3_up, ui_lc_3_up] = (
             self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
 
         ax.plot(self.allStates.dates, mean_cases,
@@ -1527,9 +1652,10 @@ class ProbabilisticAllStates:
         # Create a plot
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths , mean_icu, ui_icu, mean_lc, ui_lc,
-                mean_lc_1, ui_lc_1,mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up,mean_lc_2_low, ui_lc_2_low,
-                mean_lc_2_up, ui_lc_2_up,mean_lc_3, ui_lc_3] = (
+        [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths, mean_icu, ui_icu, mean_lc, ui_lc,
+         mean_lc_1, ui_lc_1, mean_lc_1_L, ui_lc_1_L, mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up,
+         mean_lc_2_low, ui_lc_2_low,
+         mean_lc_2_up, ui_lc_2_up, mean_lc_3_low, ui_lc_3_low, mean_lc_3_up, ui_lc_3_up] = (
             self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
 
         ax.plot(self.allStates.dates, mean_cases,
@@ -1544,17 +1670,13 @@ class ProbabilisticAllStates:
                 label='Deaths', linewidth=2, color='red')
         #ax.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='red', alpha=0.25)
 
-        ax.plot(self.allStates.dates, mean_lc_3,
-                label='Long COVID 3', linewidth=2, color='olive')
+        ax.plot(self.allStates.dates, mean_lc_3_low,
+                label='Long COVID 3 (lower parameters)', linewidth=2, color='olive')
         #ax.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='orange', alpha=0.25)
 
-        ax.plot(self.allStates.dates, mean_lc_1_low,
-                label='Long COVID 1 (lower parameters)', linewidth=2, color='salmon')
-        #ax.fill_between(self.allStates.dates, ui_lc_1_low[0], ui_lc_1_low[1], color='brown', alpha=0.25)
-
-        ax.plot(self.allStates.dates, mean_lc_2_up,
-                label='Long COVID 2 (upper parameters)', linewidth=2, color='cyan')
-        #ax.fill_between(self.allStates.dates, ui_lc_1_up[0], ui_lc_1_up[1], color='orange', alpha=0.25)
+        ax.plot(self.allStates.dates, mean_lc_3_up,
+                label='Long COVID 3 (upper parameters', linewidth=2, color='gold')
+        # ax.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='orange', alpha=0.25)
 
 
         ax.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")  # delta variant
@@ -1588,15 +1710,17 @@ class ProbabilisticAllStates:
         mean_icu, ui_icu = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesICU, alpha=alpha)
         mean_lc, ui_lc = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesLongCOVID, alpha=alpha)
         mean_lc_1, ui_lc_1 = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesLongCOVID_1, alpha=alpha)
+        mean_lc_1_L, ui_lc_1_L = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesLongCOVID_1_L, alpha=alpha)
         mean_lc_1_low, ui_lc_1_low = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesLongCOVID_1_low, alpha=alpha)
         mean_lc_1_up, ui_lc_1_up = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesLongCOVID_1_up, alpha=alpha)
         mean_lc_2_low, ui_lc_2_low = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesLongCOVID_1_low,alpha=alpha)
         mean_lc_2_up, ui_lc_2_up = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesLongCOVID_1_up,alpha=alpha)
-        mean_lc_3, ui_lc_3 = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesLongCOVID_3, alpha=alpha)
+        mean_lc_3_low, ui_lc_3_low = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesLongCOVID_3_low, alpha=alpha)
+        mean_lc_3_up, ui_lc_3_up=get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesLongCOVID_3_up, alpha=alpha)
 
         return (mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths , mean_icu, ui_icu, mean_lc, ui_lc,
-                mean_lc_1, ui_lc_1,mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up,mean_lc_2_low, ui_lc_2_low,
-                mean_lc_2_up, ui_lc_2_up,mean_lc_3, ui_lc_3)
+                mean_lc_1, ui_lc_1, mean_lc_1_L, ui_lc_1_L, mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up,mean_lc_2_low, ui_lc_2_low,
+                mean_lc_2_up, ui_lc_2_up,mean_lc_3_low, ui_lc_3_low, mean_lc_3_up, ui_lc_3_up)
 
     def plot_map_of_avg_qaly_loss_by_county(self):
         """
