@@ -1462,23 +1462,25 @@ class ProbabilisticAllStates:
 
         ax.plot(self.allStates.dates, mean_cases,
                 label='Cases', linewidth=2, color='blue')
-        #ax.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
+        ax.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
 
         ax.plot(self.allStates.dates, mean_hosps + mean_icu,
                 label='Hospital admissions (including ICU)', linewidth=2, color='green')
-        #ax.fill_between(self.allStates.dates, ui_hosps[0]+ui_icu[0], ui_hosps[1]+ui_icu[1], color='grey', alpha=0.25)
+        ax.fill_between(self.allStates.dates, ui_hosps[0]+ui_icu[0], ui_hosps[1]+ui_icu[1], color='grey', alpha=0.25)
 
         ax.plot(self.allStates.dates, mean_deaths,
                 label='Deaths', linewidth=2, color='red')
-        #ax.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='red', alpha=0.25)
+        ax.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='red', alpha=0.25)
 
-        #ax.plot(self.allStates.dates, mean_lc,
-                #label='Long COVID', linewidth=2, color='purple')
-        #ax.fill_between(self.allStates.dates, ui_lc[0], ui_lc[1], color='purple', alpha=0.25)
+        ax.plot(self.allStates.dates, mean_lc,
+                label='Long COVID', linewidth=2, color='purple')
+        ax.fill_between(self.allStates.dates, ui_lc[0], ui_lc[1], color='purple', alpha=0.25)
+
+        '''
 
         ax.plot(self.allStates.dates, mean_lc_1,
                 label='Long COVID 1', linewidth=2, color='maroon')
-        #ax.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='orange', alpha=0.25)
+        ax.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='orange', alpha=0.25)
 
         ax.plot(self.allStates.dates, mean_lc_1_L,
                 label='Long COVID 1 (adjusted duration)', linewidth=2, color='yellow')
@@ -1508,29 +1510,48 @@ class ProbabilisticAllStates:
                 label='Long COVID 3 (upper parameters)', linewidth=2, color='gold')
         # ax.fill_between(self.allStates.dates, ui_lc_3[0], ui_lc_3[1], color='olive', alpha=0.25)
 
-
+        '''
         [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
 
-        #ax.plot(self.allStates.dates, mean,
-                #label='Total', linewidth=2, color='black')
-        #ax.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
+        ax.plot(self.allStates.dates, mean,
+                 label='Total', linewidth=2, color='black')
+        ax.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
         ax.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")  # delta variant
         ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")  # omicron variant
+        ax.axvline(x="2021-08-04", color='black', linestyle='--')
 
-        #ax.axvline("2021-03-24", linestyle='--', color='grey', label='70% of 65+ years population vaccinated')
-        #ax.axvline("2021-08-11", linestyle='--', color='black', label='70% of population vaccinated')
+        ax.set_title('National Weekly QALY Loss by Health State', fontsize=16)
+        ax.set_xlabel('Date', fontsize=14)
+        ax.set_ylabel('QALY Loss', fontsize=14)
+        # ax1.legend(loc='lower center', bbox_to_anchor=(0.5, -0.2), ncol=10)
+        # ax1.legend()
 
-        ax.set_title('National Weekly QALY Loss by Health State')
-        ax.set_xlabel('Date')
-        ax.set_ylabel('QALY Loss')
-        ax.legend()
+        date_range = self.allStates.dates
+        tick_positions = range(0, len(date_range))
+        ax.set_xticks(tick_positions)
+        ax.set_xticklabels(
+            [date_range[i] if i % 4 == 0 else '' for i in tick_positions],  # Label every 4th tick mark
+            fontsize=10, rotation=45  # Rotate labels at 45 degrees
+        )
 
-        vals_y = ax.get_yticks()
-        ax.set_yticklabels(['{:,.{prec}f}'.format(x, prec=0) for x in vals_y])
-        # To label every other tick on the x-axis
-        [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
-        plt.xticks(rotation=45)
-        ax.tick_params(axis='x', labelsize=6.5)
+        # Make the labeled tick marks slightly longer and bold
+        for i, tick in enumerate(ax.xaxis.get_major_ticks()):
+            if i % 4 == 0:  # Every 4th tick mark
+                tick.label1.set_fontsize(10)  # Adjust font size for the labeled tick mark
+                tick.label1.set_rotation(45)  # Rotate the label if needed
+                tick.label1.set_horizontalalignment('right')
+                tick.label1.set_weight('normal')
+                tick.tick1line.set_markersize(6)
+                tick.tick1line.set_linewidth(2)
+                tick.tick2line.set_markersize(6)
+                tick.tick2line.set_linewidth(2)
+
+            else:
+                tick.label1.set_fontsize(10)  # Adjust font size for the non-labeled tick marks
+                tick.label1.set_weight('normal')  # Set the label to normal weight
+
+
+
 
         output_figure(fig, filename=ROOT_DIR + '/figs/simulations_national_qaly_loss_by_outcome.png')
 

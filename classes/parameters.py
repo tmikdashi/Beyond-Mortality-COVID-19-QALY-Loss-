@@ -31,11 +31,11 @@ class ParameterGenerator:
         # parameters to calculate the QALY loss due to a case
         self.parameters['case_prob_symp'] = Beta(mean=0.692, st_dev=0.115)  # SD based on 95% CI-- may need to be revised
         self.parameters['case_weight_symp'] = Beta(mean=0.43, st_dev=0.015)
-        self.parameters['case_dur_symp'] = Gamma(mean=10/365.25, st_dev=1/365.25) # Based on CDC isolation guidelines, can be replaced by exp decay function
+        self.parameters['case_dur_symp'] = Gamma(mean=7/365.25, st_dev=2/365.25) # Based on CDC isolation guidelines, can be replaced by exp decay function
 
         # parameters to calculate the QALY loss due to a hospitalizations
         hosp_data = pd.read_csv(ROOT_DIR + '/csv_files/hosps_by_age.csv')
-        self.parameters['hosp_dur_stay'] = Gamma(mean=6/365.25, st_dev=3.704/365.25) # assuming SD = IQR/1.35
+        self.parameters['hosp_dur_stay'] = Gamma(mean=15.78/365.25, st_dev=2.17/365.25) # assuming SD = IQR/1.35
         self.parameters['hosp_weight'] = Beta(mean=0.5, st_dev=0.05)
         self.parameters['hosps_age_dist'] = Dirichlet(par_ns=hosp_data['COVID-19 Hosps'])
         #self.parameters['hosps_prob_non_icu'] = 1 - (self.parameters['icu_prob'].value)
@@ -48,17 +48,17 @@ class ParameterGenerator:
         self.parameters['Age Group']= ConstantArray(values=data['Age Group'])
 
         #parameters to calculate the QALY loss due to a ICU hopsitalization
-        self.parameters['icu_prob'] = Beta(mean=0.174, st_dev = 0.02) #TODO: A revoir
+        self.parameters['icu_prob'] = Beta(mean=0.190, st_dev = 0.0357) #TODO: A revoir
         self.parameters['icu_weight']= Beta(mean=0.60, st_dev = 0.1)
         self.parameters['occupancy_dur'] = ConstantArray(values=(7/365))
 
 
         # parameters to calculate the QALY loss due to long COVID
         #self.parameters['long_covid_dur'] = Beta(mean=30/365.25, st_dev=1/365.25)
-        self.parameters['long_covid_dur'] = Beta(mean=3.99/12, st_dev=(0.4/12)/1.35)
+        self.parameters['long_covid_dur'] = Beta(mean=4/12, st_dev=(1/48))
         #self.parameters['long_covid_prob'] = Beta(mean=0.343, st_dev=0.0065)
-        self.parameters['long_covid_prob'] = Beta(mean=0.037, st_dev=(0.066/1.35))
-        self.parameters['long_covid_weight'] = Beta(mean=0.29, st_dev =0.033)
+        self.parameters['long_covid_prob'] = Beta(mean=0.062, st_dev=0.0273)
+        self.parameters['long_covid_weight'] = Beta(mean=0.29, st_dev =0.0275)
 
         #Scenario 1: Long COVID parameters
         self.parameters['long_covid_prob_1'] = Beta(mean=0.062, st_dev = ((0.133-0.024)/1.35))
