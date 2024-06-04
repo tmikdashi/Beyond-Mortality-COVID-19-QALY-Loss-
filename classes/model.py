@@ -1453,7 +1453,7 @@ class ProbabilisticAllStates:
         :return: Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
         """
         # Create a plot
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(10, 6))
 
         [mean_cases, ui_cases, mean_hosps, ui_hosps, mean_deaths, ui_deaths , mean_icu, ui_icu, mean_lc, ui_lc,
                 mean_lc_1, ui_lc_1,  mean_lc_1_L, ui_lc_1_L, mean_lc_1_low, ui_lc_1_low, mean_lc_1_up, ui_lc_1_up,mean_lc_2_low, ui_lc_2_low,
@@ -1523,8 +1523,8 @@ class ProbabilisticAllStates:
         ax.set_title('National Weekly QALY Loss by Health State', fontsize=16)
         ax.set_xlabel('Date', fontsize=14)
         ax.set_ylabel('QALY Loss', fontsize=14)
-        # ax1.legend(loc='lower center', bbox_to_anchor=(0.5, -0.2), ncol=10)
-        # ax1.legend()
+        ax.legend(loc='lower center', bbox_to_anchor=(0.5, -0.4), ncol=5)
+        #ax.legend()
 
         date_range = self.allStates.dates
         tick_positions = range(0, len(date_range))
@@ -2006,6 +2006,7 @@ class ProbabilisticAllStates:
 
         ax1.axis('off')
         ax1.set_title('Cumulative County QALY Loss', fontsize=18)
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
 
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=8)
 
@@ -2064,6 +2065,8 @@ class ProbabilisticAllStates:
 
         ax2.axis('off')
         ax2.set_title('Cumulative County QALY Loss per 100,000 Population', fontsize=18)
+        ax2.text(0.01, -0.1, "B", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
+
 
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=8)
 
@@ -2623,6 +2626,7 @@ class ProbabilisticAllStates:
 
         ax1.axis('off')
         ax1.set_title('Cases per 100K', fontsize=15)
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
 
         scheme_cases = mc.Quantiles(merged_geo_data_mainland["Cases per 100K"], k=10)
 
@@ -2687,6 +2691,7 @@ class ProbabilisticAllStates:
 
         ax2.axis('off')
         ax2.set_title('Hospital Admissions per 100K', fontsize=15)
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
         scheme_hosps = mc.Quantiles(merged_geo_data_mainland["Hosps per 100K"], k=10)
 
@@ -2751,6 +2756,7 @@ class ProbabilisticAllStates:
 
         ax3.axis('off')
         ax3.set_title('Deaths per 100K', fontsize=15)
+        ax3.text(0.01, 0.98, "C", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
         scheme = mc.Quantiles(merged_geo_data_mainland["Deaths per 100K"], k=10)
 
@@ -2869,6 +2875,7 @@ class ProbabilisticAllStates:
         ax1.axis('off')
         ax1.set_title('Cases', fontsize=15)
 
+
         scheme_cases = mc.Quantiles(merged_geo_data_mainland["Cases"], k=10)
 
         gplt.choropleth(
@@ -2932,6 +2939,7 @@ class ProbabilisticAllStates:
 
         ax2.axis('off')
         ax2.set_title('Hospital Admissions', fontsize=15)
+
 
         scheme_hosps = mc.Quantiles(merged_geo_data_mainland["Hosps"], k=10)
 
@@ -3213,6 +3221,7 @@ class ProbabilisticAllStates:
 
         ax1.axis('off')
         ax1.set_title('Cases per 100K', fontsize=15)
+        ax1.text(0.01, 2.15, "A", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
         scheme_cases = mc.Quantiles(merged_geo_data_mainland["HSA Total Cases per 100K"], k=10)
 
@@ -3277,6 +3286,7 @@ class ProbabilisticAllStates:
 
         ax2.axis('off')
         ax2.set_title('Hospital Admissions per 100K', fontsize=15)
+        ax2.text(0.01, 1.00, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
         scheme_hosps = mc.Quantiles(merged_geo_data_mainland["HSA Total Hospitalizations per 100K"], k=10)
 
@@ -3341,6 +3351,8 @@ class ProbabilisticAllStates:
 
         ax3.axis('off')
         ax3.set_title('Deaths per 100K', fontsize=15)
+        ax3.text(0.01, 0.98, "C", transform=ax3.transAxes, fontsize=14, fontweight='bold', va='top')
+
 
         scheme = mc.Quantiles(merged_geo_data_mainland["HSA Total Deaths per 100K"], k=10)
 

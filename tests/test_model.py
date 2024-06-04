@@ -5,7 +5,7 @@ probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=10)
 
 #probabilisticModel.print_overall_qaly_loss_by_outcome()
-probabilisticModel.print_overall_outcomes_and_qaly_loss()
+#probabilisticModel.print_overall_outcomes_and_qaly_loss()
 #probabilisticModel.generate_combined_abstract_plots()
 #probabilisticModel.calculate_death_qaly_loss_proportion()
 #probabilisticModel.generate_correlation_matrix_total()
@@ -13,14 +13,15 @@ probabilisticModel.print_overall_outcomes_and_qaly_loss()
 #probabilisticModel.generate_correlation_matrix_per_capita_alt()
 
 #probabilisticModel.generate_scatter_plots_per_capita()
-#probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 #probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
 #probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
 #probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
 
+
 #probabilisticModel.plot_qaly_loss_by_state_and_by_outcome_state_pol_combined()
-probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+#probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 #probabilisticModel.plot_weekly_qaly_loss_by_outcome_scenario_1()
 #probabilisticModel.plot_weekly_qaly_loss_by_outcome_scenario_2()
 #probabilisticModel.plot_weekly_qaly_loss_by_outcome_scenario_3()
@@ -29,10 +30,10 @@ probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 #probabilisticModel.plot_map_of_outcomes_per_county()
 #probabilisticModel.plot_qaly_loss_by_age()
 #probabilisticModel.plot_qaly_loss_by_age_same_scale()
-#probabilisticModel.plot_map_of_outcomes_per_county_per_100K()7
+#probabilisticModel.plot_map_of_outcomes_per_county_per_100K()
 #probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
 
-#probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
+probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
 
 
 #probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
