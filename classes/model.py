@@ -18,6 +18,7 @@ from deampy.statistics import SummaryStat
 from matplotlib.ticker import ScalarFormatter
 from definitions import ROOT_DIR
 from sklearn.linear_model import LinearRegression
+from scipy.stats import pearsonr
 
 
 class AnOutcome:
@@ -3748,71 +3749,73 @@ class ProbabilisticAllStates:
         # Display the plot
         plt.show()
 
-    def generate_scatter_plots_per_capita(self):
-        fig, axs = plt.subplots(1, 3, figsize=(18, 6))  # Changed the size for a single row of plots
+    def generate_outcomes_per_population(self):
+        fig, ax = plt.subplots(figsize=(18, 6))  # Single plot
 
-        county_outcomes_data_per_capita = {
-            "Cases per 100K": [],
-            "Hosps per 100K": [],
-            "Deaths per 100K": [],
+        county_outcomes_data_by_population = {
+            "Cases": [],
+            "Hosps": [],
+            "Deaths": [],
+            "Population": []
         }
 
         for state in self.allStates.states.values():
             for county in state.counties.values():
                 # Append per capita data to the per capita data list
-                county_outcomes_data_per_capita["Cases per 100K"].append(
-                    (county.pandemicOutcomes.cases.totalObs / county.population) * 100000)
-                county_outcomes_data_per_capita["Hosps per 100K"].append(
-                    (county.pandemicOutcomes.hosps.totalObs / county.population) * 100000)
-                county_outcomes_data_per_capita["Deaths per 100K"].append(
-                    (county.pandemicOutcomes.deaths.totalObs / county.population) * 100000)
+                county_outcomes_data_by_population["Cases"].append(county.pandemicOutcomes.cases.totalObs)
+                county_outcomes_data_by_population["Hosps"].append(county.pandemicOutcomes.hosps.totalObs)
+                county_outcomes_data_by_population["Deaths"].append(county.pandemicOutcomes.deaths.totalObs)
+                county_outcomes_data_by_population["Population"].append(county.population)
 
         # Convert the dictionaries to DataFrames
-        df_per_capita = pd.DataFrame(county_outcomes_data_per_capita)
+        df_per_capita = pd.DataFrame(county_outcomes_data_by_population)
 
-        print("per capita", df_per_capita)
-
-        # Scatter plot: Cases per 100k vs Hosps per 100k
-        axs[0].scatter(df_per_capita["Cases per 100K"], df_per_capita["Hosps per 100K"], color='purple')
-        axs[0].set_title('Cases per 100k vs Hosps per 100k')
-        axs[0].set_xlabel('Cases per 100k')
-        axs[0].set_ylabel('Hosps per 100k')
-        model_0 = LinearRegression().fit(df_per_capita["Cases per 100K"].values.reshape(-1, 1),
-                                         df_per_capita["Hosps per 100K"])
-        x_fit_0 = np.linspace(min(df_per_capita["Cases per 100K"]), max(df_per_capita["Cases per 100K"]), 100)
+        # Scatter plot: Cases by Population
+        ax.scatter(df_per_capita["Population"], df_per_capita["Cases"], color='purple', label='Cases')
+        model_0 = LinearRegression().fit(df_per_capita["Population"].values.reshape(-1, 1), df_per_capita["Cases"])
+        x_fit_0 = np.linspace(min(df_per_capita["Population"]), max(df_per_capita["Population"]), 100)
         y_fit_0 = model_0.predict(x_fit_0.reshape(-1, 1))
-        axs[0].plot(x_fit_0, y_fit_0, color='purple', linestyle='--')
+        ax.plot(x_fit_0, y_fit_0, color='purple', linestyle='--')
+        r_0, _ = pearsonr(df_per_capita["Population"], df_per_capita["Cases"])
 
-        # Scatter plot: Cases per 100k vs Deaths per 100k
-        axs[1].scatter(df_per_capita["Cases per 100K"], df_per_capita["Deaths per 100K"], color='orange')
-        axs[1].set_title('Cases per 100k vs Deaths per 100k')
-        axs[1].set_xlabel('Cases per 100k')
-        axs[1].set_ylabel('Deaths per 100k')
-        model_1 = LinearRegression().fit(df_per_capita["Cases per 100K"].values.reshape(-1, 1),
-                                         df_per_capita["Deaths per 100K"])
-        x_fit_1 = np.linspace(min(df_per_capita["Cases per 100K"]), max(df_per_capita["Cases per 100K"]), 100)
+        # Scatter plot: Hosps by Population
+        ax.scatter(df_per_capita["Population"], df_per_capita["Hosps"], color='orange', label='Hosps')
+        model_1 = LinearRegression().fit(df_per_capita["Population"].values.reshape(-1, 1), df_per_capita["Hosps"])
+        x_fit_1 = np.linspace(min(df_per_capita["Population"]), max(df_per_capita["Population"]), 100)
         y_fit_1 = model_1.predict(x_fit_1.reshape(-1, 1))
-        axs[1].plot(x_fit_1, y_fit_1, color='orange', linestyle='--')
+        ax.plot(x_fit_1, y_fit_1, color='orange', linestyle='--')
+        r_1, _ = pearsonr(df_per_capita["Population"], df_per_capita["Hosps"])
 
-        # Scatter plot: Hosps per 100k vs Deaths per 100k
-        axs[2].scatter(df_per_capita["Hosps per 100K"], df_per_capita["Deaths per 100K"], color='brown')
-        axs[2].set_title('Hosps per 100k vs Deaths per 100k')
-        axs[2].set_xlabel('Hosps per 100k')
-        axs[2].set_ylabel('Deaths per 100k')
-        model_2 = LinearRegression().fit(df_per_capita["Hosps per 100K"].values.reshape(-1, 1),
-                                         df_per_capita["Deaths per 100K"])
-        x_fit_2 = np.linspace(min(df_per_capita["Hosps per 100K"]), max(df_per_capita["Hosps per 100K"]), 100)
+        # Scatter plot: Deaths by Population
+        ax.scatter(df_per_capita["Population"], df_per_capita["Deaths"], color='brown', label='Deaths')
+        model_2 = LinearRegression().fit(df_per_capita['Population'].values.reshape(-1, 1), df_per_capita["Deaths"])
+        x_fit_2 = np.linspace(min(df_per_capita['Population']), max(df_per_capita['Population']), 100)
         y_fit_2 = model_2.predict(x_fit_2.reshape(-1, 1))
-        axs[2].plot(x_fit_2, y_fit_2, color='brown', linestyle='--')
+        ax.plot(x_fit_2, y_fit_2, color='brown', linestyle='--')
+        r_2, _ = pearsonr(df_per_capita["Population"], df_per_capita["Deaths"])
+
+        # Add titles, labels, and legends
+        ax.set_title('Outcomes by Population')
+        ax.set_xlabel('Population')
+        ax.set_ylabel('Outcomes')
+
+        # Add correlation coefficients as text
+        ax.text(0.05, 0.95, f'Cases r={r_0:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top',
+                color='purple')
+        ax.text(0.05, 0.90, f'Hosps r={r_1:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top',
+                color='orange')
+        ax.text(0.05, 0.85, f'Deaths r={r_2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top',
+                color='brown')
 
         # Adjust layout
         plt.tight_layout()
 
         # Save the figure as a PNG file
-        plt.savefig('scatter_plots_per_capita_with_trendlines.png', dpi=300)
+        plt.savefig('scatter_plot_outcomes_by_pop.png', dpi=300)
 
         # Display the plot
         plt.show()
+
 
     def generate_combined_abstract_plots(self):
         """

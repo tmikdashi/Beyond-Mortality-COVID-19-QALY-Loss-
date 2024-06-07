@@ -13,7 +13,9 @@ probabilisticModel.simulate(n=10)
 #probabilisticModel.generate_correlation_matrix_per_capita_alt()
 
 #probabilisticModel.generate_scatter_plots_per_capita()
-probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+#probabilisticModel.generate_outcomes_per_population()
+probabilisticModel.generate_scatter_plots()
+#probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 #probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
 #probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
@@ -33,7 +35,7 @@ probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 #probabilisticModel.plot_map_of_outcomes_per_county_per_100K()
 #probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
 
-probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
+#probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
 
 
 #probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
