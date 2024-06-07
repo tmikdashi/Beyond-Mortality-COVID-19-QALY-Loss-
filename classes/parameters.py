@@ -66,7 +66,7 @@ class ParameterGenerator:
         self.parameters['long_covid_weight_1'] = Beta (mean=0.22, st_dev=0.16/1.35)
         self.parameters['long_covid_weight_low_1'] = Beta(mean=0.019, st_dev=(0.039-0.011)/ 1.35)
         self.parameters['long_covid_weight_up_1'] = Beta(mean=0.408, st_dev=(0.556-0.273)/ 1.35)
-        self.parameters['long_covid_dur_1_L'] = Beta(mean=(((4/12)*(0.95)) +((9/12)*0.05)), st_dev=1 / 12)
+        self.parameters['long_covid_dur_1_L'] = Beta(mean=(((4/12)*(0.9411296062315598)) +((9/12)*0.05887039376844021)), st_dev=1 / 12)
 
         # Scenario 2: Long COVID parameters
         self.parameters['long_covid_prob_pf_2'] = Beta(mean=0.032, st_dev=((0.1 - 0.006) / 1.35))
@@ -248,3 +248,4 @@ class ParameterGenerator:
                                        * self.parameters['long_covid_prob_lc_icu_3_up'].value
                                        * self.parameters['long_covid_weight_pf_3'].value)
 
+        param.duration_weighted_avg = self.parameters['long_covid_dur_1_L'].value

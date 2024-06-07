@@ -464,6 +464,8 @@ class AllStates:
 
 
         print("hosp weight", param_values.qWeightHosp)
+        print(" weighted duration LC", param_values.duration_weighted_avg)
+
 
         # calculate QALY loss for the nation
         self.pandemicOutcomes.calculate_qaly_loss(
@@ -1354,6 +1356,10 @@ class ProbabilisticAllStates:
         print('  Mean Deaths: {:,.0f}'.format(mean_deaths))
         print('  Mean ICU: {:,.0f}'.format(mean_icu))
         print('  Mean Long COVID: {:,.0f}'.format(mean_lc))
+        print('Proportion of hosps among all cases:',self.allStates.pandemicOutcomes.hosps.totalObs/self.allStates.pandemicOutcomes.cases.totalObs)
+        print('Proportion of non-hosps among all cases:',
+              1-(self.allStates.pandemicOutcomes.hosps.totalObs / self.allStates.pandemicOutcomes.cases.totalObs))
+
 
         (mean, ci, ui,  mean_cases, ci_c, ui_c,mean_hosps, ci_h, ui_h,mean_deaths, ci_d, ui_d,
          mean_icu, ci_icu, ui_icu, mean_lc, ci_lc, ui_lc,
