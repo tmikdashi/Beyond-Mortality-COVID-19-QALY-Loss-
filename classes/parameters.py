@@ -29,29 +29,27 @@ class ParameterGenerator:
         self.parameters = dict()
 
         # parameters to calculate the QALY loss due to a case
-        self.parameters['case_prob_symp'] = Beta(mean=0.692, st_dev=0.115)  # SD based on 95% CI-- may need to be revised
+        self.parameters['case_prob_symp'] = Beta(mean=0.692, st_dev=0.115)
+        self.parameters['case_dur_symp'] = Gamma(mean=7/365.25, st_dev=0.5/365.25)
         self.parameters['case_weight_symp'] = Beta(mean=0.43, st_dev=0.015)
-        self.parameters['case_dur_symp'] = Gamma(mean=7/365.25, st_dev=2/365.25) # Based on CDC isolation guidelines, can be replaced by exp decay function
 
-        # parameters to calculate the QALY loss due to a hospitalizations
+        # parameters to calculate the QALY loss due to a hospitalizations + ICU
         hosp_data = pd.read_csv(ROOT_DIR + '/csv_files/hosps_by_age.csv')
-        self.parameters['hosp_dur_stay'] = Gamma(mean=15.78/365.25, st_dev=2.17/365.25) # assuming SD = IQR/1.35
+        self.parameters['hosp_dur_stay_ICU'] = Gamma(mean=15.78/365.25, st_dev=2.17/365.25)
+        self.parameters['hosp_dur_stay_ward'] = Gamma(mean=15.78/365.25, st_dev=2.17/365.25)
         self.parameters['hosp_weight'] = Beta(mean=0.5, st_dev=0.05)
         self.parameters['hosps_age_dist'] = Dirichlet(par_ns=hosp_data['COVID-19 Hosps'])
-        #self.parameters['hosps_prob_non_icu'] = 1 - (self.parameters['icu_prob'].value)
-        #self.parameters['hosps_prob_non_icu'] = Beta(mean=0.8, st_dev=0.115) #TODO
+
+        self.parameters['icu_prob'] = ConstantArray(0.174)
+        self.parameters['hosps_prob_non_icu'] = 1 - (self.parameters['icu_prob'].value)
+        self.parameters['icu_weight'] = Beta(mean=0.60, st_dev=0.1)
+        self.parameters['occupancy_dur'] = ConstantArray(values=(7 / 365))
 
         # parameters to calculate the QALY loss due to a death
         data = pd.read_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv')
         self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
         self.parameters['dQALY_loss_by_age'] = ConstantArray(values=[22.53, 20.89, 19.08, 16.96, 14.30, 11.52, 8.61, 5.50, 3.00, 1.46])
         self.parameters['Age Group']= ConstantArray(values=data['Age Group'])
-
-        #parameters to calculate the QALY loss due to a ICU hopsitalization
-        self.parameters['icu_prob'] = Beta(mean=0.190, st_dev = 0.0357) #TODO: A revoir
-        self.parameters['icu_weight']= Beta(mean=0.60, st_dev = 0.1)
-        self.parameters['occupancy_dur'] = ConstantArray(values=(7/365))
-
 
         # parameters to calculate the QALY loss due to long COVID
         #self.parameters['long_covid_dur'] = Beta(mean=30/365.25, st_dev=1/365.25)
