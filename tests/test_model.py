@@ -45,19 +45,5 @@ probabilisticModel.generate_scatter_plots()
 
 #probabilisticModel.plot_date_70pct_vaccinated_by_state()
 
-'''
-probabilisticModel.print_overall_outcomes_and_qaly_loss()
-probabilisticModel.plot_qaly_loss_from_deaths_by_age()
-
-
-probabilisticModel.plot_weekly_outcomes()
-probabilisticModel.plot_weekly_qaly_loss_by_outcome()
-probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
-
-
-probabilisticModel.plot_map_of_pop_over_65_by_county()
-probabilisticModel.plot_map_of_median_age_by_county()
-
-'''
 
 
