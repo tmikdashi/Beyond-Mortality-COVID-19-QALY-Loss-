@@ -6,16 +6,14 @@ probabilisticModel.simulate(n=10)
 
 #probabilisticModel.print_overall_qaly_loss_by_outcome()
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
-probabilisticModel.generate_combined_abstract_plots()
+#probabilisticModel.generate_combined_abstract_plots()
 #probabilisticModel.calculate_death_qaly_loss_proportion()
 #probabilisticModel.generate_correlation_matrix_total()
 #probabilisticModel.generate_correlation_matrix_per_capita()
 #probabilisticModel.generate_correlation_matrix_per_capita_alt()
 
 #probabilisticModel.generate_scatter_plots_per_capita()
-#probabilisticModel.generate_outcomes_per_population()
-probabilisticModel.generate_scatter_plots()
-#probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 #probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 
 #probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
@@ -35,7 +33,7 @@ probabilisticModel.generate_scatter_plots()
 #probabilisticModel.plot_map_of_outcomes_per_county_per_100K()
 #probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
 
-#probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
+probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
 
 
 #probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
@@ -45,5 +43,19 @@ probabilisticModel.generate_scatter_plots()
 
 #probabilisticModel.plot_date_70pct_vaccinated_by_state()
 
+'''
+probabilisticModel.print_overall_outcomes_and_qaly_loss()
+probabilisticModel.plot_qaly_loss_from_deaths_by_age()
+
+
+probabilisticModel.plot_weekly_outcomes()
+probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
+
+
+probabilisticModel.plot_map_of_pop_over_65_by_county()
+probabilisticModel.plot_map_of_median_age_by_county()
+
+'''
 
 
