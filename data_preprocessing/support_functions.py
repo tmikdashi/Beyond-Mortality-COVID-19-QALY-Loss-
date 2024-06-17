@@ -955,6 +955,7 @@ def generate_county_data_csv(data_type='cases'):
             if row[0] == county_name and row[1] == state_name:
                 county_data_rows[i][2] = new_fips  # Update the FIPS value
 
+
     # Write into a CSV file using the write_csv function
     write_csv(rows=[header_row] + county_data_rows, file_name=ROOT_DIR + output_file)
 
@@ -1141,7 +1142,7 @@ def generate_hsa_mapped_county_hosp_data():
     adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
 
     # Save the adjusted data to a new CSV
-    adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv', index=False)
+    adjusted_data.to_csv(ROOT_DIR+f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', index=False)
 
     print("Hospitalization data has been updated to based on HSA")
 
@@ -1214,7 +1215,7 @@ def generate_hsa_mapped_county_icu_data():
     adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
 
     # Save the adjusted data to a new CSV
-    adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_icu.csv', index=False)
+    adjusted_data.to_csv(ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', index=False)
 
     print("ICU data has been updated to based on HSA")
 
