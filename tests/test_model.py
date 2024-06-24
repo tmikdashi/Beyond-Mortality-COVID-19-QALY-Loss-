@@ -7,9 +7,10 @@ probabilisticModel.simulate(n=10)
 
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
 probabilisticModel.generate_scatter_plots()
-'''
+
 probabilisticModel.plot_weekly_qaly_loss_by_outcome_polished()
 probabilisticModel.plot_weekly_qaly_loss_by_outcome_scenarios()
+'''
 probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
 probabilisticModel.plot_qaly_loss_by_state_and_by_outcome_state_pol_combined()
 probabilisticModel.generate_correlation_matrix_per_capita_alt()
