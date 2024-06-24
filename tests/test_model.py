@@ -6,13 +6,20 @@ probabilisticModel.simulate(n=10)
 
 
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
-probabilisticModel.generate_scatter_plots()
+probabilisticModel.plot_map_highlight_fl_wy()
+probabilisticModel.plot_map_of_outcomes_per_county_per_100K()
 
-probabilisticModel.plot_weekly_qaly_loss_by_outcome_polished()
+probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
+#probabilisticModel.generate_scatter_plots()
+probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 probabilisticModel.plot_weekly_qaly_loss_by_outcome_scenarios()
+probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
+probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+
+
 '''
 probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
-probabilisticModel.plot_qaly_loss_by_state_and_by_outcome_state_pol_combined()
+
 probabilisticModel.generate_correlation_matrix_per_capita_alt()
 '''
 
@@ -29,8 +36,6 @@ probabilisticModel.generate_correlation_matrix_per_capita_alt()
 #probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
 #probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
 
-
-#probabilisticModel.plot_qaly_loss_by_state_and_by_outcome_state_pol_combined()
 #probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 #probabilisticModel.plot_weekly_qaly_loss_by_outcome_scenario_1()
 #probabilisticModel.plot_weekly_qaly_loss_by_outcome_scenario_2()
