@@ -32,20 +32,22 @@ class ParameterGenerator:
         # parameters to calculate the QALY loss due to a case
         self.parameters['cases_prob_symp'] = Beta(mean=0.692, st_dev=0.115)
         self.parameters['case_dur_symp'] = Gamma(mean=7/365.25, st_dev=0.5/365.25)
-        self.parameters['case_weight_symp'] = Beta(mean=0.43, st_dev=0.015)
+        #self.parameters['case_weight_symp'] = Beta(mean=0.43, st_dev=0.015)
+        self.parameters['case_weight_symp'] = Beta(mean=0.19, st_dev=0.048) #updated value
 
-        self.parameters['prob_surv'] =ConstantArray(values=0.01)
+        self.parameters['prob_surv'] =ConstantArray(values=0.989)
 
         # parameters to calculate the QALY loss due to a hospitalizations + ICU
         hosp_data = pd.read_csv(ROOT_DIR + '/csv_files/hosps_by_age.csv')
-        self.parameters['hosp_dur_stay_ICU'] = Gamma(mean=8.3/365.25, st_dev=1.25/365.25) #TODO: A REVOIR LES VALEURS SD
-        self.parameters['hosp_dur_stay_ward'] = Gamma(mean=6/365.25, st_dev=1.25/365.25)
+        self.parameters['hosp_dur_stay_ICU'] = Gamma(mean=8.3/365.25, st_dev=0.875/365.25) #TODO: A REVOIR LES VALEURS SD
+        self.parameters['hosp_dur_stay_ward'] = Gamma(mean=6/365.25, st_dev=3.7/365.25)
         self.parameters['hosp_weight'] = Beta(mean=0.5, st_dev=0.05)
         self.parameters['hosps_age_dist'] = Dirichlet(par_ns=hosp_data['COVID-19 Hosps'])
         self.parameters['hosps_prob_surv'] = Beta(mean=0.82, st_dev=0.02)
 
         self.parameters['icu_prob'] = ConstantArray(0.174)
-        self.parameters['icu_weight'] = Beta(mean=0.60, st_dev=0.1)
+        #self.parameters['icu_weight'] = Beta(mean=0.60, st_dev=0.1)
+        self.parameters['icu_weight'] = Beta(mean=0.70, st_dev= 0.175) #updated value
         self.parameters['occupancy_dur'] = ConstantArray(values=(7 / 365))
 
         # parameters to calculate the QALY loss due to a death
