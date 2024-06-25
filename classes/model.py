@@ -6,7 +6,7 @@ import mapclassify as mc
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, MultiPolygon
 
 from classes.parameters import ParameterGenerator, ParameterValues
 from classes.support import get_mean_ui_of_a_time_series, get_overall_mean_ui
@@ -2038,7 +2038,7 @@ class ProbabilisticAllStates:
 
         # Extract the outcomes for Miami-Dade County, Florida
         miami_dade_data = county_outcomes_df[
-            (county_outcomes_df['COUNTY'] == 'Miami-Dade') & (county_outcomes_df['FIPS'] == '12086')]
+            (county_outcomes_df['FIPS'] == '12086')]
         cases_miami_dade = miami_dade_data['Cases per 100K'].values[0]
         hosps_miami_dade = miami_dade_data['Hosps per 100K'].values[0]
         deaths_miami_dade = miami_dade_data['Deaths per 100K'].values[0]
@@ -2051,7 +2051,7 @@ class ProbabilisticAllStates:
 
         # Extract the outcomes for Sublette County, Wyoming
         sublette_data = county_outcomes_df[
-            (county_outcomes_df['COUNTY'] == 'Sublette') & (county_outcomes_df['FIPS'] == '56035')]
+            (county_outcomes_df['FIPS'] == '56035')]
         cases_sublette = sublette_data['Cases per 100K'].values[0]
         hosps_sublette = sublette_data['Hosps per 100K'].values[0]
         deaths_sublette = sublette_data['Deaths per 100K'].values[0]
@@ -2064,12 +2064,11 @@ class ProbabilisticAllStates:
 
         output_figure(fig, filename=ROOT_DIR + '/figs/map_county_outcomes_per_100K.png')
 
-
-
     def plot_map_highlight_fl_wy(self):
         """
-        Generates sub-plotted maps of the number of cases, hospital admissions, and deaths per 100,000 population for each county.
-        Values are computed per HSA (aggregate of county values for all counties within an HSA), but plotted by county.
+        Generates sub-plotted maps of the number of cases, hospital admissions,
+        and deaths per 100,000 population for each county in Florida and Wyoming.
+        Values are computed per county and displayed on the maps.
         """
         county_outcomes_data = {
             "COUNTY": [],
@@ -2103,30 +2102,45 @@ class ProbabilisticAllStates:
         geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
         merged_geo_data = geoData.merge(county_outcomes_df, left_on='FIPS', right_on='FIPS', how='left')
 
+        # Convert MultiPolygon to Polygon
+        def explode_multipolygons(geometry):
+            if isinstance(geometry, MultiPolygon):
+                return [Polygon(part) for part in geometry]
+            else:
+                return [geometry]
+
+        merged_geo_data = merged_geo_data.explode(column='geometry', ignore_index=True)
+        merged_geo_data['geometry'] = merged_geo_data['geometry'].apply(lambda geom: explode_multipolygons(geom)[0])
+
         # Filter for Florida (FIPS code '12') and Wyoming (FIPS code '56')
-        florida_geometry = merged_geo_data[merged_geo_data['STATE'] == '12']
-        wyoming_geometry = merged_geo_data[merged_geo_data['STATE'] == '56']
+        florida_geo_filtered = merged_geo_data[merged_geo_data['STATE'] == '12']
+        wyoming_geo_filtered = merged_geo_data[merged_geo_data['STATE'] == '56']
 
-        # Explode MultiPolygon geometries into individual polygons
-        florida_geometry_exploded = florida_geometry.explode()
-        wyoming_geometry_exploded = wyoming_geometry.explode()
-
-        # Set up the figure with 2 rows and 3 columns
+        # Set up the figure with 2 rows and 3 columns (for 3 metrics)
         fig, axes = plt.subplots(2, 3, figsize=(18, 12))
 
-        # Titles for each row (Florida and Wyoming)
-        row_titles = ['Florida', 'Wyoming']
+        # Titles for each state
+        state_titles = ['Florida', 'Wyoming']
 
         # Titles for each column (Cases, Hospital Admissions, Deaths)
         col_titles = ['Cases per 100K', 'Hosps per 100K', 'Deaths per 100K']
 
-        for i, (state_data, state_title) in enumerate(
-                zip([florida_geometry_exploded, wyoming_geometry_exploded], row_titles)):
-            for j, (column_name, ax) in enumerate(
-                    zip(["Cases per 100K", "Hosps per 100K", "Deaths per 100K"], axes[i])):
+        # Highlight counties (Miami-Dade and Sublette)
+        highlight_fips = {'12086', '56039'}
+
+        # Row titles
+        row_titles = ['Florida Health Outcomes per 100,000 Population', 'WY Health Outcomes per 100,000 Population']
+
+        # Iterate through states and metrics
+        for row, (state_data, state_title) in enumerate(zip([florida_geo_filtered, wyoming_geo_filtered], row_titles)):
+            for col, column_name in enumerate(col_titles):
+                ax = axes[row, col]
                 ax.axis('off')
-                ax.set_title(f'{state_title} - {col_titles[j]}', fontsize=15)
-                scheme = mc.Quantiles(state_data[column_name], k=10)
+                if col == 0:
+                    ax.set_title(state_title, fontsize=20)
+
+                # Choropleth plot
+                scheme = mc.Quantiles(state_data[column_name].dropna(), k=10)
                 gplt.choropleth(
                     state_data,
                     hue=column_name,
@@ -2134,23 +2148,22 @@ class ProbabilisticAllStates:
                     scheme=scheme,
                     cmap="viridis",
                     legend=True,
-                    legend_kwargs={'title': col_titles[j], 'fontsize': 10, 'bbox_to_anchor': (0.95, 0.5),
+                    legend_kwargs={'title': column_name, 'fontsize': 10, 'bbox_to_anchor': (1, 0.5),
                                    'loc': 'center left'},
-                    legend_labels=None,
                     edgecolor="black",
                     ax=ax
                 )
 
-                # Highlight Miami-Dade County, FL and Sublette County, WY with a thick red border
-                if state_title == 'Florida' and col_titles[j] == 'Cases per 100K':
-                    miami_dade = florida_geometry[florida_geometry['FIPS'] == '12086']
-                    gplt.polyplot(miami_dade, edgecolor='red', linewidth=2.5, ax=ax)
-                elif state_title == 'Wyoming' and col_titles[j] == 'Cases per 100K':
-                    sublette = wyoming_geometry[wyoming_geometry['FIPS'] == '56035']
-                    gplt.polyplot(sublette, edgecolor='red', linewidth=2.5, ax=ax)
+                # Highlight the specific counties with a red border
+                highlight_data = state_data[state_data['FIPS'].isin(highlight_fips)]
+                highlight_data.boundary.plot(ax=ax, edgecolor='red', linewidth=2)
+
+                # Set column titles dynamically
+                ax.set_title(column_name, fontsize=15)
 
         plt.tight_layout()
 
+        # Replace ROOT_DIR with your actual root directory path
         output_figure(fig, filename=ROOT_DIR + '/figs/fl_wy_county_outcomes_per_100K.png')
 
     def plot_map_of_outcomes_per_county(self):
