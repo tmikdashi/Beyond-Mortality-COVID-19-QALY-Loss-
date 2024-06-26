@@ -1228,7 +1228,7 @@ class ProbabilisticAllStates:
         ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")  # omicron variant
         ax.axvline(x="2021-08-04", color='black', linestyle='--')
 
-        ax.set_title('National Weekly QALY Loss by Contributor to QALY Loss', fontsize=16)
+        ax.set_title('National Weekly QALY Loss', fontsize=16)
         ax.set_xlabel('Date', fontsize=14)
         ax.set_ylabel('QALY Loss', fontsize=14)
         ax.legend(loc='lower center', bbox_to_anchor=(0.5, -0.4), ncol=5)
@@ -1405,6 +1405,7 @@ class ProbabilisticAllStates:
 
         ax1.axis('off')
         ax1.set_title('Cumulative County QALY Loss', fontsize=18)
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
 
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=8)
 
@@ -1463,6 +1464,7 @@ class ProbabilisticAllStates:
 
         ax2.axis('off')
         ax2.set_title('Cumulative County QALY Loss per 100,000 Population', fontsize=18)
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=8)
 
@@ -1522,7 +1524,7 @@ class ProbabilisticAllStates:
             ax=hiax2,
         )
 
-        output_figure(fig, filename=ROOT_DIR + '/figs/map_avg_county_qaly_loss_all_simulations_alt.png')
+        output_figure(fig, filename=ROOT_DIR + '/figs/map_avg_county_qaly_loss_all_simulations.png')
 
         return fig
 
@@ -1711,7 +1713,7 @@ class ProbabilisticAllStates:
         # Set the labels and title
         ax.set_ylabel('States', fontsize=14)
         ax.set_xlabel('QALY Loss per 100,000 Population', fontsize=14)
-        ax.set_title('State-level QALY Loss by Contributor to QALY Loss', fontsize=16)
+        ax.set_title('State-level QALY Loss by Contributor', fontsize=16)
 
         # Show the legend with unique labels
         handles, labels = ax.get_legend_handles_labels()
