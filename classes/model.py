@@ -1528,6 +1528,182 @@ class ProbabilisticAllStates:
 
         return fig
 
+    def plot_map_of_avg_qaly_loss_by_county_4(self):
+
+        """
+        Vertically plots a map of the QALY loss per 100,000 population for each county, considering cases, deaths, and hospitalizations.
+        """
+
+        county_qaly_loss_data = {
+            "COUNTY": [],
+            "FIPS": [],
+            "QALY Loss per 100K": [],
+            "QALY Loss": []
+        }
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                # Calculate the QALY loss per 100,000 population
+                mean, ui = self.get_mean_ui_overall_qaly_loss_by_county(state.name, county.name)
+                qaly_loss = mean
+                qaly_loss_per_100k = (qaly_loss / county.population) * 100000
+                # Append county data to the list
+                county_qaly_loss_data["COUNTY"].append(county.name)
+                county_qaly_loss_data["FIPS"].append(county.fips)
+                county_qaly_loss_data["QALY Loss per 100K"].append(qaly_loss_per_100k)
+                county_qaly_loss_data["QALY Loss"].append(qaly_loss)
+
+        # Create a DataFrame from the county data
+        county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
+
+        county_qaly_loss_df.to_csv(ROOT_DIR + '/csv_files/county_qaly_loss.csv', index=False)
+
+        # Merge the county QALY loss data with the geometry data
+        geoData = gpd.read_file(
+            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
+        )
+        geoData['STATE'] = geoData['STATE'].str.lstrip('0')
+        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
+        merged_geo_data = geoData.merge(county_qaly_loss_df, left_on='FIPS', right_on='FIPS', how='left')
+
+        # Remove counties where there is no data
+        merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss"])
+
+        # Remove Alaska, HI (to be plotted later)
+        stateToRemove = ["2", "15"]
+        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
+
+        # Explode the MultiPolygon geometries into individual polygons
+        merged_geo_data_mainland = merged_geo_data_mainland.explode()
+
+        # Plot the map
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
+
+        ax1.axis('off')
+        ax1.set_title('Cumulative County QALY Loss', fontsize=18)
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=4)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="QALY Loss",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Absolute QALY Loss', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
+            edgecolor="black",
+            ax=ax1
+        )
+
+        # Alaska 1
+        stateToInclude = ["2"]
+        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
+        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
+        akax1 = fig.add_axes([0.07, 0.45, 0.25, 0.25])
+        akax1.axis('off')
+        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
+        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["QALY Loss"], k=4)
+
+        gplt.choropleth(
+            merged_geo_data_AK_exploded,
+            hue="QALY Loss",
+            linewidth=0.1,
+            scheme=scheme_AK,
+            cmap="viridis",
+            legend=False,
+            edgecolor="black",
+            ax=akax1,
+            extent=(-180, -90, 50, 75)
+        )
+
+        # Hawaii 1
+        stateToInclude_HI = ["15"]
+        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
+        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
+        hiax1 = fig.add_axes([0.07, 0.55, 0.15, 0.25])
+        hiax1.axis('off')
+        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
+        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["QALY Loss"], k=4)
+
+        gplt.choropleth(
+            merged_geo_data_HI_exploded,
+            hue="QALY Loss",
+            linewidth=0.1,
+            scheme=scheme_HI,
+            cmap="viridis",
+            legend=False,
+            edgecolor="black",
+            ax=hiax1,
+        )
+
+        ax2.axis('off')
+        ax2.set_title('Cumulative County QALY Loss per 100,000 Population', fontsize=18)
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=4)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="QALY Loss per 100K",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'QALY Loss per 100K', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
+            edgecolor="black",
+            ax=ax2
+        )
+
+        # Alaska 2
+        akax2 = fig
+        # Alaska 2
+        stateToInclude = ["2"]
+        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
+        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
+        akax2 = fig.add_axes([0.06, -0.05, 0.25, 0.25])
+        akax2.axis('off')
+        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
+        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["QALY Loss per 100K"], k=4)
+
+        gplt.choropleth(
+            merged_geo_data_AK_exploded,
+            hue="QALY Loss per 100K",
+            linewidth=0.1,
+            scheme=scheme_AK,
+            cmap="viridis",
+            legend=False,
+            edgecolor="black",
+            ax=akax2,
+            extent=(-180, -90, 50, 75)
+        )
+
+    # Hawaii 2
+        stateToInclude_HI = ["15"]
+        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
+        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
+
+        hiax2 = fig.add_axes([0.05, 0.05, 0.15, 0.25])
+        hiax2.axis('off')
+        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
+        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["QALY Loss per 100K"], k=4)
+
+        gplt.choropleth(
+            merged_geo_data_HI_exploded,
+            hue="QALY Loss per 100K",
+            linewidth=0.1,
+            scheme=scheme_HI,
+            cmap="viridis",
+            legend=False,
+            edgecolor="black",
+            ax=hiax2,
+        )
+
+        output_figure(fig, filename=ROOT_DIR + '/figs/map_avg_county_qaly_loss_all_simulations_4.png')
+
+        return fig
+
     def get_mean_ui_overall_qaly_loss_by_county(self, state_name, county_name, alpha=0.05):
         """
         :param state_name: Name of the state.

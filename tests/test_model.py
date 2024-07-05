@@ -6,9 +6,11 @@ probabilisticModel.simulate(n=10)
 probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 probabilisticModel.plot_map_highlight_fl_wy()
 
-probabilisticModel.print_overall_outcomes_and_qaly_loss()
-
 probabilisticModel.plot_map_of_outcomes_per_county_per_100K()
+
+probabilisticModel.print_overall_outcomes_and_qaly_loss()
+probabilisticModel.plot_map_of_avg_qaly_loss_by_county_4()
+
 
 probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 #probabilisticModel.generate_scatter_plots()

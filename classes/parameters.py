@@ -35,7 +35,7 @@ class ParameterGenerator:
         #self.parameters['case_weight_symp'] = Beta(mean=0.43, st_dev=0.015)
         self.parameters['case_weight_symp'] = Beta(mean=0.19, st_dev=0.048) #updated value
 
-        self.parameters['prob_surv'] =ConstantArray(values=0.989)
+        self.parameters['prob_surv'] =ConstantArray(values=0.983)
 
         # parameters to calculate the QALY loss due to a hospitalizations + ICU
         hosp_data = pd.read_csv(ROOT_DIR + '/csv_files/hosps_by_age.csv')
