@@ -54,6 +54,17 @@ class ParameterGenerator:
         data = pd.read_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv')
         self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
         self.parameters['dQALY_loss_by_age'] = ConstantArray(values=[22.53, 20.89, 19.08, 16.96, 14.30, 11.52, 8.61, 5.50, 3.00, 1.46])
+        self.parameters['dQALY_loss_by_age_smr_1_qcm_1_r_3'] = ConstantArray(values=[27.75, 25.52, 23.29, 20.87, 17.89, 14.89, 11.42, 7.65, 4.51, 2.22])
+        self.parameters['dQALY_loss_by_age_smr_1_qcm_0.9_r_3'] = ConstantArray(values=[24.97,22.97,20.96,18.78,16.19,13.33, 10.27,6.88,4.06,2.00])
+        self.parameters['dQALY_loss_by_age_smr_1_qcm_0.8_r_3'] = ConstantArray(values=[22.20, 20.42, 18.63, 16.70, 14.39, 11.85, 9.13, 6.12, 3.61, 1.77])
+
+        self.parameters['dQALY_loss_by_age_smr_1.5_qcm_1_r_3'] = ConstantArray(values=[27.22, 24.83, 22.45,19.88, 16.84, 13.54,10.16,6.50,3.62, 1.68])
+        self.parameters['dQALY_loss_by_age_smr_1.5_qcm_0.9_r_3'] = ConstantArray(values=[24.50, 22.35, 20.20, 17.89, 15.15, 12.19, 9.14, 5.85, 3.26, 1.51])
+        self.parameters['dQALY_loss_by_age_smr_1.5_qcm_0.8_r_3'] = ConstantArray(values=[21.77,19.86,17.96,15.91,13.47,10.83,8.12,5.20,2.90, 1.34])
+
+        self.parameters['dQALY_loss_by_age_smr_2_qcm_1_r_3'] = ConstantArray(values=[26.78, 24.26, 21.77, 19.10, 15.95, 12.60, 9.26,5.74,3.07,1.35])
+        self.parameters['dQALY_loss_by_age_smr_2_qcm_0.9_r_3']= ConstantArray(values=[24.10,21.83,19.59,17.19,14.36,11.34, 8.34, 5.16, 2.76, 1.22])
+        self.parameters['dQALY_loss_by_age_smr_2_qcm_0.8_r_3'] = ConstantArray(values=[21.42, 19.41, 17.41, 15.28, 12.76, 10.08, 7.41, 4.59, 2.45, 1.08])
         self.parameters['Age Group']= ConstantArray(values=data['Age Group'])
 
         # LONG COVID 1: parameters to calculate the QALY loss due to long COVID
@@ -123,6 +134,18 @@ class ParameterGenerator:
 
         param.qWeightDeath = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age'].value)
 
+        param.qWeightDeath_sa_1_a = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age_smr_1_qcm_1_r_3'].value)
+        param.qWeightDeath_sa_1_b = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age_smr_1_qcm_0.9_r_3'].value)
+        param.qWeightDeath_sa_1_c = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age_smr_1_qcm_0.8_r_3'].value)
+
+        param.qWeightDeath_sa_2_a = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_1.5_qcm_1_r_3'].value)
+        param.qWeightDeath_sa_2_b = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_1.5_qcm_0.9_r_3'].value)
+        param.qWeightDeath_sa_2_c = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_1.5_qcm_0.8_r_3'].value)
+
+        param.qWeightDeath_sa_3_a = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2_qcm_1_r_3'].value)
+        param.qWeightDeath_sa_3_b = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2_qcm_0.9_r_3'].value)
+        param.qWeightDeath_sa_3_c = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2_qcm_0.8_r_3'].value)
+
         param.qWeightLongCOVID_1 = ( self.parameters['cases_prob_symp'].value
                                   * self.parameters['long_covid_prob'].value
                                   * self.parameters['prob_surv'].value
@@ -169,6 +192,10 @@ class ParameterGenerator:
                                          * self.parameters['long_covid_nonhosp_prob_symp'].value
                                          * self.parameters['long_covid_nonhosp_dur'].value
                                          * self.parameters['long_covid_weight'].value)
+
+        param.qWeightCase_symp = (self.parameters['cases_prob_symp'].value)
+
+
 
 
 
