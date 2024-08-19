@@ -53,18 +53,18 @@ class ParameterGenerator:
         # parameters to calculate the QALY loss due to a death
         data = pd.read_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv')
         self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
-        self.parameters['dQALY_loss_by_age'] = ConstantArray(values=[22.53, 20.89, 19.08, 16.96, 14.30, 11.52, 8.61, 5.50, 3.00, 1.46])
-        self.parameters['dQALY_loss_by_age_smr_1_qcm_1_r_3'] = ConstantArray(values=[27.75, 25.52, 23.29, 20.87, 17.89, 14.89, 11.42, 7.65, 4.51, 2.22])
-        self.parameters['dQALY_loss_by_age_smr_1_qcm_0.9_r_3'] = ConstantArray(values=[24.97,22.97,20.96,18.78,16.19,13.33, 10.27,6.88,4.06,2.00])
-        self.parameters['dQALY_loss_by_age_smr_1_qcm_0.8_r_3'] = ConstantArray(values=[22.20, 20.42, 18.63, 16.70, 14.39, 11.85, 9.13, 6.12, 3.61, 1.77])
+        self.parameters['dQALY_loss_by_age'] = ConstantArray(values=[22.53, 20.89, 19.08, 16.96, 14.30, 11.52, 8.61, 5.50, 3.00, 1.46]) # TODO
+        self.parameters['dQALY_loss_by_age_smr_1.75_qcm_0.85_r_3'] = ConstantArray(values=[22.94,20.85,18.78,16.55,13.91,11.09,8.22,5.17,2.82,1.27])
+        self.parameters['dQALY_loss_by_age_smr_1.75_qcm_0.8_r_3'] = ConstantArray(values=[21.59,19.63,17.67,15.58,13.10,10.43,7.74,4.87,2.65,1.20])
+        self.parameters['dQALY_loss_by_age_smr_1.75_qcm_0.75_r_3'] = ConstantArray(values=[20.24, 18.40, 16.57, 14.60, 12.28, 9.78, 7.26, 4.57, 2.49,1.12])
 
-        self.parameters['dQALY_loss_by_age_smr_1.5_qcm_1_r_3'] = ConstantArray(values=[27.22, 24.83, 22.45,19.88, 16.84, 13.54,10.16,6.50,3.62, 1.68])
-        self.parameters['dQALY_loss_by_age_smr_1.5_qcm_0.9_r_3'] = ConstantArray(values=[24.50, 22.35, 20.20, 17.89, 15.15, 12.19, 9.14, 5.85, 3.26, 1.51])
-        self.parameters['dQALY_loss_by_age_smr_1.5_qcm_0.8_r_3'] = ConstantArray(values=[21.77,19.86,17.96,15.91,13.47,10.83,8.12,5.20,2.90, 1.34])
-
-        self.parameters['dQALY_loss_by_age_smr_2_qcm_1_r_3'] = ConstantArray(values=[26.78, 24.26, 21.77, 19.10, 15.95, 12.60, 9.26,5.74,3.07,1.35])
-        self.parameters['dQALY_loss_by_age_smr_2_qcm_0.9_r_3']= ConstantArray(values=[24.10,21.83,19.59,17.19,14.36,11.34, 8.34, 5.16, 2.76, 1.22])
+        self.parameters['dQALY_loss_by_age_smr_2_qcm_0.85_r_3'] = ConstantArray(values=[22.76,20.62,18.50,16.24,13.56,10.71,7.87,4.88,2.61,1.15])
         self.parameters['dQALY_loss_by_age_smr_2_qcm_0.8_r_3'] = ConstantArray(values=[21.42, 19.41, 17.41, 15.28, 12.76, 10.08, 7.41, 4.59, 2.45, 1.08])
+        self.parameters['dQALY_loss_by_age_smr_2_qcm_0.75_r_3'] = ConstantArray(values=[20.08,18.20,16.33,14.33,11.96,9.45,6.95,4.30,2.30,1.02])
+
+        self.parameters['dQALY_loss_by_age_smr_2.25_qcm_0.85_r_3'] = ConstantArray(values=[22.60,20.41,18.25,15.95,13.24,10.37,7.56,4.62,2.43,1.05])
+        self.parameters['dQALY_loss_by_age_smr_2.25_qcm_0.8_r_3'] = ConstantArray(values=[21.27,19.21,17.17,15.01,12.46,9.76,7.12,4.35,2.28,0.99])
+        self.parameters['dQALY_loss_by_age_smr_2.25_qcm_0.75_r_3'] = ConstantArray(values=[19.94,18.01,16.10,14.07,11.68,9.15,6.67,4.08,2.14,0.93])
         self.parameters['Age Group']= ConstantArray(values=data['Age Group'])
 
         # LONG COVID 1: parameters to calculate the QALY loss due to long COVID
@@ -134,17 +134,17 @@ class ParameterGenerator:
 
         param.qWeightDeath = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age'].value)
 
-        param.qWeightDeath_sa_1_a = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age_smr_1_qcm_1_r_3'].value)
-        param.qWeightDeath_sa_1_b = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age_smr_1_qcm_0.9_r_3'].value)
-        param.qWeightDeath_sa_1_c = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age_smr_1_qcm_0.8_r_3'].value)
+        param.qWeightDeath_sa_1_a = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age_smr_1.75_qcm_0.85_r_3'].value)
+        param.qWeightDeath_sa_1_b = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age_smr_1.75_qcm_0.8_r_3'].value)
+        param.qWeightDeath_sa_1_c = np.dot(self.parameters['death_age_dist'].value, self.parameters['dQALY_loss_by_age_smr_1.75_qcm_0.75_r_3'].value)
 
-        param.qWeightDeath_sa_2_a = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_1.5_qcm_1_r_3'].value)
-        param.qWeightDeath_sa_2_b = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_1.5_qcm_0.9_r_3'].value)
-        param.qWeightDeath_sa_2_c = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_1.5_qcm_0.8_r_3'].value)
+        param.qWeightDeath_sa_2_a = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2_qcm_0.85_r_3'].value)
+        param.qWeightDeath_sa_2_b = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2_qcm_0.8_r_3'].value)
+        param.qWeightDeath_sa_2_c = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2_qcm_0.75_r_3'].value)
 
-        param.qWeightDeath_sa_3_a = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2_qcm_1_r_3'].value)
-        param.qWeightDeath_sa_3_b = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2_qcm_0.9_r_3'].value)
-        param.qWeightDeath_sa_3_c = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2_qcm_0.8_r_3'].value)
+        param.qWeightDeath_sa_3_a = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2.25_qcm_0.85_r_3'].value)
+        param.qWeightDeath_sa_3_b = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2.25_qcm_0.8_r_3'].value)
+        param.qWeightDeath_sa_3_c = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2.25_qcm_0.75_r_3'].value)
 
         param.qWeightLongCOVID_1 = ( self.parameters['cases_prob_symp'].value
                                   * self.parameters['long_covid_prob'].value

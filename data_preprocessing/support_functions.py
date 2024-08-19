@@ -787,8 +787,8 @@ def get_dict_of_county_data_by_type(data_type):
     """
 
     # Construct the file path based on the data type
-    file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
-    #file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    #file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
@@ -845,10 +845,10 @@ def generate_county_data_csv(data_type='cases'):
     #rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
                          #if_ignore_first_row=True)
 
-    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
+    #rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
                          #if_ignore_first_row=True)
 
-    #rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
+    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
 
 
@@ -943,7 +943,8 @@ def generate_county_data_csv(data_type='cases'):
                        {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
                        {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
                        {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
-                       {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'}]
+                       {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
+                       {'County': 'New York City', 'State': 'NY', 'NewFIPS': '36061'}]
 
     for county_update in new_fips_values:
         county_name = county_update['County']
@@ -955,6 +956,10 @@ def generate_county_data_csv(data_type='cases'):
             if row[0] == county_name and row[1] == state_name:
                 county_data_rows[i][2] = new_fips  # Update the FIPS value
 
+        # Replace 'New York City, NY' with 'New York County, NY'
+        #for row in county_data_rows:
+            #if row[0] == 'New York City' and row[1] == 'NY':
+                #row[0] = 'New York County', row[2] == '36061'
 
     # Write into a CSV file using the write_csv function
     write_csv(rows=[header_row] + county_data_rows, file_name=ROOT_DIR + output_file)
@@ -1075,28 +1080,29 @@ def generate_deaths_by_age_group():
 
 def generate_hsa_mapped_county_hosp_data():
     # Load county hosp data
-
-    county_hosp_data = pd.read_csv(ROOT_DIR+'/csv_files/county_hospitalizations.csv', skiprows=0)
-    #county_hosp_data=pd.read_csv(ROOT_DIR +'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv',skiprows=0)
+    county_hosp_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', skiprows=0)
 
     # Load HSA data
-    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
-    #hsa_data=pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv',skiprows=0)
+    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
 
     # Ensure the FIPS column has the same data type in both dataframes
     county_hosp_data['FIPS'] = county_hosp_data['FIPS'].astype(str)
     hsa_data['county_fips'] = hsa_data['county_fips'].astype(str)
 
-    new_fips_values = [{'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
-                       {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
-                       {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
-                       {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
-                       {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
-                       {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
-                       {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
-                       {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'}]
+    # Define new FIPS values for specific counties
+    new_fips_values = [
+        {'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
+        {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
+        {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
+        {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
+        {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
+        {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
+        {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
+        {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
+        {'County': 'New York County', 'State': 'NY', 'NewFIPS': '36061'}
+    ]
 
-
+    # Update FIPS values for the specified counties
     for county_update in new_fips_values:
         county_name = county_update['County']
         state_name = county_update['State']
@@ -1106,123 +1112,115 @@ def generate_hsa_mapped_county_hosp_data():
         condition = (county_hosp_data['County'] == county_name) & (county_hosp_data['State'] == state_name)
         county_hosp_data.loc[condition, 'FIPS'] = new_fips
 
-    # Merge county_hosp_data with hsa_data based on FIPS
+    # Update "New York City" to "New York County" in county hosp data to match HSA data
+    #county_hosp_data.loc[(county_hosp_data['County'] == 'New York City') & (county_hosp_data['State'] == 'NY'), 'County'] = 'New York County'
+
+    # Merge county hosp data with HSA data based on FIPS
     merged_data = pd.merge(county_hosp_data, hsa_data, left_on='FIPS', right_on='county_fips', how='left')
 
     # Extract the necessary columns for computation
-    selected_columns = ['County', 'State', 'FIPS', 'Population', 'health_service_area_number',
-                        'health_service_area_population']
+    selected_columns = ['County', 'State', 'FIPS', 'Population', 'health_service_area_number', 'health_service_area_population']
     selected_columns += county_hosp_data.columns[4:].to_list()  # Add the date columns
 
     merged_data = merged_data[selected_columns]
 
     # Convert 'Population' and 'health_service_area_population' columns to numeric
     merged_data['Population'] = pd.to_numeric(merged_data['Population'], errors='coerce')
-    merged_data['health_service_area_population'] = pd.to_numeric(
-        merged_data['health_service_area_population'].str.replace(',', ''), errors='coerce')
+    merged_data['health_service_area_population'] = pd.to_numeric(merged_data['health_service_area_population'].str.replace(',', ''), errors='coerce')
 
     # Calculate the Population Proportion
-    merged_data['Population Proportion'] = merged_data['Population']/ merged_data['health_service_area_population']
+    merged_data['Population Proportion'] = merged_data['Population'] / merged_data['health_service_area_population']
 
     adjusted_weekly_hosp_values = None  # Initialize the variable
 
     if (merged_data[county_hosp_data.columns[4:]] == '').any().any():
         # Replace empty strings with NaN
         merged_data[county_hosp_data.columns[4:]] = merged_data[county_hosp_data.columns[4:]].replace('', np.nan)
-
     else:
-        adjusted_weekly_hosp_values = merged_data[county_hosp_data.columns[4:]] * merged_data[
-            'Population Proportion'].values[:, None]
+        adjusted_weekly_hosp_values = merged_data[county_hosp_data.columns[4:]] * merged_data['Population Proportion'].values[:, None]
 
     # Create a new dataframe with adjusted values
-    adjusted_data = pd.concat([merged_data[['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values],
-                              axis=1)
+    adjusted_data = pd.concat([merged_data[['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values], axis=1)
 
     # Replace NaN values with 'nan' to match the behavior in generate_county_data
     adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
 
     # Save the adjusted data to a new CSV
-    adjusted_data.to_csv(
-        ROOT_DIR + f'/csv_files/county_hospitalizations.csv',
-        index=False)
-    #adjusted_data.to_csv(ROOT_DIR+f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', index=False)
+    adjusted_data.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', index=False)
 
-    print("Hospitalization data has been updated to based on HSA")
+    print("Hospitalization data has been updated based on HSA")
 
 def generate_hsa_mapped_county_icu_data():
-    # Load county hosp data
-
-    county_icu_data = pd.read_csv(ROOT_DIR+'/csv_files/county_icu.csv', skiprows=0)
-    #county_icu_data=pd.read_csv(ROOT_DIR +'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv',skiprows=0)
+    # Load county ICU data
+    county_icu_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', skiprows=0)
 
     # Load HSA data
-    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
-    #hsa_data=pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv',skiprows=0)
+    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
 
     # Ensure the FIPS column has the same data type in both dataframes
     county_icu_data['FIPS'] = county_icu_data['FIPS'].astype(str)
     hsa_data['county_fips'] = hsa_data['county_fips'].astype(str)
 
-    new_fips_values = [{'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
-                       {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
-                       {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
-                       {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
-                       {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
-                       {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
-                       {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
-                       {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'}]
+    # Define new FIPS values for specific counties
+    new_fips_values = [
+        {'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
+        {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
+        {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
+        {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
+        {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
+        {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
+        {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
+        {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
+        {'County': 'New York County', 'State': 'NY', 'NewFIPS': '36061'}
+    ]
 
-
+    # Update FIPS values for the specified counties
     for county_update in new_fips_values:
         county_name = county_update['County']
         state_name = county_update['State']
         new_fips = county_update['NewFIPS']
 
-        # Update FIPS values for the specified county and state in county_hosp_data
+        # Update FIPS values for the specified county and state in county ICU data
         condition = (county_icu_data['County'] == county_name) & (county_icu_data['State'] == state_name)
         county_icu_data.loc[condition, 'FIPS'] = new_fips
 
-    # Merge county_hosp_data with hsa_data based on FIPS
+    # Update "New York City" to "New York County" in county ICU data to match HSA data
+    #county_icu_data.loc[(county_icu_data['County'] == 'New York City') & (county_icu_data['State'] == 'NY'), 'County'] = 'New York County'
+
+    # Merge county ICU data with HSA data based on FIPS
     merged_data = pd.merge(county_icu_data, hsa_data, left_on='FIPS', right_on='county_fips', how='left')
 
     # Extract the necessary columns for computation
-    selected_columns = ['County', 'State', 'FIPS', 'Population', 'health_service_area_number',
-                        'health_service_area_population']
+    selected_columns = ['County', 'State', 'FIPS', 'Population', 'health_service_area_number', 'health_service_area_population']
     selected_columns += county_icu_data.columns[4:].to_list()  # Add the date columns
 
     merged_data = merged_data[selected_columns]
 
     # Convert 'Population' and 'health_service_area_population' columns to numeric
     merged_data['Population'] = pd.to_numeric(merged_data['Population'], errors='coerce')
-    merged_data['health_service_area_population'] = pd.to_numeric(
-        merged_data['health_service_area_population'].str.replace(',', ''), errors='coerce')
+    merged_data['health_service_area_population'] = pd.to_numeric(merged_data['health_service_area_population'].str.replace(',', ''), errors='coerce')
 
     # Calculate the Population Proportion
-    merged_data['Population Proportion'] = merged_data['Population']/ merged_data['health_service_area_population']
+    merged_data['Population Proportion'] = merged_data['Population'] / merged_data['health_service_area_population']
 
     adjusted_weekly_hosp_values = None  # Initialize the variable
 
     if (merged_data[county_icu_data.columns[4:]] == '').any().any():
         # Replace empty strings with NaN
         merged_data[county_icu_data.columns[4:]] = merged_data[county_icu_data.columns[4:]].replace('', np.nan)
-
     else:
-        adjusted_weekly_hosp_values = merged_data[county_icu_data.columns[4:]] * merged_data[
-            'Population Proportion'].values[:, None]
+        adjusted_weekly_hosp_values = merged_data[county_icu_data.columns[4:]] * merged_data['Population Proportion'].values[:, None]
 
     # Create a new dataframe with adjusted values
-    adjusted_data = pd.concat([merged_data[['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values],
-                              axis=1)
+    adjusted_data = pd.concat([merged_data[['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values], axis=1)
 
     # Replace NaN values with 'nan' to match the behavior in generate_county_data
     adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
 
     # Save the adjusted data to a new CSV
-    #adjusted_data.to_csv(ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', index=False)
-    adjusted_data.to_csv(
-        ROOT_DIR + f'/csv_files/county_icu.csv', index=False)
+    adjusted_data.to_csv(ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', index=False)
 
-    print("ICU data has been updated to based on HSA")
+    print("ICU data has been updated based on HSA")
 
 
 
@@ -1235,8 +1233,8 @@ def generate_hosps_by_age_group():
     :return: A csv of COVID-19 hosps by age group.
     """
 
-    data = pd.read_csv('C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
-    #data = pd.read_csv('/Users/timamikdashi/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
+    #data = pd.read_csv('C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
+    data = pd.read_csv('/Users/timamikdashi/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
 
     #deaths_by_age = data.groupby(['state','date']).sum().reset_index() #TODO" A REVOIR TO ENSURE THAT THE data is aggregated over state and dates
 
@@ -1295,7 +1293,6 @@ def generate_hosps_by_age_group():
     hosps_by_age_group.to_csv(ROOT_DIR + '/csv_files/hosps_by_age.csv', index=False)
 
 
-import pandas as pd
 
 def generate_cases_by_age_group():
     """

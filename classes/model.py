@@ -6,7 +6,11 @@ import mapclassify as mc
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import requests
 from shapely.geometry import Polygon, MultiPolygon
+from matplotlib.colors import Normalize
+from matplotlib.colors import BoundaryNorm
+
 
 from classes.parameters import ParameterGenerator, ParameterValues
 from classes.support import get_mean_ui_of_a_time_series, get_overall_mean_ui
@@ -16,9 +20,11 @@ from deampy.format_functions import format_interval
 from deampy.plots.plot_support import output_figure
 from deampy.statistics import SummaryStat
 from matplotlib.ticker import ScalarFormatter
+from matplotlib.lines import Line2D
 from definitions import ROOT_DIR
 from matplotlib import rc
 from scipy.stats import linregress
+from sklearn.linear_model import LinearRegression
 
 
 class AnOutcome:
@@ -102,6 +108,16 @@ class PandemicOutcomes:
         self.deaths_sa_3_a = AnOutcome()
         self.deaths_sa_3_b = AnOutcome()
         self.deaths_sa_3_c = AnOutcome()
+
+        self.total_sa_1_a = AnOutcome()
+        self.total_sa_1_b = AnOutcome()
+        self.total_sa_1_c = AnOutcome()
+        self.total_sa_2_a = AnOutcome()
+        self.total_sa_2_b = AnOutcome()
+        self.total_sa_2_c = AnOutcome()
+        self.total_sa_3_a = AnOutcome()
+        self.total_sa_3_b = AnOutcome()
+        self.total_sa_3_c = AnOutcome()
 
 
         self.weeklyQALYLoss = np.array([])
@@ -205,6 +221,53 @@ class PandemicOutcomes:
         self.deaths_sa_3_a.calculate_qaly_loss(quality_weight=death_sa_3a_weight)
         self.deaths_sa_3_b.calculate_qaly_loss(quality_weight=death_sa_3b_weight)
         self.deaths_sa_3_c.calculate_qaly_loss(quality_weight=death_sa_3c_weight)
+
+        self.total_sa_1_a.totalQALYLoss=(self.cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
+                              + self.deaths_sa_1_a.totalQALYLoss + self.icu.totalQALYLoss + self.longCOVID_1.totalQALYLoss)
+        self.total_sa_1_b.totalQALYLoss = (self.cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
+                    + self.deaths_sa_1_b.totalQALYLoss + self.icu.totalQALYLoss + self.longCOVID_1.totalQALYLoss)
+        self.total_sa_1_c.totalQALYLoss=(self.cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
+                              + self.deaths_sa_1_c.totalQALYLoss + self.icu.totalQALYLoss + self.longCOVID_1.totalQALYLoss)
+        self.total_sa_2_a.totalQALYLoss=(self.cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
+                              + self.deaths_sa_2_a.totalQALYLoss + self.icu.totalQALYLoss + self.longCOVID_1.totalQALYLoss)
+        self.total_sa_2_b.totalQALYLoss = (self.cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
+                    + self.deaths_sa_2_b.totalQALYLoss + self.icu.totalQALYLoss + self.longCOVID_1.totalQALYLoss)
+        self.total_sa_2_c.totalQALYLoss=(self.cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
+                              + self.deaths_sa_2_c.totalQALYLoss + self.icu.totalQALYLoss + self.longCOVID_1.totalQALYLoss)
+        self.total_sa_3_a.totalQALYLoss = (self.cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
+                    + self.deaths_sa_3_a.totalQALYLoss + self.icu.totalQALYLoss + self.longCOVID_1.totalQALYLoss)
+        self.total_sa_3_b.totalQALYLoss = (self.cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
+                    + self.deaths_sa_3_b.totalQALYLoss + self.icu.totalQALYLoss + self.longCOVID_1.totalQALYLoss)
+        self.total_sa_3_c.totalQALYLoss = (self.cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
+                    + self.deaths_sa_3_c.totalQALYLoss + self.icu.totalQALYLoss + self.longCOVID_1.totalQALYLoss)
+
+        self.total_sa_1_a.weeklyQALYLoss = (
+                    self.cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+                    + self.deaths_sa_1_a.weeklyQALYLoss + self.icu.weeklyQALYLoss + self.longCOVID_1.weeklyQALYLoss)
+        self.total_sa_1_b.weeklyQALYLoss = (
+                    self.cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+                    + self.deaths_sa_1_b.weeklyQALYLoss + self.icu.weeklyQALYLoss + self.longCOVID_1.weeklyQALYLoss)
+        self.total_sa_1_c.weeklyQALYLoss = (
+                    self.cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+                    + self.deaths_sa_1_c.weeklyQALYLoss + self.icu.weeklyQALYLoss + self.longCOVID_1.weeklyQALYLoss)
+        self.total_sa_2_a.weeklyQALYLoss = (
+                    self.cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+                    + self.deaths_sa_2_a.weeklyQALYLoss + self.icu.weeklyQALYLoss + self.longCOVID_1.weeklyQALYLoss)
+        self.total_sa_2_b.weeklyQALYLoss = (
+                    self.cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+                    + self.deaths_sa_2_b.weeklyQALYLoss + self.icu.weeklyQALYLoss + self.longCOVID_1.weeklyQALYLoss)
+        self.total_sa_2_c.weeklyQALYLoss = (
+                    self.cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+                    + self.deaths_sa_2_c.weeklyQALYLoss + self.icu.weeklyQALYLoss + self.longCOVID_1.weeklyQALYLoss)
+        self.total_sa_3_a.weeklyQALYLoss = (
+                    self.cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+                    + self.deaths_sa_3_a.weeklyQALYLoss + self.icu.weeklyQALYLoss + self.longCOVID_1.weeklyQALYLoss)
+        self.total_sa_3_b.weeklyQALYLoss = (
+                    self.cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+                    + self.deaths_sa_3_b.weeklyQALYLoss + self.icu.weeklyQALYLoss + self.longCOVID_1.weeklyQALYLoss)
+        self.total_sa_3_c.weeklyQALYLoss = (
+                    self.cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+                    + self.deaths_sa_3_c.weeklyQALYLoss + self.icu.weeklyQALYLoss + self.longCOVID_1.weeklyQALYLoss)
 
 
 class County:
@@ -503,17 +566,27 @@ class AllStates:
                         'longcovid_1_alt': self.pandemicOutcomes.longCOVID_1_alt.totalQALYLoss,
                         'longcovid_2': self.pandemicOutcomes.longCOVID_1_alt.totalQALYLoss,
                         'longcovid_2_alt': self.pandemicOutcomes.longCOVID_2_alt.totalQALYLoss,
-                        'deaths, smr=1, qCM=1, r=3%': self.pandemicOutcomes.deaths_sa_1_a.totalQALYLoss,
-                        'deaths, smr=1, qCM=0.9, r= 3%': self.pandemicOutcomes.deaths_sa_1_b.totalQALYLoss,
-                        'deaths, smr=1 , qCM=0.8, r= 3%': self.pandemicOutcomes.deaths_sa_1_c.totalQALYLoss,
-                        'deaths, smr=1.5, qCM=1, r=3%': self.pandemicOutcomes.deaths_sa_2_a.totalQALYLoss,
-                        'deaths, smr=1.5, qCM=0.9, r= 3%': self.pandemicOutcomes.deaths_sa_2_b.totalQALYLoss,
-                        'deaths, smr=1.5, qCM=0.8, r= 3%': self.pandemicOutcomes.deaths_sa_2_c.totalQALYLoss,
-                        'deaths, smr=2, qCM=1, r=3%': self.pandemicOutcomes.deaths_sa_3_a.totalQALYLoss,
-                        'deaths, smr=2, qCM=0.9, r= 3%': self.pandemicOutcomes.deaths_sa_3_b.totalQALYLoss,
-                        'deaths, smr=2 , qCM=0.8, r= 3%': self.pandemicOutcomes.deaths_sa_3_c.totalQALYLoss
+                        'deaths, smr=1.75, qCM=0.85, r=3%': self.pandemicOutcomes.deaths_sa_1_a.totalQALYLoss,
+                        'deaths, smr=1.75, qCM=0.8, r= 3%': self.pandemicOutcomes.deaths_sa_1_b.totalQALYLoss,
+                        'deaths, smr=1.75 , qCM=0.75, r= 3%': self.pandemicOutcomes.deaths_sa_1_c.totalQALYLoss,
+                        'deaths, smr=2, qCM=0.85, r=3%': self.pandemicOutcomes.deaths_sa_2_a.totalQALYLoss,
+                        'deaths, smr=2, qCM=0.8, r= 3%': self.pandemicOutcomes.deaths_sa_2_b.totalQALYLoss,
+                        'deaths, smr=2, qCM=0.0.75, r= 3%': self.pandemicOutcomes.deaths_sa_2_c.totalQALYLoss,
+                        'deaths, smr=2.25, qCM=0.85, r=3%': self.pandemicOutcomes.deaths_sa_3_a.totalQALYLoss,
+                        'deaths, smr=2.25, qCM=0.8, r= 3%': self.pandemicOutcomes.deaths_sa_3_b.totalQALYLoss,
+                        'deaths, smr=2.25 , qCM=0.75, r= 3%': self.pandemicOutcomes.deaths_sa_3_c.totalQALYLoss,
+                        'total, smr=1.75, qCM=0.85, r=3%': self.pandemicOutcomes.total_sa_1_a.totalQALYLoss,
+                        'total, smr=1.75, qCM=0.8, r= 3%': self.pandemicOutcomes.total_sa_1_b.totalQALYLoss,
+                        'total, smr=1.75 , qCM=0.75, r= 3%': self.pandemicOutcomes.total_sa_1_c.totalQALYLoss,
+                        'total, smr=2, qCM=0.85, r=3%': self.pandemicOutcomes.total_sa_2_a.totalQALYLoss,
+                        'total, smr=2, qCM=0.8, r= 3%': self.pandemicOutcomes.total_sa_2_b.totalQALYLoss,
+                        'total, smr=2, qCM=0.0.75, r= 3%': self.pandemicOutcomes.total_sa_2_c.totalQALYLoss,
+                        'total, smr=2.25, qCM=0.85, r=3%': self.pandemicOutcomes.total_sa_3_a.totalQALYLoss,
+                        'total, smr=2.25, qCM=0.8, r= 3%': self.pandemicOutcomes.total_sa_3_b.totalQALYLoss,
+                        'total, smr=2.25 , qCM=0.75, r= 3%': self.pandemicOutcomes.total_sa_3_c.totalQALYLoss
                         }
 
+        print("testing total 1" ,self.pandemicOutcomes.total_sa_1_a.totalQALYLoss)
         return dict_results
 
     def get_overall_qaly_loss_by_county(self):
@@ -545,7 +618,6 @@ class AllStates:
         weekly_qaly_loss_by_state ={}
         for state_name, state_obj in self.states.items():
             weekly_qaly_loss_by_state[state_name] = state_obj.pandemicOutcomes.weeklyQALYLoss
-
 
         return weekly_qaly_loss_by_state
 
@@ -703,7 +775,7 @@ class AllStates:
         )
         ax.set_xlim([-170.0, 60])
         ax.set_ylim([25, 76])
-        plt.title("Cumulative County QALY Loss per 100,000 Population", fontsize=22)
+        plt.title("Cumulative QALY Loss per 100,000 Population by County", fontsize=22)
 
         stateToInclude = ["2"]
         merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
@@ -980,6 +1052,16 @@ class SummaryOutcomes:
         self.overallQALYlossesDeaths_SA_3b = []
         self.overallQALYlossesDeaths_SA_3c = []
 
+        self.overallQALYlossesTotal_SA_1a = []
+        self.overallQALYlossesTotal_SA_1b = []
+        self.overallQALYlossesTotal_SA_1c = []
+        self.overallQALYlossesTotal_SA_2a = []
+        self.overallQALYlossesTotal_SA_2b = []
+        self.overallQALYlossesTotal_SA_2c = []
+        self.overallQALYlossesTotal_SA_3a = []
+        self.overallQALYlossesTotal_SA_3b = []
+        self.overallQALYlossesTotal_SA_3c = []
+
 
         self.weeklyQALYlosses = []
         self.weeklyQALYlossesByState = []
@@ -1004,6 +1086,16 @@ class SummaryOutcomes:
         self.weeklyQALYlossesDeaths_SA_3a = []
         self.weeklyQALYlossesDeaths_SA_3b = []
         self.weeklyQALYlossesDeaths_SA_3c = []
+
+        self.weeklyQALYlossesTotal_SA_1a = []
+        self.weeklyQALYlossesTotal_SA_1b = []
+        self.weeklyQALYlossesTotal_SA_1c = []
+        self.weeklyQALYlossesTotal_SA_2a = []
+        self.weeklyQALYlossesTotal_SA_2b = []
+        self.weeklyQALYlossesTotal_SA_2c = []
+        self.weeklyQALYlossesTotal_SA_3a = []
+        self.weeklyQALYlossesTotal_SA_3b = []
+        self.weeklyQALYlossesTotal_SA_3c = []
 
         self.overallQALYlossesCasesByState = []
         self.overallQALYlossesHospNonICUByState = []
@@ -1043,6 +1135,16 @@ class SummaryOutcomes:
         self.statOverallQALYLossDeaths_SA_3b = None
         self.statOverallQALYLossDeaths_SA_3c = None
 
+        self.statOverallQALYLossTotal_SA_1a = None
+        self.statOverallQALYLossTotal_SA_1b = None
+        self.statOverallQALYLossTotal_SA_1c = None
+        self.statOverallQALYLossTotal_SA_2a = None
+        self.statOverallQALYLossTotal_SA_2b = None
+        self.statOverallQALYLossTotal_SA_2c = None
+        self.statOverallQALYLossTotal_SA_3a = None
+        self.statOverallQALYLossTotal_SA_3b = None
+        self.statOverallQALYLossTotal_SA_3c = None
+
         self.deathQALYLossByAge = []
         self.casesQALYLossByAge = []
         self.age_group = []
@@ -1080,6 +1182,16 @@ class SummaryOutcomes:
         self.weeklyQALYlossesDeaths_SA_3b.append(simulated_model.pandemicOutcomes.deaths_sa_3_b.weeklyQALYLoss)
         self.weeklyQALYlossesDeaths_SA_3c.append(simulated_model.pandemicOutcomes.deaths_sa_3_c.weeklyQALYLoss)
 
+        self.weeklyQALYlossesTotal_SA_1a.append(simulated_model.pandemicOutcomes.total_sa_1_a.weeklyQALYLoss)
+        self.weeklyQALYlossesTotal_SA_1b.append(simulated_model.pandemicOutcomes.total_sa_1_b.weeklyQALYLoss)
+        self.weeklyQALYlossesTotal_SA_1c.append(simulated_model.pandemicOutcomes.total_sa_1_c.weeklyQALYLoss)
+        self.weeklyQALYlossesTotal_SA_2a.append(simulated_model.pandemicOutcomes.total_sa_2_a.weeklyQALYLoss)
+        self.weeklyQALYlossesTotal_SA_2b.append(simulated_model.pandemicOutcomes.total_sa_2_b.weeklyQALYLoss)
+        self.weeklyQALYlossesTotal_SA_2c.append(simulated_model.pandemicOutcomes.total_sa_2_c.weeklyQALYLoss)
+        self.weeklyQALYlossesTotal_SA_3a.append(simulated_model.pandemicOutcomes.total_sa_3_a.weeklyQALYLoss)
+        self.weeklyQALYlossesTotal_SA_3b.append(simulated_model.pandemicOutcomes.total_sa_3_b.weeklyQALYLoss)
+        self.weeklyQALYlossesTotal_SA_3c.append(simulated_model.pandemicOutcomes.total_sa_3_c.weeklyQALYLoss)
+
         self.overallQALYlossesCases.append(simulated_model.pandemicOutcomes.cases.totalQALYLoss)
         self.overallQALYlossesHospNonICU.append(simulated_model.pandemicOutcomes.hosp_non_icu.totalQALYLoss)
         self.overallQALYlossesHospICU.append(simulated_model.pandemicOutcomes.hosp_icu.totalQALYLoss)
@@ -1101,6 +1213,17 @@ class SummaryOutcomes:
         self.overallQALYlossesDeaths_SA_3a.append(simulated_model.pandemicOutcomes.deaths_sa_3_a.totalQALYLoss)
         self.overallQALYlossesDeaths_SA_3b.append(simulated_model.pandemicOutcomes.deaths_sa_3_b.totalQALYLoss)
         self.overallQALYlossesDeaths_SA_3c.append(simulated_model.pandemicOutcomes.deaths_sa_3_c.totalQALYLoss)
+
+
+        self.overallQALYlossesTotal_SA_1a.append(simulated_model.pandemicOutcomes.total_sa_1_a.totalQALYLoss)
+        self.overallQALYlossesTotal_SA_1b.append(simulated_model.pandemicOutcomes.total_sa_1_b.totalQALYLoss)
+        self.overallQALYlossesTotal_SA_1c.append(simulated_model.pandemicOutcomes.total_sa_1_c.totalQALYLoss)
+        self.overallQALYlossesTotal_SA_2a.append(simulated_model.pandemicOutcomes.total_sa_2_a.totalQALYLoss)
+        self.overallQALYlossesTotal_SA_2b.append(simulated_model.pandemicOutcomes.total_sa_2_b.totalQALYLoss)
+        self.overallQALYlossesTotal_SA_2c.append(simulated_model.pandemicOutcomes.total_sa_2_c.totalQALYLoss)
+        self.overallQALYlossesTotal_SA_3a.append(simulated_model.pandemicOutcomes.total_sa_3_a.totalQALYLoss)
+        self.overallQALYlossesTotal_SA_3b.append(simulated_model.pandemicOutcomes.total_sa_3_b.totalQALYLoss)
+        self.overallQALYlossesTotal_SA_3c.append(simulated_model.pandemicOutcomes.total_sa_3_c.totalQALYLoss)
 
         self.overallQALYlossesCasesByState.append(simulated_model.get_overall_qaly_loss_by_state_cases())
         self.overallQALYlossesHospNonICUByState.append(simulated_model.get_overall_qaly_loss_by_state_hosp_non_icu())
@@ -1142,6 +1265,20 @@ class SummaryOutcomes:
         self.statOverallQALYLossDeaths_SA_3a = SummaryStat(data=self.overallQALYlossesDeaths_SA_3a)
         self.statOverallQALYLossDeaths_SA_3b = SummaryStat(data=self.overallQALYlossesDeaths_SA_3b)
         self.statOverallQALYLossDeaths_SA_3c = SummaryStat(data=self.overallQALYlossesDeaths_SA_3c)
+
+        self.statOverallQALYLossTotal_SA_1a = SummaryStat(data=self.overallQALYlossesTotal_SA_1a)
+        self.statOverallQALYLossTotal_SA_1b = SummaryStat(data=self.overallQALYlossesTotal_SA_1b)
+        self.statOverallQALYLossTotal_SA_1c = SummaryStat(data=self.overallQALYlossesTotal_SA_1c)
+        self.statOverallQALYLossTotal_SA_2a = SummaryStat(data=self.overallQALYlossesTotal_SA_2a)
+        self.statOverallQALYLossTotal_SA_2b = SummaryStat(data=self.overallQALYlossesTotal_SA_2b)
+        self.statOverallQALYLossTotal_SA_2c = SummaryStat(data=self.overallQALYlossesTotal_SA_2c)
+        self.statOverallQALYLossTotal_SA_3a = SummaryStat(data=self.overallQALYlossesTotal_SA_3a)
+        self.statOverallQALYLossTotal_SA_3b = SummaryStat(data=self.overallQALYlossesTotal_SA_3b)
+        self.statOverallQALYLossTotal_SA_3c = SummaryStat(data=self.overallQALYlossesTotal_SA_3c)
+
+        print("Test Deaths 3", self.overallQALYlossesDeaths_SA_3c)
+        print("Test Total 3", self.overallQALYlossesTotal_SA_3c)
+
 
 
     def get_mean_ci_ui_overall_qaly_loss(self):
@@ -1204,11 +1341,9 @@ class SummaryOutcomes:
                 self.statOverallQALYLossDeaths_SA_2a.get_mean(),
                 self.statOverallQALYLossDeaths_SA_2a.get_t_CI(alpha=0.05),
                 self.statOverallQALYLossDeaths_SA_2a.get_PI(alpha=0.05),
-
                 self.statOverallQALYLossDeaths_SA_2b.get_mean(),
                 self.statOverallQALYLossDeaths_SA_2b.get_t_CI(alpha=0.05),
                 self.statOverallQALYLossDeaths_SA_2b.get_PI(alpha=0.05),
-
                 self.statOverallQALYLossDeaths_SA_2c.get_mean(),
                 self.statOverallQALYLossDeaths_SA_2c.get_t_CI(alpha=0.05),
                 self.statOverallQALYLossDeaths_SA_2c.get_PI(alpha=0.05),
@@ -1216,15 +1351,48 @@ class SummaryOutcomes:
                 self.statOverallQALYLossDeaths_SA_3a.get_mean(),
                 self.statOverallQALYLossDeaths_SA_3a.get_t_CI(alpha=0.05),
                 self.statOverallQALYLossDeaths_SA_3a.get_PI(alpha=0.05),
-
                 self.statOverallQALYLossDeaths_SA_3b.get_mean(),
                 self.statOverallQALYLossDeaths_SA_3b.get_t_CI(alpha=0.05),
                 self.statOverallQALYLossDeaths_SA_3b.get_PI(alpha=0.05),
-
                 self.statOverallQALYLossDeaths_SA_3c.get_mean(),
                 self.statOverallQALYLossDeaths_SA_3c.get_t_CI(alpha=0.05),
-                self.statOverallQALYLossDeaths_SA_3c.get_PI(alpha=0.05)
-                )
+                self.statOverallQALYLossDeaths_SA_3c.get_PI(alpha=0.05),
+
+                self.statOverallQALYLossTotal_SA_1a.get_mean(),
+                self.statOverallQALYLossTotal_SA_1a.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_1a.get_PI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_1b.get_mean(),
+                self.statOverallQALYLossTotal_SA_1b.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_1b.get_PI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_1c.get_mean(),
+                self.statOverallQALYLossTotal_SA_1c.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_1c.get_PI(alpha=0.05),
+
+                self.statOverallQALYLossTotal_SA_2a.get_mean(),
+                self.statOverallQALYLossTotal_SA_2a.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_2a.get_PI(alpha=0.05),
+
+                self.statOverallQALYLossTotal_SA_2b.get_mean(),
+                self.statOverallQALYLossTotal_SA_2b.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_2b.get_PI(alpha=0.05),
+
+                self.statOverallQALYLossTotal_SA_2c.get_mean(),
+                self.statOverallQALYLossTotal_SA_2c.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_2c.get_PI(alpha=0.05),
+
+                self.statOverallQALYLossTotal_SA_3a.get_mean(),
+                self.statOverallQALYLossTotal_SA_3a.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_3a.get_PI(alpha=0.05),
+
+                self.statOverallQALYLossTotal_SA_3b.get_mean(),
+                self.statOverallQALYLossTotal_SA_3b.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_3b.get_PI(alpha=0.05),
+
+                self.statOverallQALYLossTotal_SA_3c.get_mean(),
+                self.statOverallQALYLossTotal_SA_3c.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossTotal_SA_3c.get_PI(alpha=0.05))
+
+
 
 
 class ProbabilisticAllStates:
@@ -1304,6 +1472,12 @@ class ProbabilisticAllStates:
         print('  Mean Deaths: {:,.0f}'.format(mean_deaths))
         print('  Mean ICU: {:,.0f}'.format(mean_icu))
         print('  Mean Long COVID: {:,.0f}'.format(mean_lc))
+        print(' Total 1 test obs', self.allStates.pandemicOutcomes.total_sa_1_a.totalObs)
+        print(' Total 1 test weeekly obs', self.allStates.pandemicOutcomes.total_sa_1_a.weeklyObs)
+        print(' Total 1 test total qaly loss', self.allStates.pandemicOutcomes.total_sa_1_a.totalQALYLoss)
+        print(' Total 1 test weekly qaly', self.allStates.pandemicOutcomes.total_sa_1_a.weeklyQALYLoss)
+        print(' Deaths 1 test total qaly loss', self.allStates.pandemicOutcomes.deaths_sa_1_a.totalQALYLoss)
+        print(' Deaths 1 test weekly qaly', self.allStates.pandemicOutcomes.deaths_sa_1_a.weeklyQALYLoss)
 
         (mean, ci, ui,  mean_cases, ci_c, ui_c,mean_hosps_non_icu, ci_hosps_non_icu, ui_hosps_non_icu,
          mean_hosps_icu, ci_hosps_icu, ui_hosps_icu, mean_deaths, ci_d, ui_d,
@@ -1422,11 +1596,15 @@ class ProbabilisticAllStates:
         #fig, ax = plt.subplots(figsize=(10, 6))
 
         [mean_cases, ui_cases, mean_deaths, ui_deaths, mean_hosps_non_icu, ui_hosps_non_icu,
-            mean_hosps_icu, ui_hosps_icu,mean_icu, ui_icu, mean_total_hosps, ui_total_hosps,
-            mean_lc_1, ui_lc_1,mean_lc_1_alt, ui_lc_1_alt, mean_lc_2, ui_lc_2,mean_lc_2_alt, ui_lc_2_alt,
-            mean_deaths_sa_1a, ui_deaths_sa_1a, mean_deaths_sa_1b, ui_deaths_sa_1b, mean_deaths_sa_1c, ui_deaths_sa_1c,
-            mean_deaths_sa_2a, ui_deaths_sa_2a, mean_deaths_sa_2b, ui_deaths_sa_2b, mean_deaths_sa_2c, ui_deaths_sa_2c,
-            mean_deaths_sa_3a, ui_deaths_sa_3a, mean_deaths_sa_3b, ui_deaths_sa_3b, mean_deaths_sa_3c, ui_deaths_sa_3c] = (
+                mean_hosps_icu, ui_hosps_icu,mean_icu, ui_icu, mean_total_hosps, ui_total_hosps,
+                mean_lc_1, ui_lc_1,mean_lc_1_alt, ui_lc_1_alt, mean_lc_2, ui_lc_2,mean_lc_2_alt, ui_lc_2_alt,
+                mean_deaths_sa_1a, ui_deaths_sa_1a, mean_deaths_sa_1b, ui_deaths_sa_1b, mean_deaths_sa_1c, ui_deaths_sa_1c,
+                mean_deaths_sa_2a, ui_deaths_sa_2a, mean_deaths_sa_2b, ui_deaths_sa_2b, mean_deaths_sa_2c, ui_deaths_sa_2c,
+                mean_deaths_sa_3a, ui_deaths_sa_3a, mean_deaths_sa_3b, ui_deaths_sa_3b, mean_deaths_sa_3c, ui_deaths_sa_3c,
+                mean_total_sa_1a, ui_total_sa_1a, mean_total_sa_1b, ui_total_sa_1b, mean_total_sa_1c,ui_total_sa_1c,
+                mean_total_sa_2a, ui_total_sa_2a, mean_total_sa_2b, ui_total_sa_2b, mean_total_sa_2c,ui_total_sa_2c,
+                mean_total_sa_3a, ui_total_sa_3a, mean_total_sa_3b, ui_total_sa_3b, mean_total_sa_3c, ui_total_sa_3c
+                ] = (
             self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
 
         ax1.plot(self.allStates.dates, mean_cases,
@@ -1442,7 +1620,7 @@ class ProbabilisticAllStates:
         ax1.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='red', alpha=0.25)
 
         ax1.plot(self.allStates.dates, mean_lc_1,
-                label='Long COVID (Approach 1)', linewidth=2, color='purple')
+                label='Long COVID (Simplified Approach)', linewidth=2, color='purple')
         ax1.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='purple', alpha=0.25)
 
         ax2.plot(self.allStates.dates, mean_cases,
@@ -1458,7 +1636,7 @@ class ProbabilisticAllStates:
         ax2.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='red', alpha=0.25)
 
         ax2.plot(self.allStates.dates, mean_lc_2,
-                 label='Long COVID (Approach 2)', linewidth=2, color='purple')
+                 label='Long COVID (Health State-Dependent Appraoch)', linewidth=2, color='purple')
         ax2.fill_between(self.allStates.dates, ui_lc_2[0], ui_lc_2[1], color='purple', alpha=0.25)
 
 
@@ -1554,7 +1732,11 @@ class ProbabilisticAllStates:
                 mean_lc_1, ui_lc_1,mean_lc_1_alt, ui_lc_1_alt, mean_lc_2, ui_lc_2,mean_lc_2_alt, ui_lc_2_alt,
                 mean_deaths_sa_1a, ui_deaths_sa_1a, mean_deaths_sa_1b, ui_deaths_sa_1b, mean_deaths_sa_1c, ui_deaths_sa_1c,
                 mean_deaths_sa_2a, ui_deaths_sa_2a, mean_deaths_sa_2b, ui_deaths_sa_2b, mean_deaths_sa_2c, ui_deaths_sa_2c,
-                mean_deaths_sa_3a, ui_deaths_sa_3a, mean_deaths_sa_3b, ui_deaths_sa_3b, mean_deaths_sa_3c, ui_deaths_sa_3c] = (
+                mean_deaths_sa_3a, ui_deaths_sa_3a, mean_deaths_sa_3b, ui_deaths_sa_3b, mean_deaths_sa_3c, ui_deaths_sa_3c,
+                mean_total_sa_1a, ui_total_sa_1a, mean_total_sa_1b, ui_total_sa_1b, mean_total_sa_1c,ui_total_sa_1c,
+                mean_total_sa_2a, ui_total_sa_2a, mean_total_sa_2b, ui_total_sa_2b, mean_total_sa_2c,ui_total_sa_2c,
+                mean_total_sa_3a, ui_total_sa_3a, mean_total_sa_3b, ui_total_sa_3b, mean_total_sa_3c, ui_total_sa_3c
+                ] = (
             self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
 
 
@@ -1612,6 +1794,13 @@ class ProbabilisticAllStates:
 
         output_figure(fig, filename=ROOT_DIR + '/figs/simulations_national_qaly_loss_by_outcome_scenarios.png')
 
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from matplotlib.lines import Line2D
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from matplotlib.lines import Line2D
 
     def plot_weekly_deaths_sensitivity_analysis(self):
         # Create a plot
@@ -1622,18 +1811,33 @@ class ProbabilisticAllStates:
 
         # Unpack the data into variables for each subplot
         variables = [
-            ('Deaths 1a', 'orange', data[20], data[21]),
-            ('Deaths 1b', 'orange', data[22], data[23]),
-            ('Deaths 1c', 'orange', data[24], data[25]),
-            ('Deaths 2a', 'orange', data[26], data[27]),
-            ('Deaths 2b', 'orange', data[28], data[29]),
-            ('Deaths 2c', 'orange', data[30], data[31]),
-            ('Deaths 3a', 'orange', data[32], data[33]),
-            ('Deaths 3b', 'orange', data[34], data[35]),
-            ('Deaths 3c', 'orange', data[36], data[37])
+            ('Deaths 1a', 'red', data[20], data[21]),
+            ('Deaths 1b', 'red', data[22], data[23]),
+            ('Deaths 1c', 'red', data[24], data[25]),
+            ('Deaths 2a', 'red', data[26], data[27]),
+            ('Deaths 2b', 'red', data[28], data[29]),
+            ('Deaths 2c', 'red', data[30], data[31]),
+            ('Deaths 3a', 'red', data[32], data[33]),
+            ('Deaths 3b', 'red', data[34], data[35]),
+            ('Deaths 3c', 'red', data[36], data[37])
         ]
 
-        [mean_total, ui_total] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
+        # Total data for each scenario
+        total_data = [
+            (data[38], data[39]),  # Total 1a
+            (data[40], data[41]),  # Total 1b
+            (data[42], data[43]),  # Total 1c
+            (data[44], data[45]),  # Total 2a
+            (data[46], data[47]),  # Total 2b
+            (data[48], data[49]),  # Total 2c
+            (data[50], data[51]),  # Total 3a
+            (data[52], data[53]),  # Total 3b
+            (data[54], data[55])  # Total 3c
+        ]
+
+        # Data for Deaths 2b (Base analysis) to be added to all subplots
+        deaths_2b_mean = data[28]
+        deaths_2b_ui = data[29]
 
         # Plotting each subplot
         for i, (label, color, mean, ui) in enumerate(variables):
@@ -1641,10 +1845,19 @@ class ProbabilisticAllStates:
             col = i % 3
             ax = axes[row, col]
 
-            ax.plot(self.allStates.dates, mean, label=label, linewidth=2, color='red')
-            ax.fill_between(self.allStates.dates, ui[0], ui[1], color='orange', alpha=0.25)
-            ax.plot(self.allStates.dates, mean_total, label='Total', linewidth=2, color='black')
+            ax.plot(self.allStates.dates, mean, label=label, linewidth=2, color=color)
+            ax.fill_between(self.allStates.dates, ui[0], ui[1], color=color, alpha=0.25)
+
+            # Plot total QALY loss in black for each subplot
+            mean_total, ui_total = total_data[i]
+            ax.plot(self.allStates.dates, mean_total, label='Total QALY Loss', linewidth=2, color='black')
             ax.fill_between(self.allStates.dates, ui_total[0], ui_total[1], color='grey', alpha=0.25)
+
+            # Add Deaths 2b line to all subplots
+            ax.plot(self.allStates.dates, deaths_2b_mean, label='Deaths in base analysis', linestyle='--', linewidth=2,
+                    color='red')
+            ax.fill_between(self.allStates.dates, deaths_2b_ui[0], deaths_2b_ui[1], color='red', alpha=0.15)
+
             ax.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")
             ax.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")
             ax.axvline(x="2021-08-04", color='black', linestyle='--')
@@ -1652,31 +1865,29 @@ class ProbabilisticAllStates:
             # Set title only on the top row
             if row == 0:
                 if col == 0:
-                    ax.set_title('qCM=1', fontsize=18)
+                    ax.set_title('qCM=15%', fontsize=18)
                 elif col == 1:
-                    ax.set_title('qCM=0.9', fontsize=18)
+                    ax.set_title('qCM=20%', fontsize=18)
                 elif col == 2:
-                    ax.set_title('qCM=0.8', fontsize=18)
+                    ax.set_title('qCM=25%', fontsize=18)
 
             # Set ylabel only on the left column
             if col == 0:
                 if row == 0:
-                    ax.set_ylabel('SMR=1', fontsize=18)
+                    ax.set_ylabel('SMR=1.75', fontsize=18, labelpad=20)
                 elif row == 1:
-                    ax.set_ylabel('SMR=1.5', fontsize=18)
+                    ax.set_ylabel('SMR=2', fontsize=18, labelpad=20)
                 elif row == 2:
-                    ax.set_ylabel('SMR=2', fontsize=18)
+                    ax.set_ylabel('SMR=2.25', fontsize=18, labelpad=20)
 
             ax.set_xlabel('Date', fontsize=14)
 
-            # Set QALY loss label on the left
-            ax.text(-0.1, 0.5, 'QALY Loss', va='center', rotation='vertical', fontsize=14, transform=ax.transAxes)
+            # Adjust the QALY Loss label position
+            if col == 0:
+                ax.text(-0.15, 0.5, 'QALY Loss', va='center', rotation='vertical', fontsize=14, transform=ax.transAxes)
 
             # Set y-axis range to be consistent
             ax.set_ylim(0, 180000)
-
-            # Adjust tick parameters
-            ax.tick_params(axis='x', which='major', labelsize=10, rotation=45, labelrotation=45)
 
         # Common settings for all subplots
         date_range = self.allStates.dates
@@ -1686,7 +1897,7 @@ class ProbabilisticAllStates:
                                fontsize=10, rotation=45)
 
             # Adjust tick parameters
-            ax.tick_params(axis='x', which='major', labelsize=10, rotation=45, labelrotation=45)
+            ax.tick_params(axis='x', which='major', labelsize=10, rotation=45)
 
         # Adding text labels (A, B, C, ...)
         labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
@@ -1694,17 +1905,23 @@ class ProbabilisticAllStates:
             ax.text(0.01, 0.98, label, transform=ax.transAxes, fontsize=14, fontweight='bold', va='top')
 
         # Set document title
-        fig.suptitle('National QALY Loss with a 3% Discount Rate', fontsize=24, y=1.02)
+        fig.suptitle('National Weekly QALY Loss', fontsize=24, y=1.02)
 
-        # Adding a simplified legend
-        fig.legend(['Deaths', 'Total QALY Loss'], loc='lower center', bbox_to_anchor=(0.5, -0.02), fontsize=14)
+        # Adjust the spacing between subplots
+        plt.subplots_adjust(hspace=0.4, wspace=0.3)
 
-        # Ensure consistent axes dimensions and ranges
-        fig.tight_layout()
+        # Adding a simplified legend with horizontal orientation
+        legend_lines = [Line2D([0], [0], color='red', lw=2),
+                        Line2D([0], [0], linestyle='--', color='red', lw=2),
+                        Line2D([0], [0], color='black', lw=2)]
+
+        fig.legend(legend_lines, ['Deaths', 'Deaths in base analysis', 'Total QALY Loss'], loc='lower center',
+                   bbox_to_anchor=(0.5, -0.02), fontsize=14, ncol=3)
 
         # Save the figure (replace with your output_figure function)
         output_figure(fig, filename=ROOT_DIR + '/figs/deaths_sensitivity_analysis_sa.png')
 
+        return fig
 
     def get_mean_ui_weekly_qaly_loss_by_outcome(self, alpha=0.05):
         """
@@ -1731,14 +1948,28 @@ class ProbabilisticAllStates:
         mean_deaths_sa_3a, ui_deaths_sa_3a = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesDeaths_SA_3a, alpha=alpha)
         mean_deaths_sa_3b, ui_deaths_sa_3b = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesDeaths_SA_3b, alpha=alpha)
         mean_deaths_sa_3c, ui_deaths_sa_3c = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesDeaths_SA_3c, alpha=alpha)
+        mean_total_sa_1a, ui_total_sa_1a = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesTotal_SA_1a, alpha=alpha)
+        mean_total_sa_1b, ui_total_sa_1b = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesTotal_SA_1b, alpha=alpha)
+        mean_total_sa_1c, ui_total_sa_1c = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesTotal_SA_1c, alpha=alpha)
+        mean_total_sa_2a, ui_total_sa_2a = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesTotal_SA_2a, alpha=alpha)
+        mean_total_sa_2b, ui_total_sa_2b = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesTotal_SA_2b, alpha=alpha)
+        mean_total_sa_2c, ui_total_sa_2c = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesTotal_SA_2c, alpha=alpha)
+        mean_total_sa_3a, ui_total_sa_3a = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesTotal_SA_3a, alpha=alpha)
+        mean_total_sa_3b, ui_total_sa_3b = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesTotal_SA_3b, alpha=alpha)
+        mean_total_sa_3c, ui_total_sa_3c = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesTotal_SA_3c, alpha=alpha)
 
-
+        print("deaths sameple",self.summaryOutcomes.weeklyQALYlossesDeaths_SA_1a)
+        print("total sample", self.summaryOutcomes.weeklyQALYlossesTotal_SA_1a)
         return (mean_cases, ui_cases, mean_deaths, ui_deaths, mean_hosps_non_icu, ui_hosps_non_icu,
                 mean_hosps_icu, ui_hosps_icu,mean_icu, ui_icu, mean_total_hosps, ui_total_hosps,
                 mean_lc_1, ui_lc_1,mean_lc_1_alt, ui_lc_1_alt, mean_lc_2, ui_lc_2,mean_lc_2_alt, ui_lc_2_alt,
                 mean_deaths_sa_1a, ui_deaths_sa_1a, mean_deaths_sa_1b, ui_deaths_sa_1b, mean_deaths_sa_1c, ui_deaths_sa_1c,
                 mean_deaths_sa_2a, ui_deaths_sa_2a, mean_deaths_sa_2b, ui_deaths_sa_2b, mean_deaths_sa_2c, ui_deaths_sa_2c,
-                mean_deaths_sa_3a, ui_deaths_sa_3a, mean_deaths_sa_3b, ui_deaths_sa_3b, mean_deaths_sa_3c, ui_deaths_sa_3c)
+                mean_deaths_sa_3a, ui_deaths_sa_3a, mean_deaths_sa_3b, ui_deaths_sa_3b, mean_deaths_sa_3c, ui_deaths_sa_3c,
+                mean_total_sa_1a, ui_total_sa_1a, mean_total_sa_1b, ui_total_sa_1b, mean_total_sa_1c,ui_total_sa_1c,
+                mean_total_sa_2a, ui_total_sa_2a, mean_total_sa_2b, ui_total_sa_2b, mean_total_sa_2c,ui_total_sa_2c,
+                mean_total_sa_3a, ui_total_sa_3a, mean_total_sa_3b, ui_total_sa_3b, mean_total_sa_3c, ui_total_sa_3c
+                )
 
     def plot_map_of_avg_qaly_loss_by_county(self):
 
@@ -1792,7 +2023,7 @@ class ProbabilisticAllStates:
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
 
         ax1.axis('off')
-        ax1.set_title('Cumulative County QALY Loss', fontsize=18)
+        ax1.set_title('Cumulative QALY Loss by County', fontsize=18)
         ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
 
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=8)
@@ -1804,7 +2035,7 @@ class ProbabilisticAllStates:
             scheme=scheme,
             cmap="viridis",
             legend=True,
-            legend_kwargs={'title': 'Absolute QALY Loss', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
+            legend_kwargs={'title': 'QALY Loss', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
             edgecolor="black",
             ax=ax1
         )
@@ -1851,7 +2082,7 @@ class ProbabilisticAllStates:
         )
 
         ax2.axis('off')
-        ax2.set_title('Cumulative County QALY Loss per 100,000 Population', fontsize=18)
+        ax2.set_title('Cumulative QALY Loss per 100,000 Population by County', fontsize=18)
         ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=8)
@@ -1968,10 +2199,13 @@ class ProbabilisticAllStates:
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
 
         ax1.axis('off')
-        ax1.set_title('Cumulative County QALY Loss', fontsize=18)
+        ax1.set_title('Cumulative QALY Loss by County', fontsize=18)
         ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
 
+        # Define the scheme with Quantiles and round the bins to whole numbers
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=4)
+        rounded_bins = np.round(scheme.bins)
+        scheme = mc.UserDefined(merged_geo_data_mainland["QALY Loss"], bins=rounded_bins)
 
         gplt.choropleth(
             merged_geo_data_mainland,
@@ -1980,7 +2214,7 @@ class ProbabilisticAllStates:
             scheme=scheme,
             cmap="viridis",
             legend=True,
-            legend_kwargs={'title': 'Absolute QALY Loss', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
+            legend_kwargs={'title': 'QALY Loss', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
             edgecolor="black",
             ax=ax1
         )
@@ -1993,6 +2227,8 @@ class ProbabilisticAllStates:
         akax1.axis('off')
         polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
         scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["QALY Loss"], k=4)
+        rounded_bins_AK = np.round(scheme_AK.bins)
+        scheme_AK = mc.UserDefined(merged_geo_data_AK_exploded["QALY Loss"], bins=rounded_bins_AK)
 
         gplt.choropleth(
             merged_geo_data_AK_exploded,
@@ -2014,6 +2250,8 @@ class ProbabilisticAllStates:
         hiax1.axis('off')
         hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
         scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["QALY Loss"], k=4)
+        rounded_bins_HI = np.round(scheme_HI.bins)
+        scheme_HI = mc.UserDefined(merged_geo_data_HI_exploded["QALY Loss"], bins=rounded_bins_HI)
 
         gplt.choropleth(
             merged_geo_data_HI_exploded,
@@ -2027,10 +2265,13 @@ class ProbabilisticAllStates:
         )
 
         ax2.axis('off')
-        ax2.set_title('Cumulative County QALY Loss per 100,000 Population', fontsize=18)
+        ax2.set_title('Cumulative QALY Loss per 100,000 Population by County', fontsize=18)
         ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
+        # Repeat the process for the second plot
         scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=4)
+        rounded_bins = np.round(scheme.bins)
+        scheme = mc.UserDefined(merged_geo_data_mainland["QALY Loss per 100K"], bins=rounded_bins)
 
         gplt.choropleth(
             merged_geo_data_mainland,
@@ -2039,13 +2280,12 @@ class ProbabilisticAllStates:
             scheme=scheme,
             cmap="viridis",
             legend=True,
-            legend_kwargs={'title': 'QALY Loss per 100K', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
+            legend_kwargs={'title': 'QALY Loss per 100K', 'loc': 'center right', 'fontsize': 12,
+                           'bbox_to_anchor': (1.08, 0.4)},
             edgecolor="black",
             ax=ax2
         )
 
-        # Alaska 2
-        akax2 = fig
         # Alaska 2
         stateToInclude = ["2"]
         merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
@@ -2054,6 +2294,8 @@ class ProbabilisticAllStates:
         akax2.axis('off')
         polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
         scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["QALY Loss per 100K"], k=4)
+        rounded_bins_AK = np.round(scheme_AK.bins)
+        scheme_AK = mc.UserDefined(merged_geo_data_AK_exploded["QALY Loss per 100K"], bins=rounded_bins_AK)
 
         gplt.choropleth(
             merged_geo_data_AK_exploded,
@@ -2067,7 +2309,7 @@ class ProbabilisticAllStates:
             extent=(-180, -90, 50, 75)
         )
 
-    # Hawaii 2
+        # Hawaii 2
         stateToInclude_HI = ["15"]
         merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
         merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
@@ -2076,6 +2318,8 @@ class ProbabilisticAllStates:
         hiax2.axis('off')
         hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
         scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["QALY Loss per 100K"], k=4)
+        rounded_bins_HI = np.round(scheme_HI.bins)
+        scheme_HI = mc.UserDefined(merged_geo_data_HI_exploded["QALY Loss per 100K"], bins=rounded_bins_HI)
 
         gplt.choropleth(
             merged_geo_data_HI_exploded,
@@ -2732,12 +2976,13 @@ class ProbabilisticAllStates:
         # Replace ROOT_DIR with your actual root directory path
         output_figure(fig, filename=ROOT_DIR + '/figs/fl_wy_county_outcomes_per_100K.png')
 
-    def plot_map_of_outcomes_per_county(self):
+    def plot_map_of_county_outcomes(self):
         """
         Generates sub-plotted maps of the number of cases, hospital admissions, and deaths per 100,000 population for each county.
-        Values are computed per HSA (aggregate of county values for all counties within an HSA), but plotted by county.
+        Values are computed per county and plotted by county.
         """
 
+        # Prepare the data for plotting
         county_outcomes_data = {
             "COUNTY": [],
             "FIPS": [],
@@ -2756,10 +3001,9 @@ class ProbabilisticAllStates:
 
         # Create a DataFrame from the county data
         county_outcomes_df = pd.DataFrame(county_outcomes_data)
-
         county_outcomes_df.to_csv(ROOT_DIR + '/csv_files/county_outcomes.csv', index=False)
 
-        # Merge the county QALY loss data with the geometry data
+        # Load geometry data and merge with outcomes data
         geoData = gpd.read_file(
             "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
         )
@@ -2767,23 +3011,31 @@ class ProbabilisticAllStates:
         geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
         merged_geo_data = geoData.merge(county_outcomes_df, left_on='FIPS', right_on='FIPS', how='left')
 
-        # Remove counties where there is no data
-        merged_geo_data = merged_geo_data.dropna(subset=["Deaths"])
-
-        # Remove Alaska, HI, Puerto Rico (to be plotted later)
+        # Filter data
+        merged_geo_data = merged_geo_data.dropna(subset=["Deaths"])  # Adjust according to data availability
         stateToRemove = ["2", "15", "72"]
         merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
 
-        # Explode the MultiPolygon geometries into individual polygons
+        # Explode geometries
         merged_geo_data_mainland = merged_geo_data_mainland.explode()
 
-        # Plot the map
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12), subplot_kw={'aspect': 'equal'})
+        # Helper function to format legend labels
+        def format_legend_labels(breaks):
+            labels = []
+            for i in range(len(breaks) - 1):
+                labels.append(f'{int(round(breaks[i], 0)):,} - {int(round(breaks[i + 1], 0)):,}')
+            return labels
 
+        # Plotting the maps
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 10), subplot_kw={'aspect': 'equal'})
+
+        # Cases per 100K
         ax1.axis('off')
         ax1.set_title('Cases', fontsize=15)
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
 
-        scheme_cases = mc.Quantiles(merged_geo_data_mainland["Cases"], k=10)
+        scheme_cases = mc.Quantiles(merged_geo_data_mainland["Cases"], k=4)
+        legend_labels_cases = format_legend_labels([scheme_cases.yb.min(), *scheme_cases.bins])
 
         gplt.choropleth(
             merged_geo_data_mainland,
@@ -2794,60 +3046,55 @@ class ProbabilisticAllStates:
             legend=True,
             legend_kwargs={'title': 'Cases', 'fontsize': 10, 'bbox_to_anchor': (0.95, 0.5),
                            'loc': 'center left'},
-            legend_labels=None,
+            legend_labels=legend_labels_cases,
             edgecolor="black",
             ax=ax1
         )
 
+        # Alaska Cases
         stateToInclude = ["2"]
         merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
         merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
         akax1 = fig.add_axes([0.15, 0.39, 0.3, 0.5])
         akax1.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["Cases"], k=2)
 
         gplt.choropleth(
             merged_geo_data_AK_exploded,
             hue="Cases",
             linewidth=0.1,
-            scheme=scheme_AK,
+            scheme=scheme_cases,
             cmap="viridis",
-            legend=True,
+            legend=False,
             edgecolor="black",
             ax=akax1,
             extent=(-180, -90, 50, 75)
         )
 
-        akax1.get_legend().remove()
-
-        ## Hawai'i ##
+        # Hawaii Cases
         stateToInclude_HI = ["15"]
         merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
         merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
         hiax1 = fig.add_axes([0.2, 0.65, 0.1, 0.15])
         hiax1.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["Cases"], k=2)
 
         gplt.choropleth(
             merged_geo_data_HI_exploded,
             hue="Cases",
             linewidth=0.1,
-            scheme=scheme_HI,
+            scheme=scheme_cases,
             cmap="viridis",
-            legend=True,
+            legend=False,
             edgecolor="black",
             ax=hiax1,
         )
 
-        hiax1.get_legend().remove()
-
+        # Hospital Admissions per 100K
         ax2.axis('off')
         ax2.set_title('Hospital Admissions', fontsize=15)
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
-        scheme_hosps = mc.Quantiles(merged_geo_data_mainland["Hosps"], k=10)
+        scheme_hosps = mc.Quantiles(merged_geo_data_mainland["Hosps"], k=4)
+        legend_labels_hosps = format_legend_labels([scheme_hosps.yb.min(), *scheme_hosps.bins])
 
         gplt.choropleth(
             merged_geo_data_mainland,
@@ -2857,125 +3104,100 @@ class ProbabilisticAllStates:
             cmap="viridis",
             legend=True,
             legend_kwargs={'title': 'Hospital Admissions', 'fontsize': 10, 'bbox_to_anchor': (0.95, 0.5),
-                            'loc': 'center left'},
-            legend_labels=None,
+                           'loc': 'center left'},
+            legend_labels=legend_labels_hosps,
             edgecolor="black",
             ax=ax2
         )
 
-        stateToInclude = ["2"]
-        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
-        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
+        # Alaska Hospital Admissions
         akax2 = fig.add_axes([0.15, 0.06, 0.3, 0.5])
-        akax1.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["Hosps"], k=2)
+        akax2.axis('off')
 
         gplt.choropleth(
             merged_geo_data_AK_exploded,
             hue="Hosps",
             linewidth=0.1,
-            scheme=scheme_AK,
+            scheme=scheme_hosps,
             cmap="viridis",
-            legend=True,
+            legend=False,
             edgecolor="black",
             ax=akax2,
             extent=(-180, -90, 50, 75)
         )
 
-        akax2.get_legend().remove()
-
-        ## Hawai'i ##
-        stateToInclude_HI = ["15"]
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
-        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
+        # Hawaii Hospital Admissions
         hiax2 = fig.add_axes([0.2, 0.32, 0.1, 0.15])
         hiax2.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["Hosps"], k=2)
 
         gplt.choropleth(
             merged_geo_data_HI_exploded,
             hue="Hosps",
             linewidth=0.1,
-            scheme=scheme_HI,
+            scheme=scheme_hosps,
             cmap="viridis",
-            legend=True,
+            legend=False,
             edgecolor="black",
             ax=hiax2,
         )
 
-        hiax2.get_legend().remove()
-
+        # Deaths per 100K
         ax3.axis('off')
         ax3.set_title('Deaths', fontsize=15)
+        ax3.text(0.01, 0.98, "C", transform=ax3.transAxes, fontsize=14, fontweight='bold', va='top')
 
-        scheme = mc.Quantiles(merged_geo_data_mainland["Deaths"], k=10)
+        scheme_deaths = mc.Quantiles(merged_geo_data_mainland["Deaths"], k=4)
+        legend_labels_deaths = format_legend_labels([scheme_deaths.yb.min(), *scheme_deaths.bins])
 
         gplt.choropleth(
-             merged_geo_data_mainland,
+            merged_geo_data_mainland,
             hue="Deaths",
             linewidth=0.1,
-            scheme=scheme,
+            scheme=scheme_deaths,
             cmap="viridis",
             legend=True,
             legend_kwargs={'title': 'Deaths', 'fontsize': 10, 'bbox_to_anchor': (0.95, 0.5),
-                             'loc': 'center left'},
-            legend_labels=None,
+                           'loc': 'center left'},
+            legend_labels=legend_labels_deaths,
             edgecolor="black",
             ax=ax3
         )
 
-        stateToInclude = ["2"]
-        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
-        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
+        # Alaska Deaths
         akax3 = fig.add_axes([0.15, -0.25, 0.3, 0.5])
         akax3.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["Deaths"], k=2)
 
         gplt.choropleth(
             merged_geo_data_AK_exploded,
             hue="Deaths",
             linewidth=0.1,
-            scheme=scheme_AK,
+            scheme=scheme_deaths,
             cmap="viridis",
-            legend=True,
+            legend=False,
             edgecolor="black",
             ax=akax3,
             extent=(-180, -90, 50, 75)
         )
 
-        akax3.get_legend().remove()
-
-        ## Hawai'i ##
-        stateToInclude_HI = ["15"]
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
-        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
+        # Hawaii Deaths
         hiax3 = fig.add_axes([0.2, 0.01, 0.1, 0.15])
-        hiax1.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["Deaths"], k=2)
+        hiax3.axis('off')
 
         gplt.choropleth(
             merged_geo_data_HI_exploded,
             hue="Deaths",
             linewidth=0.1,
-            scheme=scheme_HI,
+            scheme=scheme_deaths,
             cmap="viridis",
-            legend=True,
+            legend=False,
             edgecolor="black",
             ax=hiax3,
         )
 
-        hiax3.get_legend().remove()
-        plt.subplots_adjust(hspace=0.01)
-
+        # Save the plot to a file
         plt.tight_layout()
-
         output_figure(fig, filename=ROOT_DIR + '/figs/map_county_outcomes.png')
+        plt.show()
 
     def plot_map_of_hsa_outcomes_by_county_per_100K(self):
         """
@@ -2984,7 +3206,7 @@ class ProbabilisticAllStates:
         """
 
         # Load HSA data
-        hsa_data = read_csv_rows(file_name='C:/Users/fm478/Downloads/county_names_HSA_number.csv',
+        hsa_data = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_names_HSA_number.csv',
                                  if_ignore_first_row=True)
 
         # Create a dictionary for FIPS to HSA mapping
@@ -3053,13 +3275,10 @@ class ProbabilisticAllStates:
                             "Population": hsa_population
                         }
                     hsa_aggregated_data[hsa_number]["Total Cases"] += county.pandemicOutcomes.cases.totalObs
-                    # hsa_aggregated_data[hsa_number]["Total Hospitalizations"] += county.pandemicOutcomes.hosps.totalObs
+                    hsa_aggregated_data[hsa_number]["Total Hospitalizations"] += county.pandemicOutcomes.hosps.totalObs
                     hsa_aggregated_data[hsa_number]["Total Deaths"] += county.pandemicOutcomes.deaths.totalObs
 
                 else:
-                    hsa_number = None
-                    hsa_population = None
-
                     # Append county name, state, and FIPS to the list of counties without HSA
                     counties_without_hsa.append({
                         "County Name": county.name,
@@ -3074,11 +3293,9 @@ class ProbabilisticAllStates:
                 hsa_number = int(hsa_number)
                 hsa_total_cases_per_100K = (hsa_aggregated_data[hsa_number]["Total Cases"] / float(
                     hsa_aggregated_data[hsa_number]["Population"])) * 100000
-                # hsa_total_hospitalizations_per_100K = (hsa_aggregated_data[hsa_number][
-                # "Total Hospitalizations"] / float(
-                # hsa_aggregated_data[hsa_number]["Population"])) * 100000
-                hsa_total_hospitalizations_per_100K = county_outcomes_data["Hosps"][i] / float(
-                    hsa_aggregated_data[hsa_number]["Population"]) * 100000
+                hsa_total_hospitalizations_per_100K = (hsa_aggregated_data[hsa_number][
+                                                           "Total Hospitalizations"] / float(
+                    hsa_aggregated_data[hsa_number]["Population"])) * 100000
                 hsa_total_deaths_per_100K = (hsa_aggregated_data[hsa_number]["Total Deaths"] / float(
                     hsa_aggregated_data[hsa_number]["Population"])) * 100000
 
@@ -3093,7 +3310,6 @@ class ProbabilisticAllStates:
 
         # Create a DataFrame from the county data
         county_outcomes_df = pd.DataFrame(county_outcomes_data)
-
         county_outcomes_df.to_csv(ROOT_DIR + '/csv_files/county_outcomes_by_hsa.csv', index=False)
 
         # Print the count of counties without HSA
@@ -3122,13 +3338,19 @@ class ProbabilisticAllStates:
         # Explode the MultiPolygon geometries into individual polygons
         merged_geo_data_mainland = merged_geo_data_mainland.explode()
 
+        # Define color schemes for different outcomes
+        def get_color_scheme(data):
+            return mc.Quantiles(data, k=4)
+
         # Plot the map
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12), subplot_kw={'aspect': 'equal'})
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 10), subplot_kw={'aspect': 'equal'})
 
+        # Cases per 100K
         ax1.axis('off')
-        ax1.set_title('Cases per 100K', fontsize=15)
+        ax1.set_title('Cases per 100,000 Population', fontsize=15)
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
 
-        scheme_cases = mc.Quantiles(merged_geo_data_mainland["HSA Total Cases per 100K"], k=10)
+        scheme_cases = get_color_scheme(merged_geo_data_mainland["HSA Total Cases per 100K"])
 
         gplt.choropleth(
             merged_geo_data_mainland,
@@ -3139,60 +3361,57 @@ class ProbabilisticAllStates:
             legend=True,
             legend_kwargs={'title': 'Cases per 100K', 'fontsize': 10, 'bbox_to_anchor': (0.95, 0.5),
                            'loc': 'center left'},
-            legend_labels=None,
             edgecolor="black",
             ax=ax1
         )
 
+        # Alaska
         stateToInclude = ["2"]
         merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
         merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
         akax1 = fig.add_axes([0.15, 0.39, 0.3, 0.5])
         akax1.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["HSA Total Cases per 100K"], k=2)
+        scheme_AK_cases = get_color_scheme(merged_geo_data_AK_exploded["HSA Total Cases per 100K"])
 
         gplt.choropleth(
             merged_geo_data_AK_exploded,
             hue="HSA Total Cases per 100K",
             linewidth=0.1,
-            scheme=scheme_AK,
+            scheme=scheme_AK_cases,
             cmap="viridis",
             legend=True,
             edgecolor="black",
             ax=akax1,
             extent=(-180, -90, 50, 75)
         )
-
         akax1.get_legend().remove()
 
-        ## Hawai'i ##
+        # Hawaii
         stateToInclude_HI = ["15"]
         merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
         merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
         hiax1 = fig.add_axes([0.2, 0.65, 0.1, 0.15])
         hiax1.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["HSA Total Cases per 100K"], k=2)
+        scheme_HI_cases = get_color_scheme(merged_geo_data_HI_exploded["HSA Total Cases per 100K"])
 
         gplt.choropleth(
             merged_geo_data_HI_exploded,
             hue="HSA Total Cases per 100K",
             linewidth=0.1,
-            scheme=scheme_HI,
+            scheme=scheme_HI_cases,
             cmap="viridis",
             legend=True,
             edgecolor="black",
             ax=hiax1,
         )
-
         hiax1.get_legend().remove()
 
+        # Hospital Admissions per 100K
         ax2.axis('off')
-        ax2.set_title('Hospital Admissions per 100K', fontsize=15)
+        ax2.set_title('Hospital Admissions per 100,000 Population', fontsize=15)
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
-        scheme_hosps = mc.Quantiles(merged_geo_data_mainland["HSA Total Hospitalizations per 100K"], k=10)
+        scheme_hosps = get_color_scheme(merged_geo_data_mainland["HSA Total Hospitalizations per 100K"])
 
         gplt.choropleth(
             merged_geo_data_mainland,
@@ -3203,122 +3422,101 @@ class ProbabilisticAllStates:
             legend=True,
             legend_kwargs={'title': 'Hospital Admissions per 100K', 'fontsize': 10, 'bbox_to_anchor': (0.95, 0.5),
                            'loc': 'center left'},
-            legend_labels=None,
             edgecolor="black",
             ax=ax2
         )
 
-        stateToInclude = ["2"]
-        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
-        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
+        # Alaska
         akax2 = fig.add_axes([0.15, 0.06, 0.3, 0.5])
-        akax1.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["HSA Total Hospitalizations per 100K"], k=2)
+        akax2.axis('off')
+        scheme_AK_hosps = get_color_scheme(merged_geo_data_AK_exploded["HSA Total Hospitalizations per 100K"])
 
         gplt.choropleth(
             merged_geo_data_AK_exploded,
             hue="HSA Total Hospitalizations per 100K",
             linewidth=0.1,
-            scheme=scheme_AK,
+            scheme=scheme_AK_hosps,
             cmap="viridis",
             legend=True,
             edgecolor="black",
             ax=akax2,
             extent=(-180, -90, 50, 75)
         )
-
         akax2.get_legend().remove()
 
-        ## Hawai'i ##
-        stateToInclude_HI = ["15"]
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
-        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
+        # Hawaii
         hiax2 = fig.add_axes([0.2, 0.32, 0.1, 0.15])
         hiax2.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["HSA Total Hospitalizations per 100K"], k=2)
+        scheme_HI_hosps = get_color_scheme(merged_geo_data_HI_exploded["HSA Total Hospitalizations per 100K"])
 
         gplt.choropleth(
             merged_geo_data_HI_exploded,
             hue="HSA Total Hospitalizations per 100K",
             linewidth=0.1,
-            scheme=scheme_HI,
+            scheme=scheme_HI_hosps,
             cmap="viridis",
             legend=True,
             edgecolor="black",
             ax=hiax2,
         )
-
         hiax2.get_legend().remove()
 
+        # Deaths per 100K
         ax3.axis('off')
-        ax3.set_title('Deaths per 100K', fontsize=15)
+        ax3.set_title('Deaths per 100,000 Population', fontsize=15)
+        ax3.text(0.01, 0.98, "C", transform=ax3.transAxes, fontsize=14, fontweight='bold', va='top')
 
-        scheme = mc.Quantiles(merged_geo_data_mainland["HSA Total Deaths per 100K"], k=10)
+        scheme_deaths = get_color_scheme(merged_geo_data_mainland["HSA Total Deaths per 100K"])
 
         gplt.choropleth(
             merged_geo_data_mainland,
             hue="HSA Total Deaths per 100K",
             linewidth=0.1,
-            scheme=scheme,
+            scheme=scheme_deaths,
             cmap="viridis",
             legend=True,
             legend_kwargs={'title': 'Deaths per 100K', 'fontsize': 10, 'bbox_to_anchor': (0.95, 0.5),
                            'loc': 'center left'},
-            legend_labels=None,
             edgecolor="black",
             ax=ax3
         )
 
-        stateToInclude = ["2"]
-        merged_geo_data_AK = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude)]
-        merged_geo_data_AK_exploded = merged_geo_data_AK.explode()
+        # Alaska
         akax3 = fig.add_axes([0.15, -0.25, 0.3, 0.5])
         akax3.axis('off')
-        polygon_AK = Polygon([(-170, 50), (-170, 72), (-140, 72), (-140, 50)])
-        scheme_AK = mc.Quantiles(merged_geo_data_AK_exploded["HSA Total Deaths per 100K"], k=2)
+        scheme_AK_deaths = get_color_scheme(merged_geo_data_AK_exploded["HSA Total Deaths per 100K"])
 
         gplt.choropleth(
             merged_geo_data_AK_exploded,
             hue="HSA Total Deaths per 100K",
             linewidth=0.1,
-            scheme=scheme_AK,
+            scheme=scheme_AK_deaths,
             cmap="viridis",
             legend=True,
             edgecolor="black",
             ax=akax3,
             extent=(-180, -90, 50, 75)
         )
-
         akax3.get_legend().remove()
 
-        ## Hawai'i ##
-        stateToInclude_HI = ["15"]
-        merged_geo_data_HI = merged_geo_data[merged_geo_data.STATE.isin(stateToInclude_HI)]
-        merged_geo_data_HI_exploded = merged_geo_data_HI.explode()
-
+        # Hawaii
         hiax3 = fig.add_axes([0.2, 0.01, 0.1, 0.15])
-        hiax1.axis('off')
-        hipolygon = Polygon([(-160, 0), (-160, 90), (-120, 90), (-120, 0)])
-        scheme_HI = mc.Quantiles(merged_geo_data_HI_exploded["HSA Total Deaths per 100K"], k=2)
+        hiax3.axis('off')
+        scheme_HI_deaths = get_color_scheme(merged_geo_data_HI_exploded["HSA Total Deaths per 100K"])
 
         gplt.choropleth(
             merged_geo_data_HI_exploded,
             hue="HSA Total Deaths per 100K",
             linewidth=0.1,
-            scheme=scheme_HI,
+            scheme=scheme_HI_deaths,
             cmap="viridis",
             legend=True,
             edgecolor="black",
             ax=hiax3,
         )
-
         hiax3.get_legend().remove()
 
         plt.subplots_adjust(hspace=0.01)
-
         plt.tight_layout()
 
         output_figure(fig, filename=ROOT_DIR + '/figs/map_county_hsa_outcomes_per_100K.png')
@@ -3635,6 +3833,115 @@ class ProbabilisticAllStates:
         plt.savefig('scatter_plots.png', dpi=300)
         plt.show()
 
+    def generate_scatter_plots_with_outliers(self):
+        fig, axs = plt.subplots(2, 3, figsize=(18, 12))
+
+        # Data collection and DataFrame creation
+        county_outcomes_data_per_capita = {
+            "Cases per 100K": [],
+            "Hosps per 100K": [],
+            "Deaths per 100K": [],
+        }
+
+        county_outcomes_data_total = {
+            "Cases": [],
+            "Hosps": [],
+            "Deaths": []
+        }
+
+        county_names = []
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                county_names.append(county.name)
+
+                county_outcomes_data_total["Cases"].append(county.pandemicOutcomes.cases.totalObs)
+                county_outcomes_data_total["Hosps"].append(county.pandemicOutcomes.hosps.totalObs)
+                county_outcomes_data_total["Deaths"].append(county.pandemicOutcomes.deaths.totalObs)
+
+                county_outcomes_data_per_capita["Cases per 100K"].append(
+                    (county.pandemicOutcomes.cases.totalObs / county.population) * 100000)
+                county_outcomes_data_per_capita["Hosps per 100K"].append(
+                    (county.pandemicOutcomes.hosps.totalObs / county.population) * 100000)
+                county_outcomes_data_per_capita["Deaths per 100K"].append(
+                    (county.pandemicOutcomes.deaths.totalObs / county.population) * 100000)
+
+        df_total = pd.DataFrame(county_outcomes_data_total)
+        df_per_capita = pd.DataFrame(county_outcomes_data_per_capita)
+
+        # Add the 'County' column to both DataFrames
+        df_total['County'] = county_names
+        df_per_capita['County'] = county_names
+
+        # Define a function to find the top 3 furthest points from the trendline
+        def find_top_3_outliers(x, y):
+            model = LinearRegression()
+            model.fit(x.reshape(-1, 1), y)
+            trendline = model.predict(x.reshape(-1, 1))
+            distances = np.abs(y - trendline)
+            top_3_outliers = np.argsort(distances)[-3:]  # Indices of the top 3 outliers
+            return top_3_outliers
+
+        # Function to plot with trendline and highlight outliers
+        def plot_with_trendline_and_outliers(ax, x, y, xlabel, ylabel, title, color, df, x_label, y_label):
+            ax.scatter(x, y, color=color)
+            slope, intercept, r_value, p_value, std_err = linregress(x, y)
+            ax.plot(x, intercept + slope * x, color='black', linestyle='dashed')
+            ax.text(0.95, 0.95, f'$R^2$ = {r_value ** 2:.2f}', transform=ax.transAxes, fontsize=12,
+                    verticalalignment='top', horizontalalignment='right')
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.set_title(title)
+
+            # Highlight top 3 outliers
+            top_3_outliers = find_top_3_outliers(x, y)
+            ax.scatter(x[top_3_outliers], y[top_3_outliers], color='red')
+
+            # Print outlier details
+            print(f"Outliers in {title}:")
+            for i, idx in enumerate(top_3_outliers):
+                county = df.iloc[idx]['County']
+                x_value = x[idx]
+                y_value = y[idx]
+                print(f"  Outlier {i+1}: {county}, {x_label} = {x_value}, {y_label} = {y_value}")
+
+        # Plotting each scatter plot with trendline and highlighting outliers
+        plot_with_trendline_and_outliers(
+            axs[0, 0], df_total["Cases"].values, df_total["Hosps"].values,
+            'Cases', 'Hosps', 'Cases vs Hosps', 'blue', df_total, 'Cases', 'Hosps'
+        )
+        plot_with_trendline_and_outliers(
+            axs[0, 1], df_total["Cases"].values, df_total["Deaths"].values,
+            'Cases', 'Deaths', 'Cases vs Deaths', 'green', df_total, 'Cases', 'Deaths'
+        )
+        plot_with_trendline_and_outliers(
+            axs[0, 2], df_total["Hosps"].values, df_total["Deaths"].values,
+            'Hosps', 'Deaths', 'Hosps vs Deaths', 'red', df_total, 'Hosps', 'Deaths'
+        )
+        plot_with_trendline_and_outliers(
+            axs[1, 0], df_per_capita["Cases per 100K"].values, df_per_capita["Hosps per 100K"].values,
+            'Cases per 100K', 'Hosps per 100K', 'Cases per 100K vs Hosps per 100K', 'purple', df_per_capita, 'Cases per 100K', 'Hosps per 100K'
+        )
+        plot_with_trendline_and_outliers(
+            axs[1, 1], df_per_capita["Cases per 100K"].values, df_per_capita["Deaths per 100K"].values,
+            'Cases per 100K', 'Deaths per 100K', 'Cases per 100K vs Deaths per 100K', 'orange', df_per_capita, 'Cases per 100K', 'Deaths per 100K'
+        )
+        plot_with_trendline_and_outliers(
+            axs[1, 2], df_per_capita["Hosps per 100K"].values, df_per_capita["Deaths per 100K"].values,
+            'Hosps per 100K', 'Deaths per 100K', 'Hosps per 100K vs Deaths per 100K', 'brown', df_per_capita, 'Hosps per 100K', 'Deaths per 100K'
+        )
+
+        # Adding titles
+        fig.text(0.5, 0.96, 'Scatter Plots of COVID Outcomes (Absolute Values)', ha='center', fontsize=14)
+        fig.text(0.5, 0.45, 'Scatter Plots of COVID Outcomes (Per Capita)', ha='center', fontsize=14)
+
+        # Adjusting layout to evenly separate top and bottom rows
+        fig.subplots_adjust(top=0.93, bottom=0.02, left=0.05, right=0.95, hspace=0.30, wspace=0.25)
+
+        # Saving and displaying the plot
+        plt.savefig('scatter_plots_with_outliers.png', dpi=300)
+        plt.show()
+
     def generate_combined_abstract_plots(self):
         """
         Generate a combined plot of state-level QALY loss by outcome and weekly national QALY loss by outcome.
@@ -3855,3 +4162,641 @@ class ProbabilisticAllStates:
         fig.suptitle('QALY Loss by Age by Health State', size=20)
 
         output_figure(fig, filename=ROOT_DIR + '/figs/qaly_loss_by_age_same_scale.png')
+
+    def generate_qaly_loss_csv(self):
+        """
+        Generates a CSV file containing each county's name, state name, total QALY loss with UI,
+        and QALY loss per 100K population with UI, formatted as whole numbers.
+        """
+        # Initialize the data dictionary
+        county_qaly_loss_data = {
+            "COUNTY": [],
+            "STATE": [],
+            "FIPS": [],
+            "QALY Loss": [],
+            "QALY Loss per 100K": []
+        }
+
+        # Iterate over all states and counties to calculate QALY loss
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                # Calculate the QALY loss per 100,000 population
+                mean, ui = self.get_mean_ui_overall_qaly_loss_by_county(state.name, county.name)
+                qaly_loss = f"{int(round(mean))}[{int(round(ui[0]))}-{int(round(ui[1]))}]"
+                qaly_loss_per_100k = (mean / county.population) * 100000
+                qaly_loss_per_100k_ui = f"{int(round(qaly_loss_per_100k))}[{int(round(ui[0] / county.population * 100000))}-{int(round(ui[1] / county.population * 100000))}]"
+
+                # Append county data to the list
+                county_qaly_loss_data["COUNTY"].append(county.name)
+                county_qaly_loss_data["STATE"].append(state.name)
+                county_qaly_loss_data["FIPS"].append(county.fips)
+                county_qaly_loss_data["QALY Loss"].append(qaly_loss)
+                county_qaly_loss_data["QALY Loss per 100K"].append(qaly_loss_per_100k_ui)
+
+        # Create a DataFrame from the county data
+        county_qaly_loss_df = pd.DataFrame(county_qaly_loss_data)
+
+        # Save the DataFrame as a CSV file
+        csv_filename = ROOT_DIR + '/csv_files/county_qaly_loss.csv'
+        county_qaly_loss_df.to_csv(csv_filename, index=False)
+
+        print(f"CSV file generated: {csv_filename}")
+        return county_qaly_loss_df
+
+    def plot_county_deaths_and_qaly_loss(self):
+        """
+        Generates subplots with maps of county-level deaths and county-level QALY loss.
+        """
+
+        county_outcomes_data = {
+            "COUNTY": [],
+            "FIPS": [],
+            "Deaths": [],
+            "QALY Loss": []
+        }
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                county_outcomes_data["COUNTY"].append(county.name)
+                county_outcomes_data["FIPS"].append(county.fips)
+                county_outcomes_data["Deaths"].append(county.pandemicOutcomes.deaths.totalObs)
+                county_outcomes_data["QALY Loss"].append(
+                    self.get_mean_ui_overall_qaly_loss_by_county(state.name, county.name)[0])
+
+        county_outcomes_df = pd.DataFrame(county_outcomes_data)
+        county_outcomes_df.to_csv(ROOT_DIR + '/csv_files/county_deaths_qaly_loss.csv', index=False)
+
+        geoData = gpd.read_file(
+            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson")
+        geoData['STATE'] = geoData['STATE'].str.lstrip('0')
+        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
+        merged_geo_data = geoData.merge(county_outcomes_df, left_on='FIPS', right_on='FIPS', how='left')
+        merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss", "Deaths"])
+
+        stateToRemove = ["2", "15"]
+        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
+        merged_geo_data_mainland = merged_geo_data_mainland.explode()
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
+
+        # Plot deaths map
+        ax1.axis('off')
+        ax1.set_title('Cumulative Deaths by County', fontsize=18)
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        # Define color scheme with exactly 4 bins
+        scheme = mc.Quantiles(merged_geo_data_mainland["Deaths"], k=4)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="Deaths",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Deaths', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
+            edgecolor="black",
+            ax=ax1
+        )
+
+        # Plot QALY loss map
+        ax2.axis('off')
+        ax2.set_title('Cumulative QALY Loss by County', fontsize=18)
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        # Define color scheme with exactly 4 bins
+        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=4)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="QALY Loss",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'QALY Loss', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
+            edgecolor="black",
+            ax=ax2
+        )
+
+        output_figure(fig, filename=ROOT_DIR + '/figs/county_deaths_qaly_loss.png')
+        return fig
+
+    def plot_combined_maps(self):
+        # Load county outcomes data
+        county_outcomes_data = {
+            "COUNTY": [],
+            "FIPS": [],
+            "Deaths per 100K": [],
+            "QALY Loss per 100K": []
+        }
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                # Calculate the number of outcomes per 100,000 population
+                deaths_per_100k = (county.pandemicOutcomes.deaths.totalObs / county.population) * 100000
+                mean, _ = self.get_mean_ui_overall_qaly_loss_by_county(state.name, county.name)
+                qaly_loss = mean
+                qaly_loss_per_100k = (qaly_loss / county.population) * 100000
+
+                # Append county data to the list
+                county_outcomes_data["COUNTY"].append(county.name)
+                county_outcomes_data["FIPS"].append(county.fips)
+                county_outcomes_data["Deaths per 100K"].append(deaths_per_100k)
+                county_outcomes_data["QALY Loss per 100K"].append(qaly_loss_per_100k)
+
+        # Create a DataFrame from the county data
+        county_outcomes_df = pd.DataFrame(county_outcomes_data)
+
+        # Merge the county data with the geometry data
+        geoData = gpd.read_file(
+            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson"
+        )
+        geoData['STATE'] = geoData['STATE'].str.lstrip('0')
+        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
+        merged_geo_data = geoData.merge(county_outcomes_df, left_on='FIPS', right_on='FIPS', how='left')
+
+        # Remove counties where there is no data
+        merged_geo_data = merged_geo_data.dropna(subset=["Deaths per 100K", "QALY Loss per 100K"])
+
+        # Remove Alaska, HI
+        stateToRemove = ["2", "15"]
+        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
+
+        # Explode the MultiPolygon geometries into individual polygons
+        merged_geo_data_mainland = merged_geo_data_mainland.explode()
+
+        # Plot the map
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
+
+        # Deaths per 100K
+        ax1.axis('off')
+        ax1.set_title('Deaths per 100K', fontsize=15)
+        scheme_deaths = mc.Quantiles(merged_geo_data_mainland["Deaths per 100K"], k=4)  # Force 4 bins
+        rounded_bins_deaths = np.round(scheme_deaths.bins)
+        unique_bins_deaths = np.unique(rounded_bins_deaths)
+
+        if len(unique_bins_deaths) < 4:
+            unique_bins_deaths = np.linspace(min(merged_geo_data_mainland["Deaths per 100K"]),
+                                             max(merged_geo_data_mainland["Deaths per 100K"]), 5)[1:]
+
+        scheme_deaths = mc.UserDefined(merged_geo_data_mainland["Deaths per 100K"], bins=unique_bins_deaths)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="Deaths per 100K",
+            linewidth=0.1,
+            scheme=scheme_deaths,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Deaths per 100K', 'fontsize': 10, 'bbox_to_anchor': (0.95, 0.5),
+                           'loc': 'center left'},
+            edgecolor="black",
+            ax=ax1
+        )
+
+        # QALY Loss per 100K
+        ax2.axis('off')
+        ax2.set_title('QALY Loss per 100K', fontsize=15)
+        scheme_qaly = mc.Quantiles(merged_geo_data_mainland["QALY Loss per 100K"], k=4)
+        rounded_bins_qaly = np.round(scheme_qaly.bins)
+        scheme_qaly = mc.UserDefined(merged_geo_data_mainland["QALY Loss per 100K"], bins=rounded_bins_qaly)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="QALY Loss per 100K",
+            linewidth=0.1,
+            scheme=scheme_qaly,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'QALY Loss per 100K', 'fontsize': 10, 'bbox_to_anchor': (0.95, 0.5),
+                           'loc': 'center left'},
+            edgecolor="black",
+            ax=ax2
+        )
+
+        plt.tight_layout()
+
+
+        plt.show()
+
+    def plot_weekly_qaly_loss_proportion_by_outcome(self):
+        """
+        Plots the proportion of national weekly QALY Loss from Cases, Hospitalizations, Deaths, and Long COVID over time.
+        """
+        # Get the QALY loss data and uncertainty intervals
+        [mean_cases, ui_cases, mean_deaths, ui_deaths, mean_hosps_non_icu, ui_hosps_non_icu,
+         mean_hosps_icu, ui_hosps_icu, mean_icu, ui_icu, mean_total_hosps, ui_total_hosps,
+         mean_lc_1, ui_lc_1, mean_lc_1_alt, ui_lc_1_alt, mean_lc_2, ui_lc_2, mean_lc_2_alt, ui_lc_2_alt,
+         mean_deaths_sa_1a, ui_deaths_sa_1a, mean_deaths_sa_1b, ui_deaths_sa_1b, mean_deaths_sa_1c, ui_deaths_sa_1c,
+         mean_deaths_sa_2a, ui_deaths_sa_2a, mean_deaths_sa_2b, ui_deaths_sa_2b, mean_deaths_sa_2c, ui_deaths_sa_2c,
+         mean_deaths_sa_3a, ui_deaths_sa_3a, mean_deaths_sa_3b, ui_deaths_sa_3b, mean_deaths_sa_3c, ui_deaths_sa_3c,
+         mean_total_sa_1a, ui_total_sa_1a, mean_total_sa_1b, ui_total_sa_1b, mean_total_sa_1c, ui_total_sa_1c,
+         mean_total_sa_2a, ui_total_sa_2a, mean_total_sa_2b, ui_total_sa_2b, mean_total_sa_2c, ui_total_sa_2c,
+         mean_total_sa_3a, ui_total_sa_3a, mean_total_sa_3b, ui_total_sa_3b, mean_total_sa_3c, ui_total_sa_3c
+         ] = self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05)
+
+        # Calculate total QALY loss per week
+        total_qaly_loss_per_week = (mean_cases + mean_total_hosps + mean_deaths + mean_lc_1)
+
+        # Calculate proportions for each outcome
+        cases_proportion = mean_cases / total_qaly_loss_per_week
+        hosp_proportion = mean_total_hosps / total_qaly_loss_per_week
+        deaths_proportion = mean_deaths / total_qaly_loss_per_week
+        long_covid_proportion = mean_lc_1 / total_qaly_loss_per_week
+
+        # Create the plot
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+
+        ax1.plot(self.allStates.dates, cases_proportion, label='Cases', linewidth=2, color='blue')
+        ax1.fill_between(self.allStates.dates, ui_cases[0] / total_qaly_loss_per_week,
+                         ui_cases[1] / total_qaly_loss_per_week, color='lightblue', alpha=0.25)
+
+        ax1.plot(self.allStates.dates, hosp_proportion, label='Hospital admissions (including ICU)', linewidth=2,
+                 color='green')
+        ax1.fill_between(self.allStates.dates, ui_total_hosps[0] / total_qaly_loss_per_week,
+                         ui_total_hosps[1] / total_qaly_loss_per_week, color='grey', alpha=0.25)
+
+        ax1.plot(self.allStates.dates, deaths_proportion, label='Deaths', linewidth=2, color='red')
+        ax1.fill_between(self.allStates.dates, ui_deaths[0] / total_qaly_loss_per_week,
+                         ui_deaths[1] / total_qaly_loss_per_week, color='red', alpha=0.25)
+
+        ax1.plot(self.allStates.dates, long_covid_proportion, label='Long COVID (Simplified Approach)', linewidth=2,
+                 color='purple')
+        ax1.fill_between(self.allStates.dates, ui_lc_1[0] / total_qaly_loss_per_week,
+                         ui_lc_1[1] / total_qaly_loss_per_week, color='purple', alpha=0.25)
+
+        ax1.set_title('Weekly Proportion of National QALY Loss by Outcome', fontsize=16)
+        ax1.set_xlabel('Date', fontsize=14)
+        ax1.set_ylabel('Proportion of QALY Loss', fontsize=14)
+        ax1.legend(loc='lower center', bbox_to_anchor=(0.5, -0.3), ncol=2)
+
+        date_range = self.allStates.dates
+        tick_positions = range(0, len(date_range))
+        ax1.set_xticks(tick_positions)
+        ax1.set_xticklabels(
+            [date_range[i] if i % 4 == 0 else '' for i in tick_positions],  # Label every 4th tick mark
+            fontsize=10, rotation=45)
+
+        # Make the labeled tick marks slightly longer and bold
+        for i, tick in enumerate(ax1.xaxis.get_major_ticks()):
+            if i % 4 == 0:  # Every 4th tick mark
+                tick.label1.set_fontsize(10)
+                tick.label1.set_rotation(45)
+                tick.label1.set_horizontalalignment('right')
+                tick.label1.set_weight('normal')
+                tick.tick1line.set_markersize(6)
+                tick.tick1line.set_linewidth(2)
+                tick.tick2line.set_markersize(6)
+                tick.tick2line.set_linewidth(2)
+
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        plt.tight_layout()
+        output_figure(fig, filename=ROOT_DIR + '/figs/national_weekly_qaly_loss_proportion_by_outcome.png')
+
+    def plot_state_level_qaly_loss_maps(self):
+        """
+        Extract state-level data, prepare GeoDataFrame, and generate two state-level maps:
+        1. QALY loss from deaths.
+        2. QALY loss from long COVID.
+        """
+
+        # Extract state-level data
+        states_list = list(self.allStates.states.values())
+        state_data = {}
+
+        for state_obj in states_list:
+            state_name = state_obj.name
+            population = state_obj.population
+
+            (mean_cases, ui_cases, mean_hosps_non_icu, ui_hosps_non_icu, mean_hosps_icu, ui_hosps_icu,
+             mean_deaths, ui_deaths, mean_icu, ui_icu, mean_total_hosps,
+             ui_total_hosps, mean_lc_1, ui_lc_1) = self.get_mean_ui_overall_qaly_loss_by_outcome_and_by_state(
+                state_name=state_obj.name, alpha=0.05)
+
+            state_data[state_name] = {
+                'population': population,
+                'mean_deaths': mean_deaths,
+                'mean_lc_1': mean_lc_1
+            }
+
+        # Load the US states shapefile
+        states_gdf = gpd.read_file(
+            '/Users/timamikdashi/Downloads/cb_2023_us_all_500k/cb_2023_us_state_500k/cb_2023_us_state_500k.shp')
+
+        # Create a mapping of GeoDataFrame names to state abbreviations
+        name_to_abbreviation = {
+            'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+            'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+            'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+            'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+            'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+            'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+            'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+            'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+            'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+            'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
+        }
+
+        # Map state names to state abbreviations
+        states_gdf['state_name'] = states_gdf['NAME'].map(lambda name: name_to_abbreviation.get(name, np.nan))
+
+        # Add QALY loss data to the GeoDataFrame
+        states_gdf['QALY_loss_deaths'] = states_gdf['state_name'].map(
+            lambda abbr: state_data.get(abbr, {}).get('mean_deaths', np.nan))
+        states_gdf['QALY_loss_long_covid'] = states_gdf['state_name'].map(
+            lambda abbr: state_data.get(abbr, {}).get('mean_lc_1', np.nan))
+
+        states_gdf = states_gdf.dropna(subset=['QALY_loss_deaths', 'QALY_loss_long_covid'])
+
+        # Reproject to a different CRS (e.g., Albers Equal Area) if needed
+        states_gdf = states_gdf.to_crs(epsg=5070)  # EPSG:5070 is for Albers Equal Area
+
+        # Define the number of color bins
+        num_bins = 4
+
+        # Set up the figure with 2 subplots
+        fig, ax = plt.subplots(1, 2, figsize=(16, 8))
+
+        # Plot QALY loss from deaths
+        norm_deaths = Normalize(vmin=states_gdf['QALY_loss_deaths'].min(), vmax=states_gdf['QALY_loss_deaths'].max())
+        states_gdf.plot(column='QALY_loss_deaths', cmap='viridis', linewidth=0.8, ax=ax[0], edgecolor='0.8',
+                        legend=True, legend_kwds={'label': "QALY Loss from Deaths", 'orientation': "horizontal"},
+                        norm=norm_deaths)
+        ax[0].set_title('QALY Loss from Deaths by State')
+
+        # Plot QALY loss from long COVID
+        norm_long_covid = Normalize(vmin=states_gdf['QALY_loss_long_covid'].min(),
+                                    vmax=states_gdf['QALY_loss_long_covid'].max())
+        states_gdf.plot(column='QALY_loss_long_covid', cmap='viridis', linewidth=0.8, ax=ax[1], edgecolor='0.8',
+                        legend=True, legend_kwds={'label': "QALY Loss from Long COVID", 'orientation': "horizontal"},
+                        norm=norm_long_covid)
+        ax[1].set_title('QALY Loss from Long COVID by State')
+
+        # Adjust layout
+        plt.tight_layout()
+
+        # Show the plot
+        plt.show()
+
+    def plot_state_level_qaly_loss_maps_2(self):
+        """
+        Generates subplots with maps of state-level QALY loss from deaths and long COVID,
+        excluding AK and HI from the main plots and plotting them separately.
+        """
+
+        # Extract state-level data
+        states_list = list(self.allStates.states.values())
+        state_data = {}
+
+        for state_obj in states_list:
+            state_name = state_obj.name
+            population = state_obj.population
+
+            (mean_cases, ui_cases, mean_hosps_non_icu, ui_hosps_non_icu, mean_hosps_icu, ui_hosps_icu,
+             mean_deaths, ui_deaths, mean_icu, ui_icu, mean_total_hosps,
+             ui_total_hosps, mean_lc_1, ui_lc_1) = self.get_mean_ui_overall_qaly_loss_by_outcome_and_by_state(
+                state_name=state_obj.name, alpha=0.05)
+
+            state_data[state_name] = {
+                'population': population,
+                'mean_deaths': mean_deaths,
+                'mean_lc_1': mean_lc_1
+            }
+
+        # Load the US states GeoJSON data
+        url = "https://raw.githubusercontent.com/python-visualization/folium/553a33981fa29a9d4ce6c426563749188906610f/tests/us-states.json"
+        response = requests.get(url)
+        states_data = response.json()
+        states_gdf = gpd.GeoDataFrame.from_features(states_data['features'])
+
+        # Create a mapping of GeoDataFrame names to state abbreviations
+        name_to_abbreviation = {
+            'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+            'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+            'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+            'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+            'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+            'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+            'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+            'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+            'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+            'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
+        }
+
+        # Map state names to state abbreviations
+        states_gdf['state_name'] = states_gdf['name'].map(lambda name: name_to_abbreviation.get(name, None))
+
+        # Add QALY loss data to the GeoDataFrame
+        states_gdf['QALY_loss_deaths'] = states_gdf['state_name'].map(
+            lambda abbr: state_data.get(abbr, {}).get('mean_deaths', None))
+        states_gdf['QALY_loss_long_covid'] = states_gdf['state_name'].map(
+            lambda abbr: state_data.get(abbr, {}).get('mean_lc_1', None))
+
+        # Exclude AK and HI for the main plots
+        mainland_states_gdf = states_gdf[~states_gdf['state_name'].isin(['AK', 'HI'])]
+        ak_hi_gdf = states_gdf[states_gdf['state_name'].isin(['AK', 'HI'])]
+
+        # Handle MultiPolygon geometries by converting to Polygons
+        mainland_states_gdf['geometry'] = mainland_states_gdf['geometry'].apply(
+            lambda geom: geom if geom.geom_type == 'Polygon' else geom.convex_hull)
+        ak_hi_gdf['geometry'] = ak_hi_gdf['geometry'].apply(
+            lambda geom: geom if geom.geom_type == 'Polygon' else geom.convex_hull)
+
+        # Create the figure with 2 vertically stacked subplots for mainland
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
+
+        # Plot QALY loss from deaths for mainland states
+        ax1.axis('off')
+        ax1.set_title('QALY Loss from Deaths by State', fontsize=18)
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        # Define color scheme with exactly 4 bins
+        scheme_deaths = mc.Quantiles(mainland_states_gdf["QALY_loss_deaths"].dropna(), k=4)
+
+        mainland_states_gdf.plot(
+            column="QALY_loss_deaths",
+            cmap="viridis",
+            linewidth=0.8,
+            edgecolor='0.8',
+            ax=ax1,
+            legend=True,
+            legend_kwds={'title': 'QALY Loss from Deaths', 'loc': 'center right', 'fontsize': 12,
+                         'bbox_to_anchor': (1.08, 0.4)},
+            scheme=scheme_deaths
+        )
+
+        # Plot QALY loss from long COVID for mainland states
+        ax2.axis('off')
+        ax2.set_title('QALY Loss from Long COVID by State', fontsize=18)
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        # Define color scheme with exactly 4 bins
+        scheme_long_covid = mc.Quantiles(mainland_states_gdf["QALY_loss_long_covid"].dropna(), k=4)
+
+        mainland_states_gdf.plot(
+            column="QALY_loss_long_covid",
+            cmap="viridis",
+            linewidth=0.8,
+            edgecolor='0.8',
+            ax=ax2,
+            legend=True,
+            legend_kwds={'title': 'QALY Loss from Long COVID', 'loc': 'center right', 'fontsize': 12,
+                         'bbox_to_anchor': (1.08, 0.4)},
+            scheme=scheme_long_covid
+        )
+
+        # Create the figure with 2 vertically stacked subplots for AK and HI
+        fig_ak_hi, (ax3, ax4) = plt.subplots(2, 1, figsize=(8, 12))
+
+        # Plot QALY loss from deaths for AK and HI
+        ax3.axis('off')
+        ax3.set_title('QALY Loss from Deaths in AK and HI', fontsize=18)
+        ax3.text(0.01, 0.98, "C", transform=ax3.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        ak_hi_gdf.plot(
+            column="QALY_loss_deaths",
+            cmap="viridis",
+            linewidth=0.8,
+            edgecolor='0.8',
+            ax=ax3,
+            legend=True,
+            legend_kwds={'title': 'QALY Loss from Deaths', 'loc': 'center right', 'fontsize': 12,
+                         'bbox_to_anchor': (1.08, 0.4)},
+            scheme=scheme_deaths
+        )
+
+        # Plot QALY loss from long COVID for AK and HI
+        ax4.axis('off')
+        ax4.set_title('QALY Loss from Long COVID in AK and HI', fontsize=18)
+        ax4.text(0.01, 0.98, "D", transform=ax4.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        ak_hi_gdf.plot(
+            column="QALY_loss_long_covid",
+            cmap="viridis",
+            linewidth=0.8,
+            edgecolor='0.8',
+            ax=ax4,
+            legend=True,
+            legend_kwds={'title': 'QALY Loss from Long COVID', 'loc': 'center right', 'fontsize': 12,
+                         'bbox_to_anchor': (1.08, 0.4)},
+            scheme=scheme_long_covid
+        )
+
+        # Adjust layouts
+        plt.tight_layout()
+        plt.show()
+'''
+    def plot_county_deaths_and_lc_qaly_loss(self):
+        """
+        Generates subplots with maps of county-level deaths and county-level QALY loss.
+        """
+
+        county_outcomes_data = {
+            "COUNTY": [],
+            "FIPS": [],
+            "QALY Loss from Deaths": [],
+            "QALY Loss from LC": []
+        }
+
+        for state in self.allStates.states.values():
+            for county in state.counties.values():
+                county_outcomes_data["COUNTY"].append(county.name)
+                county_outcomes_data["FIPS"].append(county.fips)
+                county_outcomes_data["QALY Loss from Deaths"].append(county.pandemicOutcomes.deaths.)
+                county_outcomes_data["QALY Loss from LC"].append(
+                    self.get_mean_ui_overall_qaly_loss_by_county(state.name, county.name)[0])
+
+        county_outcomes_df = pd.DataFrame(county_outcomes_data)
+        county_outcomes_df.to_csv(ROOT_DIR + '/csv_files/county_deaths_qaly_loss.csv', index=False)
+
+        geoData = gpd.read_file(
+            "https://raw.githubusercontent.com/holtzy/The-Python-Graph-Gallery/master/static/data/US-counties.geojson")
+        geoData['STATE'] = geoData['STATE'].str.lstrip('0')
+        geoData['FIPS'] = geoData['STATE'] + geoData['COUNTY']
+        merged_geo_data = geoData.merge(county_outcomes_df, left_on='FIPS', right_on='FIPS', how='left')
+        merged_geo_data = merged_geo_data.dropna(subset=["QALY Loss", "Deaths"])
+
+        stateToRemove = ["2", "15"]
+        merged_geo_data_mainland = merged_geo_data[~merged_geo_data.STATE.isin(stateToRemove)]
+        merged_geo_data_mainland = merged_geo_data_mainland.explode()
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
+
+        # Plot deaths map
+        ax1.axis('off')
+        ax1.set_title('Cumulative Deaths by County', fontsize=18)
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        # Define color scheme with exactly 4 bins
+        scheme = mc.Quantiles(merged_geo_data_mainland["Deaths"], k=4)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="Deaths",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'Deaths', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
+            edgecolor="black",
+            ax=ax1
+        )
+
+        # Plot QALY loss map
+        ax2.axis('off')
+        ax2.set_title('Cumulative QALY Loss by County', fontsize=18)
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        # Define color scheme with exactly 4 bins
+        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=4)
+
+        gplt.choropleth(
+            merged_geo_data_mainland,
+            hue="QALY Loss",
+            linewidth=0.1,
+            scheme=scheme,
+            cmap="viridis",
+            legend=True,
+            legend_kwargs={'title': 'QALY Loss', 'loc': 'center right', 'fontsize': 12, 'bbox_to_anchor': (1.08, 0.4)},
+            edgecolor="black",
+            ax=ax2
+        )
+
+        output_figure(fig, filename=ROOT_DIR + '/figs/county_deaths_qaly_loss.png')
+        return fig
+
+
+    def get_mean_ui_overall_qaly_loss_by_outcome_and_by_county(self, state_name, alpha=0.05):
+        """
+        :param alpha: (float) significance value for calculating uncertainty intervals
+        :return: mean and uncertainty interval for the weekly QALY loss.
+        """
+        county_cases_qaly_losses = [qaly_loss[state_name] for qaly_loss in
+                                   self.summaryOutcomes.overallQALYlossesCasesByCounty]
+        county_hosps_non_icu_qaly_losses = [qaly_losses[state_name] for qaly_losses in
+                                   self.summaryOutcomes.overallQALYlossesHospNonICUByCounty]
+        county_hosps_icu_qaly_losses = [qaly_losses[state_name] for qaly_losses in
+                                           self.summaryOutcomes.overallQALYlossesHospICUByCounty]
+        county_total_hosps_qaly_losses=[qaly_losses[state_name] for qaly_losses in
+                                            self.summaryOutcomes.overallQALYlossesTotalHospByCounty]
+        county_deaths_qaly_losses = [qaly_losses[state_name] for qaly_losses in
+                                    self.summaryOutcomes.overallQALYlossesDeathsByState]
+        county_icu_qaly_losses = [qaly_losses[state_name] for qaly_losses in
+                                 self.summaryOutcomes.overallQALYlossesICUByState]
+        county_long_covid_1_qaly_losses = [qaly_losses[state_name] for qaly_losses in
+                                        self.summaryOutcomes.overallQALYlossesLongCOVID_1_ByState]
+
+        mean_cases, ui_cases = get_overall_mean_ui(county_cases_qaly_losses, alpha=alpha)
+        mean_hosps_non_icu, ui_hosps_non_icu = get_overall_mean_ui(county_hosps_non_icu_qaly_losses, alpha=alpha)
+        mean_hosps_icu, ui_hosps_icu = get_overall_mean_ui(county_hosps_icu_qaly_losses, alpha=alpha)
+        mean_deaths, ui_deaths = get_overall_mean_ui(county_deaths_qaly_losses, alpha=alpha)
+        mean_icu, ui_icu = get_overall_mean_ui(county_icu_qaly_losses, alpha=alpha)
+        mean_total_hosps, ui_total_hosps = get_overall_mean_ui(county_total_hosps_qaly_losses, alpha=alpha)
+        mean_lc_1, ui_lc_1 = get_overall_mean_ui(county_long_covid_1_qaly_losses, alpha=alpha)
+
+        return (mean_cases, ui_cases, mean_hosps_non_icu, ui_hosps_non_icu, mean_hosps_icu, ui_hosps_icu,
+                mean_deaths, ui_deaths, mean_icu, ui_icu, mean_total_hosps, ui_total_hosps, mean_lc_1, ui_lc_1)
+
+    '''

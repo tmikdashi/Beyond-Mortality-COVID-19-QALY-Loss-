@@ -3,6 +3,30 @@ from classes.model import ProbabilisticAllStates
 
 probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=10)
+probabilisticModel.plot_state_level_qaly_loss_maps_2()
+
+
+'''
+probabilisticModel.plot_county_deaths_and_qaly_loss()
+probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+probabilisticModel.plot_weekly_deaths_sensitivity_analysis()
+probabilisticModel.print_overall_outcomes_and_qaly_loss()
+
+probabilisticModel.plot_map_of_avg_qaly_loss_by_county_4()
+probabilisticModel.plot_map_of_county_outcomes()
+probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
+
+#probabilisticModel.plot_map_of_outcomes_per_county_per_100K()
+
+'''
+
+'''
+probabilisticModel.plot_map_of_outcomes_per_county()
+probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
+
+
+probabilisticModel.generate_scatter_plots()
+probabilisticModel.generate_scatter_plots_with_outliers()
 
 probabilisticModel.plot_weekly_deaths_sensitivity_analysis()
 probabilisticModel.plot_weekly_qaly_loss_by_outcome_scenarios()
@@ -22,7 +46,7 @@ probabilisticModel.plot_qaly_loss_by_state_and_by_outcome()
 probabilisticModel.plot_map_of_avg_qaly_loss_by_county()
 probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 
-
+'''
 '''
 probabilisticModel.plot_map_of_avg_qaly_loss_by_county_alt()
 
@@ -57,7 +81,7 @@ probabilisticModel.generate_correlation_matrix_per_capita_alt()
 #probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
 
 
-#probabilisticModel.plot_map_of_hsa_outcomes_by_county_per_100K()
+
 #probabilisticModel.plot_qaly_loss_by_state_and_vax_status_subplots()
 #probabilisticModel.plot_qaly_loss_by_state_and_by_outcome_alt_2()
 #probabilisticModel.print_state_prevax_values()
