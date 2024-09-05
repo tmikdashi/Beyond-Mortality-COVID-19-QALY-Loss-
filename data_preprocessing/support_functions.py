@@ -1,4 +1,4 @@
-'''
+
 
 from collections import defaultdict
 
@@ -11,7 +11,6 @@ from datetime import datetime
 from scipy.stats import pearsonr
 
 
-
 def get_dict_of_county_data_by_type(data_type):
     """
     This function reads the county data CSV file and returns a dictionary of county data by the specified data type.
@@ -21,8 +20,8 @@ def get_dict_of_county_data_by_type(data_type):
     """
 
     # Construct the file path based on the data type
-    file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
-    #file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    #file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
@@ -46,8 +45,6 @@ def get_dict_of_county_data_by_type(data_type):
     return county_data_by_type, dates
 
 
-
-
 def generate_county_data_csv(data_type='cases'):
     """
     This function reads the county data CSV file and creates a CSV of county data over time for a specified data type.
@@ -65,8 +62,7 @@ def generate_county_data_csv(data_type='cases'):
         'deaths per 100,000': 18,
         'hospitalizations per 100,000': 22,
         'icu occupancy per 100,000': 24,
-        'longcovid': (5,6)
-
+        'longcovid': (5, 6)
     }
 
     # Ensure the specified data_type is valid
@@ -77,18 +73,16 @@ def generate_county_data_csv(data_type='cases'):
             "'deaths per 100,000', 'hospitalizations per 100,000', 'icu occupancy per 100,000'.")
 
     # Read the data
-    #rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
-                         #if_ignore_first_row=True)
-
-    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
+    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
-
-    #rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
-                         #if_ignore_first_row=True)
-
 
     # Creating a dictionary to store the time series of data for each county
     county_data_time_series = defaultdict(list)
+
+    # Define the date range for filtering
+    #start_date = datetime(2021, 12, 2)
+    #end_date = datetime(2022, 10, 27)
+
     for row in rows:
         fips = row[1]
         county = row[3]
@@ -96,56 +90,55 @@ def generate_county_data_csv(data_type='cases'):
         date_str = row[2]
         population = row[10]  # Add population to this section
 
-        # Check if the date is before or on November 2, 2022
+        # Convert the date string to a datetime object for comparison
         date = datetime.strptime(date_str, "%Y-%m-%d")
-        if date <= datetime(2022, 11, 2):
-            if data_type == 'longcovid':
-                cases_index, deaths_index = data_type_mapping[data_type]
-                cases = row[data_type_mapping['cases']]
-                deaths = row[data_type_mapping['deaths']]
+
+        # Check if the date is within the desired range
+        #if start_date <= date <= end_date:
+        if data_type == 'longcovid':
+            cases_index, deaths_index = data_type_mapping[data_type]
+            cases = row[data_type_mapping['cases']]
+            deaths = row[data_type_mapping['deaths']]
 
                 # Removing PR from analysis
-                if state == 'NA':
-                    cases = np.nan
-                    deaths = np.nan
+            if state == 'NA':
+                cases = np.nan
+                deaths = np.nan
 
                 # Check if data_value is empty or 'NA' and assign np.nan
-                if cases == '' or cases == 'NA':
-                    cases = np.nan
-                else:
-                    cases = float(cases) * 7
-
-                if deaths == '' or deaths == 'NA':
-                    deaths = np.nan
-                else:
-                    deaths = float(deaths) * 7
-
-                longcovid = cases - deaths
-
-                # Append the data to the respective county's time series
-                county_data_time_series[(county, state, fips, population)].append((date_str, longcovid))
-
+            if cases == '' or cases == 'NA':
+                cases = np.nan
             else:
-                data_value = row[data_type_mapping[data_type]]
+                cases = float(cases) * 7
 
-                # Removing PR from analysis
-                if state == 'NA':
-                    data_value = np.nan
-                # Check if data_value is empty or 'NA' and assign np.nan
-                if data_value == '' or data_value == 'NA':
-                    data_value = np.nan
-                else:
-                    # Convert other values to float
-                 data_value = float(data_value) * 7
+            if deaths == '' or deaths == 'NA':
+                deaths = np.nan
+            else:
+                deaths = float(deaths) * 7
+
+            longcovid = cases - deaths
 
                 # Append the data to the respective county's time series
-                county_data_time_series[(county, state, fips, population)].append((date_str, data_value))
+            county_data_time_series[(county, state, fips, population)].append((date_str, longcovid))
 
-    # Create a list of unique dates across all counties
+        else:
+            data_value = row[data_type_mapping[data_type]]
+
+                # Removing PR from analysis
+            if state == 'NA':
+                data_value = np.nan
+                # Check if data_value is empty or 'NA' and assign np.nan
+            if data_value == '' or data_value == 'NA':
+                data_value = np.nan
+            else:
+                    # Convert other values to float
+                data_value = float(data_value) * 7
+
+                # Append the data to the respective county's time series
+            county_data_time_series[(county, state, fips, population)].append((date_str, data_value))
+
+    # Create a list of unique dates across all counties within the specified range
     unique_dates = sorted(set(date for time_series in county_data_time_series.values() for date, _ in time_series))
-
-    # Exclude dates after November 2, 2022
-    unique_dates = [date for date in unique_dates if datetime.strptime(date, "%Y-%m-%d") <= datetime(2022, 11, 2)]
 
     # Generate the output file name based on data_type
     output_file = f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
@@ -178,7 +171,8 @@ def generate_county_data_csv(data_type='cases'):
                        {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
                        {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
                        {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
-                       {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'}]
+                       {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
+                       {'County': 'New York City', 'State': 'NY', 'NewFIPS': '36061'}]
 
     for county_update in new_fips_values:
         county_name = county_update['County']
@@ -192,64 +186,6 @@ def generate_county_data_csv(data_type='cases'):
 
     # Write into a CSV file using the write_csv function
     write_csv(rows=[header_row] + county_data_rows, file_name=ROOT_DIR + output_file)
-
-
-def generate_combined_county_data_csv():
-    # Define a dictionary to map data types to column indices
-    data_type_mapping = {
-        'cases': 5,
-        'deaths': 6,
-        'hospitalizations': 20,
-    }
-
-    # Read the data
-    rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
-                         if_ignore_first_row=True)
-
-    # Creating a dictionary to store the time series of data for each county
-    county_data_time_series = defaultdict(list)
-    for row in rows:
-        fips = row[1]
-        county = row[3]
-        state = row[12]  # State abbreviation
-        date = row[2]
-        population = row[10]
-
-        for data_type, data_column in data_type_mapping.items():
-            data_value = row[data_column]
-
-            # Check if data_value is empty or 'NA' and assign np.nan
-            if data_value == '' or data_value == 'NA':
-                data_value = np.nan
-            else:
-                # Convert other values to float
-                data_value = float(data_value) * 7  # Adjust as needed
-
-            # Append the data to the respective county's time series for the specific data type
-            county_data_time_series[(county, state, fips, population, data_type)].append((date, data_value))
-
-    # Create a list of unique dates across all counties
-    unique_dates = sorted(set(date for time_series in county_data_time_series.values() for date, _ in time_series))
-
-    # Generate the output file name for the combined data
-    output_file = ROOT_DIR + '/csv_files/county_data_combined.csv'
-
-    # Create the header row with dates for each data type
-    header_row = ['County', 'State', 'FIPS', 'Population']
-    for data_type in data_type_mapping.keys():
-        header_row += [f'{data_type} {date}' for date in unique_dates]
-
-    # Create a list of data rows for each county and data type
-    combined_county_data_rows = []
-    for key, time_series in county_data_time_series.items():
-        data = {date: np.nan for date in unique_dates}
-        for date, data_value in time_series:
-            data[date] = data_value
-        combined_county_data_rows.append([key[0], key[1], key[2], key[3]] + [data[date] for date in unique_dates])
-
-    # Write into a CSV file using the write_csv function
-    write_csv(rows=[header_row] + combined_county_data_rows, file_name=output_file)
-
 
 def generate_deaths_by_age_group():
     """
@@ -305,6 +241,209 @@ def generate_deaths_by_age_group():
     deaths_by_age_group.to_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv', index=False)
 
 
+
+
+def generate_hsa_mapped_county_hosp_data():
+    # Load county hosp data
+    county_hosp_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', skiprows=0)
+
+    # Load HSA data
+    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+
+    # Ensure the FIPS column has the same data type in both dataframes
+    county_hosp_data['FIPS'] = county_hosp_data['FIPS'].astype(str)
+    hsa_data['county_fips'] = hsa_data['county_fips'].astype(str)
+
+    # Define new FIPS values for specific counties
+    new_fips_values = [
+        {'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
+        {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
+        {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
+        {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
+        {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
+        {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
+        {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
+        {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
+        {'County': 'New York County', 'State': 'NY', 'NewFIPS': '36061'}
+    ]
+
+    # Update FIPS values for the specified counties
+    for county_update in new_fips_values:
+        county_name = county_update['County']
+        state_name = county_update['State']
+        new_fips = county_update['NewFIPS']
+
+        # Update FIPS values for the specified county and state in county_hosp_data
+        condition = (county_hosp_data['County'] == county_name) & (county_hosp_data['State'] == state_name)
+        county_hosp_data.loc[condition, 'FIPS'] = new_fips
+
+    # Update "New York City" to "New York County" in county hosp data to match HSA data
+    #county_hosp_data.loc[(county_hosp_data['County'] == 'New York City') & (county_hosp_data['State'] == 'NY'), 'County'] = 'New York County'
+
+    # Merge county hosp data with HSA data based on FIPS
+    merged_data = pd.merge(county_hosp_data, hsa_data, left_on='FIPS', right_on='county_fips', how='left')
+
+    # Extract the necessary columns for computation
+    selected_columns = ['County', 'State', 'FIPS', 'Population', 'health_service_area_number', 'health_service_area_population']
+    selected_columns += county_hosp_data.columns[4:].to_list()  # Add the date columns
+
+    merged_data = merged_data[selected_columns]
+
+    # Convert 'Population' and 'health_service_area_population' columns to numeric
+    merged_data['Population'] = pd.to_numeric(merged_data['Population'], errors='coerce')
+    merged_data['health_service_area_population'] = pd.to_numeric(merged_data['health_service_area_population'].str.replace(',', ''), errors='coerce')
+
+    # Calculate the Population Proportion
+    merged_data['Population Proportion'] = merged_data['Population'] / merged_data['health_service_area_population']
+
+    adjusted_weekly_hosp_values = None  # Initialize the variable
+
+    if (merged_data[county_hosp_data.columns[4:]] == '').any().any():
+        # Replace empty strings with NaN
+        merged_data[county_hosp_data.columns[4:]] = merged_data[county_hosp_data.columns[4:]].replace('', np.nan)
+    else:
+        adjusted_weekly_hosp_values = merged_data[county_hosp_data.columns[4:]] * merged_data['Population Proportion'].values[:, None]
+
+    # Create a new dataframe with adjusted values
+    adjusted_data = pd.concat([merged_data[['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values], axis=1)
+
+    # Replace NaN values with 'nan' to match the behavior in generate_county_data
+    adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
+
+    # Save the adjusted data to a new CSV
+    adjusted_data.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', index=False)
+
+    print("Hospitalization data has been updated based on HSA")
+
+def generate_hsa_mapped_county_icu_data():
+    # Load county ICU data
+    county_icu_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', skiprows=0)
+
+    # Load HSA data
+    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+
+    # Ensure the FIPS column has the same data type in both dataframes
+    county_icu_data['FIPS'] = county_icu_data['FIPS'].astype(str)
+    hsa_data['county_fips'] = hsa_data['county_fips'].astype(str)
+
+    # Define new FIPS values for specific counties
+    new_fips_values = [
+        {'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
+        {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
+        {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
+        {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
+        {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
+        {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
+        {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
+        {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
+        {'County': 'New York County', 'State': 'NY', 'NewFIPS': '36061'}
+    ]
+
+    # Update FIPS values for the specified counties
+    for county_update in new_fips_values:
+        county_name = county_update['County']
+        state_name = county_update['State']
+        new_fips = county_update['NewFIPS']
+
+        # Update FIPS values for the specified county and state in county ICU data
+        condition = (county_icu_data['County'] == county_name) & (county_icu_data['State'] == state_name)
+        county_icu_data.loc[condition, 'FIPS'] = new_fips
+
+    # Update "New York City" to "New York County" in county ICU data to match HSA data
+    #county_icu_data.loc[(county_icu_data['County'] == 'New York City') & (county_icu_data['State'] == 'NY'), 'County'] = 'New York County'
+
+    # Merge county ICU data with HSA data based on FIPS
+    merged_data = pd.merge(county_icu_data, hsa_data, left_on='FIPS', right_on='county_fips', how='left')
+
+    # Extract the necessary columns for computation
+    selected_columns = ['County', 'State', 'FIPS', 'Population', 'health_service_area_number', 'health_service_area_population']
+    selected_columns += county_icu_data.columns[4:].to_list()  # Add the date columns
+
+    merged_data = merged_data[selected_columns]
+
+    # Convert 'Population' and 'health_service_area_population' columns to numeric
+    merged_data['Population'] = pd.to_numeric(merged_data['Population'], errors='coerce')
+    merged_data['health_service_area_population'] = pd.to_numeric(merged_data['health_service_area_population'].str.replace(',', ''), errors='coerce')
+
+    # Calculate the Population Proportion
+    merged_data['Population Proportion'] = merged_data['Population'] / merged_data['health_service_area_population']
+
+    adjusted_weekly_hosp_values = None  # Initialize the variable
+
+    if (merged_data[county_icu_data.columns[4:]] == '').any().any():
+        # Replace empty strings with NaN
+        merged_data[county_icu_data.columns[4:]] = merged_data[county_icu_data.columns[4:]].replace('', np.nan)
+    else:
+        adjusted_weekly_hosp_values = merged_data[county_icu_data.columns[4:]] * merged_data['Population Proportion'].values[:, None]
+
+    # Create a new dataframe with adjusted values
+    adjusted_data = pd.concat([merged_data[['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values], axis=1)
+
+    # Replace NaN values with 'nan' to match the behavior in generate_county_data
+    adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
+
+    # Save the adjusted data to a new CSV
+    adjusted_data.to_csv(ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', index=False)
+
+    print("ICU data has been updated based on HSA")
+
+
+
+
+'''IN USE BUT DESKTOP FORMATTING 
+
+def generate_deaths_by_age_group():
+    """
+    This function generates a csv containing information on the number of deaths associated with each age group.
+    A crucial step in this process is redefining the age bands to match the dQALY age groups in the Briggs paper.
+    Calculation for the number of deaths in each age band are based on Briggs spreadsheet tool
+
+    :return: A csv of COVID-19 deaths by age group.
+    """
+
+    data = pd.read_csv(ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')
+
+    deaths_by_age = data.groupby(['Age Group'])['COVID-19 Deaths'].sum().reset_index()
+
+    age_band_mapping = {
+        '0-9': ['Under 1 year', '1-4 years', '5-14 years'],
+        '10-19': ['5-14 years','15-24 years'],
+        '20-29': ['15-24 years', '25-34 years'],
+        '30-39': ['25-34 years', '35-44 years'],
+        '40-49': ['35-44 years', '45-54 years'],
+        '50-59': ['45-54 years', '55-64 years'],
+        '60-69': ['55-64 years','65-74 years'],
+        '70-79': ['65-74 years','75-84 years'],
+        '80-90': ['75-84 years' , '85 years and over'],
+        '90-100': ['85 years and over']
+    }
+
+    new_age_data = {'Age Group': [], 'COVID-19 Deaths': []}
+
+    for age_band, age_groups in age_band_mapping.items():
+        total_deaths = sum(deaths_by_age[deaths_by_age['Age Group'].isin(age_groups)]['COVID-19 Deaths'])
+
+        if age_band == '0-9':
+            # Sum 'Under 1 year' and '1-4 years'
+            total_deaths = sum(
+                deaths_by_age[deaths_by_age['Age Group'].isin(['Under 1 year', '1-4 years'])]['COVID-19 Deaths'])
+            # Add half of '5-14 years'
+            total_deaths += 0.5 * sum(deaths_by_age[deaths_by_age['Age Group'] == '5-14 years']['COVID-19 Deaths'])
+        else:
+            total_deaths /= 2
+
+        new_age_data['Age Group'].append(age_band)
+        new_age_data['COVID-19 Deaths'].append(total_deaths)
+
+    # Create a DataFrame for the new age bands
+    new_age_df = pd.DataFrame(new_age_data)
+    new_age_df['COVID-19 Deaths'] = pd.to_numeric(new_age_df['COVID-19 Deaths'], errors='coerce').fillna(0)
+
+    # Select relevant columns
+    deaths_by_age_group = new_age_df[['Age Group', 'COVID-19 Deaths']]
+
+    # save the data as a csv file
+    deaths_by_age_group.to_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv', index=False)
 
 
 def generate_hsa_mapped_county_hosp_data():
@@ -452,9 +591,10 @@ def generate_hsa_mapped_county_icu_data():
     adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_icu.csv', index=False)
 
     print("ICU data has been updated to based on HSA")
+'''
 
-
-
+'''
+FUNCTIONS NOT IN USE IN CURRENT CODE 
 def generate_hosps_by_age_group():
     """
     This function generates a csv containing information on the number of deaths associated with each age group.
@@ -765,463 +905,6 @@ def generate_correlation_matrix_total():
     print('Total correlation matrix', correlation_matrix)
 
     return correlation_matrix
-'''
-from collections import defaultdict
-
-import numpy as np
-import pandas as pd
-
-from deampy.in_out_functions import write_csv, read_csv_rows
-from definitions import ROOT_DIR
-from datetime import datetime
-from scipy.stats import pearsonr
-
-
-
-def get_dict_of_county_data_by_type(data_type):
-    """
-    This function reads the county data CSV file and returns a dictionary of county data by the specified data type.
-    :param data_type: The data type to extract ('cases', 'deaths', 'hospitalizations', 'icu admissions', etc.)
-    :return: (dictionary, list) a dictionary with (county, state) as keys and a list of data values as values,
-            and a list of dates
-    """
-
-    # Construct the file path based on the data type
-    #file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
-    file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
-
-    # Read the data
-    data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
-
-    # Remove the population value from the dates
-    dates = data_rows[0][4:]
-
-    county_data_by_type = {}
-    for row in data_rows[1:]:
-        county = row[0]
-        state = row[1]
-        fips = row[2]
-        population = row[3]
-        data_values = row[4:]
-
-        # Convert data values to a list of floats, handling missing values
-        data_values = [float(data) if data != 'NA' else np.nan for data in data_values]
-
-        county_data_by_type[(county, state, fips, population)] = data_values
-
-    return county_data_by_type, dates
-
-
-
-
-def generate_county_data_csv(data_type='cases'):
-    """
-    This function reads the county data CSV file and creates a CSV of county data over time for a specified data type.
-    :param data_type: The data type to extract ('cases', 'deaths', 'hospitalizations', 'icu admissions', etc.)
-    :return: (.csv file) a CSV file with data per county, over time, where each row corresponds to a county, identified
-    by county name, state, fips, and population.
-    """
-    # Define a dictionary to map data types to column indices
-    data_type_mapping = {
-        'cases': 5,
-        'deaths': 6,
-        'hospitalizations': 20,
-        'icu': 23,
-        'cases per 100,000': 17,
-        'deaths per 100,000': 18,
-        'hospitalizations per 100,000': 22,
-        'icu occupancy per 100,000': 24,
-        'longcovid': (5,6)
-    }
-
-    # Ensure the specified data_type is valid
-    if data_type not in data_type_mapping:
-        raise ValueError(
-            "Invalid data_type. Choose from 'cases', 'deaths', 'hospitalizations', "
-            "'icu', 'cases per 100,000', "
-            "'deaths per 100,000', 'hospitalizations per 100,000', 'icu occupancy per 100,000'.")
-
-    # Read the data
-    #rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
-                         #if_ignore_first_row=True)
-
-    #rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
-                         #if_ignore_first_row=True)
-
-    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
-                         if_ignore_first_row=True)
-
-
-    # Creating a dictionary to store the time series of data for each county
-    county_data_time_series = defaultdict(list)
-    for row in rows:
-        fips = row[1]
-        county = row[3]
-        state = row[12]  # State abbreviation
-        date_str = row[2]
-        population = row[10]  # Add population to this section
-
-        # Check if the date is before or on November 2, 2022
-        date = datetime.strptime(date_str, "%Y-%m-%d")
-        if date <= datetime(2022, 11, 2):
-            if data_type == 'longcovid':
-                cases_index, deaths_index = data_type_mapping[data_type]
-                cases = row[data_type_mapping['cases']]
-                deaths = row[data_type_mapping['deaths']]
-
-                # Removing PR from analysis
-                if state == 'NA':
-                    cases = np.nan
-                    deaths = np.nan
-
-                # Check if data_value is empty or 'NA' and assign np.nan
-                if cases == '' or cases == 'NA':
-                    cases = np.nan
-                else:
-                    cases = float(cases) * 7
-
-                if deaths == '' or deaths == 'NA':
-                    deaths = np.nan
-                else:
-                    deaths = float(deaths) * 7
-
-                longcovid = cases - deaths
-
-                # Append the data to the respective county's time series
-                county_data_time_series[(county, state, fips, population)].append((date_str, longcovid))
-
-            else:
-                data_value = row[data_type_mapping[data_type]]
-
-                # Removing PR from analysis
-                if state == 'NA':
-                    data_value = np.nan
-                # Check if data_value is empty or 'NA' and assign np.nan
-                if data_value == '' or data_value == 'NA':
-                    data_value = np.nan
-                else:
-                    # Convert other values to float
-                 data_value = float(data_value) * 7
-
-                # Append the data to the respective county's time series
-                county_data_time_series[(county, state, fips, population)].append((date_str, data_value))
-
-    # Create a list of unique dates across all counties
-    unique_dates = sorted(set(date for time_series in county_data_time_series.values() for date, _ in time_series))
-
-    # Exclude dates after November 2, 2022
-    unique_dates = [date for date in unique_dates if datetime.strptime(date, "%Y-%m-%d") <= datetime(2022, 11, 2)]
-
-    # Generate the output file name based on data_type
-    output_file = f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
-
-    # Create the header row with dates
-    header_row = ['County', 'State', 'FIPS', 'Population'] + unique_dates
-
-    # Create a list of data rows for each county, ensuring the length of all the rows is the same
-    county_data_rows = []
-    for key, time_series in county_data_time_series.items():
-        data = []
-        for date in unique_dates:
-            found = False
-            for time_date, time_data in time_series:
-                if time_date == date:
-                    data.append(time_data)
-                    found = True
-                    break
-            if not found:
-                # If data is missing for a date, fill with np.nan
-                data.append(np.nan)
-        # Check if the state name is 'NA' and skip adding the row
-        if key[1] != 'NA':
-            county_data_rows.append([key[0], key[1], key[2], key[3]] + data)
-
-    new_fips_values = [{'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
-                       {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
-                       {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
-                       {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
-                       {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
-                       {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
-                       {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
-                       {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
-                       {'County': 'New York City', 'State': 'NY', 'NewFIPS': '36061'}]
-
-    for county_update in new_fips_values:
-        county_name = county_update['County']
-        state_name = county_update['State']
-        new_fips = county_update['NewFIPS']
-
-        # Update FIPS values for the specified county and state in county_data_rows
-        for i, row in enumerate(county_data_rows):
-            if row[0] == county_name and row[1] == state_name:
-                county_data_rows[i][2] = new_fips  # Update the FIPS value
-
-        # Replace 'New York City, NY' with 'New York County, NY'
-        #for row in county_data_rows:
-            #if row[0] == 'New York City' and row[1] == 'NY':
-                #row[0] = 'New York County', row[2] == '36061'
-
-    # Write into a CSV file using the write_csv function
-    write_csv(rows=[header_row] + county_data_rows, file_name=ROOT_DIR + output_file)
-
-
-def generate_combined_county_data_csv():
-    # Define a dictionary to map data types to column indices
-    data_type_mapping = {
-        'cases': 5,
-        'deaths': 6,
-        'hospitalizations': 20,
-    }
-
-    # Read the data
-    rows = read_csv_rows(file_name=ROOT_DIR + '/data/county_time_data_all_dates.csv',
-                         if_ignore_first_row=True)
-
-    # Creating a dictionary to store the time series of data for each county
-    county_data_time_series = defaultdict(list)
-    for row in rows:
-        fips = row[1]
-        county = row[3]
-        state = row[12]  # State abbreviation
-        date = row[2]
-        population = row[10]
-
-        for data_type, data_column in data_type_mapping.items():
-            data_value = row[data_column]
-
-            # Check if data_value is empty or 'NA' and assign np.nan
-            if data_value == '' or data_value == 'NA':
-                data_value = np.nan
-            else:
-                # Convert other values to float
-                data_value = float(data_value) * 7  # Adjust as needed
-
-            # Append the data to the respective county's time series for the specific data type
-            county_data_time_series[(county, state, fips, population, data_type)].append((date, data_value))
-
-    # Create a list of unique dates across all counties
-    unique_dates = sorted(set(date for time_series in county_data_time_series.values() for date, _ in time_series))
-
-    # Generate the output file name for the combined data
-    output_file = ROOT_DIR + '/csv_files/county_data_combined.csv'
-
-    # Create the header row with dates for each data type
-    header_row = ['County', 'State', 'FIPS', 'Population']
-    for data_type in data_type_mapping.keys():
-        header_row += [f'{data_type} {date}' for date in unique_dates]
-
-    # Create a list of data rows for each county and data type
-    combined_county_data_rows = []
-    for key, time_series in county_data_time_series.items():
-        data = {date: np.nan for date in unique_dates}
-        for date, data_value in time_series:
-            data[date] = data_value
-        combined_county_data_rows.append([key[0], key[1], key[2], key[3]] + [data[date] for date in unique_dates])
-
-    # Write into a CSV file using the write_csv function
-    write_csv(rows=[header_row] + combined_county_data_rows, file_name=output_file)
-
-
-def generate_deaths_by_age_group():
-    """
-    This function generates a csv containing information on the number of deaths associated with each age group.
-    A crucial step in this process is redefining the age bands to match the dQALY age groups in the Briggs paper.
-    Calculation for the number of deaths in each age band are based on Briggs spreadsheet tool
-
-    :return: A csv of COVID-19 deaths by age group.
-    """
-
-    data = pd.read_csv(ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')
-
-    deaths_by_age = data.groupby(['Age Group'])['COVID-19 Deaths'].sum().reset_index()
-
-    age_band_mapping = {
-        '0-9': ['Under 1 year', '1-4 years', '5-14 years'],
-        '10-19': ['5-14 years','15-24 years'],
-        '20-29': ['15-24 years', '25-34 years'],
-        '30-39': ['25-34 years', '35-44 years'],
-        '40-49': ['35-44 years', '45-54 years'],
-        '50-59': ['45-54 years', '55-64 years'],
-        '60-69': ['55-64 years','65-74 years'],
-        '70-79': ['65-74 years','75-84 years'],
-        '80-90': ['75-84 years' , '85 years and over'],
-        '90-100': ['85 years and over']
-    }
-
-    new_age_data = {'Age Group': [], 'COVID-19 Deaths': []}
-
-    for age_band, age_groups in age_band_mapping.items():
-        total_deaths = sum(deaths_by_age[deaths_by_age['Age Group'].isin(age_groups)]['COVID-19 Deaths'])
-
-        if age_band == '0-9':
-            # Sum 'Under 1 year' and '1-4 years'
-            total_deaths = sum(
-                deaths_by_age[deaths_by_age['Age Group'].isin(['Under 1 year', '1-4 years'])]['COVID-19 Deaths'])
-            # Add half of '5-14 years'
-            total_deaths += 0.5 * sum(deaths_by_age[deaths_by_age['Age Group'] == '5-14 years']['COVID-19 Deaths'])
-        else:
-            total_deaths /= 2
-
-        new_age_data['Age Group'].append(age_band)
-        new_age_data['COVID-19 Deaths'].append(total_deaths)
-
-    # Create a DataFrame for the new age bands
-    new_age_df = pd.DataFrame(new_age_data)
-    new_age_df['COVID-19 Deaths'] = pd.to_numeric(new_age_df['COVID-19 Deaths'], errors='coerce').fillna(0)
-
-    # Select relevant columns
-    deaths_by_age_group = new_age_df[['Age Group', 'COVID-19 Deaths']]
-
-    # save the data as a csv file
-    deaths_by_age_group.to_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv', index=False)
-
-
-
-
-def generate_hsa_mapped_county_hosp_data():
-    # Load county hosp data
-    county_hosp_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', skiprows=0)
-
-    # Load HSA data
-    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
-
-    # Ensure the FIPS column has the same data type in both dataframes
-    county_hosp_data['FIPS'] = county_hosp_data['FIPS'].astype(str)
-    hsa_data['county_fips'] = hsa_data['county_fips'].astype(str)
-
-    # Define new FIPS values for specific counties
-    new_fips_values = [
-        {'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
-        {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
-        {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
-        {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
-        {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
-        {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
-        {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
-        {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
-        {'County': 'New York County', 'State': 'NY', 'NewFIPS': '36061'}
-    ]
-
-    # Update FIPS values for the specified counties
-    for county_update in new_fips_values:
-        county_name = county_update['County']
-        state_name = county_update['State']
-        new_fips = county_update['NewFIPS']
-
-        # Update FIPS values for the specified county and state in county_hosp_data
-        condition = (county_hosp_data['County'] == county_name) & (county_hosp_data['State'] == state_name)
-        county_hosp_data.loc[condition, 'FIPS'] = new_fips
-
-    # Update "New York City" to "New York County" in county hosp data to match HSA data
-    #county_hosp_data.loc[(county_hosp_data['County'] == 'New York City') & (county_hosp_data['State'] == 'NY'), 'County'] = 'New York County'
-
-    # Merge county hosp data with HSA data based on FIPS
-    merged_data = pd.merge(county_hosp_data, hsa_data, left_on='FIPS', right_on='county_fips', how='left')
-
-    # Extract the necessary columns for computation
-    selected_columns = ['County', 'State', 'FIPS', 'Population', 'health_service_area_number', 'health_service_area_population']
-    selected_columns += county_hosp_data.columns[4:].to_list()  # Add the date columns
-
-    merged_data = merged_data[selected_columns]
-
-    # Convert 'Population' and 'health_service_area_population' columns to numeric
-    merged_data['Population'] = pd.to_numeric(merged_data['Population'], errors='coerce')
-    merged_data['health_service_area_population'] = pd.to_numeric(merged_data['health_service_area_population'].str.replace(',', ''), errors='coerce')
-
-    # Calculate the Population Proportion
-    merged_data['Population Proportion'] = merged_data['Population'] / merged_data['health_service_area_population']
-
-    adjusted_weekly_hosp_values = None  # Initialize the variable
-
-    if (merged_data[county_hosp_data.columns[4:]] == '').any().any():
-        # Replace empty strings with NaN
-        merged_data[county_hosp_data.columns[4:]] = merged_data[county_hosp_data.columns[4:]].replace('', np.nan)
-    else:
-        adjusted_weekly_hosp_values = merged_data[county_hosp_data.columns[4:]] * merged_data['Population Proportion'].values[:, None]
-
-    # Create a new dataframe with adjusted values
-    adjusted_data = pd.concat([merged_data[['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values], axis=1)
-
-    # Replace NaN values with 'nan' to match the behavior in generate_county_data
-    adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
-
-    # Save the adjusted data to a new CSV
-    adjusted_data.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', index=False)
-
-    print("Hospitalization data has been updated based on HSA")
-
-def generate_hsa_mapped_county_icu_data():
-    # Load county ICU data
-    county_icu_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', skiprows=0)
-
-    # Load HSA data
-    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
-
-    # Ensure the FIPS column has the same data type in both dataframes
-    county_icu_data['FIPS'] = county_icu_data['FIPS'].astype(str)
-    hsa_data['county_fips'] = hsa_data['county_fips'].astype(str)
-
-    # Define new FIPS values for specific counties
-    new_fips_values = [
-        {'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
-        {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
-        {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
-        {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
-        {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
-        {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
-        {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
-        {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
-        {'County': 'New York County', 'State': 'NY', 'NewFIPS': '36061'}
-    ]
-
-    # Update FIPS values for the specified counties
-    for county_update in new_fips_values:
-        county_name = county_update['County']
-        state_name = county_update['State']
-        new_fips = county_update['NewFIPS']
-
-        # Update FIPS values for the specified county and state in county ICU data
-        condition = (county_icu_data['County'] == county_name) & (county_icu_data['State'] == state_name)
-        county_icu_data.loc[condition, 'FIPS'] = new_fips
-
-    # Update "New York City" to "New York County" in county ICU data to match HSA data
-    #county_icu_data.loc[(county_icu_data['County'] == 'New York City') & (county_icu_data['State'] == 'NY'), 'County'] = 'New York County'
-
-    # Merge county ICU data with HSA data based on FIPS
-    merged_data = pd.merge(county_icu_data, hsa_data, left_on='FIPS', right_on='county_fips', how='left')
-
-    # Extract the necessary columns for computation
-    selected_columns = ['County', 'State', 'FIPS', 'Population', 'health_service_area_number', 'health_service_area_population']
-    selected_columns += county_icu_data.columns[4:].to_list()  # Add the date columns
-
-    merged_data = merged_data[selected_columns]
-
-    # Convert 'Population' and 'health_service_area_population' columns to numeric
-    merged_data['Population'] = pd.to_numeric(merged_data['Population'], errors='coerce')
-    merged_data['health_service_area_population'] = pd.to_numeric(merged_data['health_service_area_population'].str.replace(',', ''), errors='coerce')
-
-    # Calculate the Population Proportion
-    merged_data['Population Proportion'] = merged_data['Population'] / merged_data['health_service_area_population']
-
-    adjusted_weekly_hosp_values = None  # Initialize the variable
-
-    if (merged_data[county_icu_data.columns[4:]] == '').any().any():
-        # Replace empty strings with NaN
-        merged_data[county_icu_data.columns[4:]] = merged_data[county_icu_data.columns[4:]].replace('', np.nan)
-    else:
-        adjusted_weekly_hosp_values = merged_data[county_icu_data.columns[4:]] * merged_data['Population Proportion'].values[:, None]
-
-    # Create a new dataframe with adjusted values
-    adjusted_data = pd.concat([merged_data[['County', 'State', 'FIPS', 'Population']], adjusted_weekly_hosp_values], axis=1)
-
-    # Replace NaN values with 'nan' to match the behavior in generate_county_data
-    adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
-
-    # Save the adjusted data to a new CSV
-    adjusted_data.to_csv(ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', index=False)
-
-    print("ICU data has been updated based on HSA")
-
 
 
 def generate_hosps_by_age_group():
@@ -1498,4 +1181,357 @@ def generate_correlation_matrix_total():
     print('Total correlation matrix', correlation_matrix)
 
     return correlation_matrix
+
+
+
+'''
+
+def generate_county_info_csv():
+    """
+    Generates a CSV containing county information (County, State, FIPS, Population) from a source file.
+    """
+
+    # Read the county data CSV file
+    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
+                         if_ignore_first_row=True)
+
+    # Initialize a list to store county information
+    county_info_list = []
+
+    for row in rows:
+        fips = row[1]
+        county = row[3]
+        state = row[12]  # State abbreviation
+        population = row[10]  # Population column
+
+        # Remove rows where state is 'NA' or 'PR'
+        if state == 'NA' or state == 'PR':
+            continue
+
+        # Append county information to the list
+        county_info_list.append((county, state, fips, population))
+
+    # Create a DataFrame for county information
+    county_info_df = pd.DataFrame(county_info_list, columns=['County', 'State', 'FIPS', 'Population'])
+
+    # Update specific FIPS codes in the DataFrame directly
+    update_fips = {
+        'Kansas City, MO': '29025',
+        'Yakutat plus Hoonah-Angoon, AK': '2282',
+        'Bristol Bay plus Lake and Peninsula, AK': '36061',
+        'Joplin, MO': '29011',
+        'New York City, NY': '36061'
+    }
+
+    # Apply updates to the county_info_df
+    for index, row in county_info_df.iterrows():
+        key = f"{row['County']}, {row['State']}"
+        if key in update_fips:
+            county_info_df.at[index, 'FIPS'] = update_fips[key]
+
+    # Save county information to CSV
+    county_info_df.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_info.csv', index=False)
+
+
+def generate_county_infection_estimates_csv():
+    """
+    Generates a CSV of infection estimates per county with additional county information.
+    Reads county data from a file, constructs a county data dictionary, and processes the infection estimates.
+    """
+    # Step 1: Generate the county data dictionary
+
+    # Read the county data CSV file
+    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
+                         if_ignore_first_row=True)
+
+    # Dictionary to store county information by FIPS
+    county_data_dict = {}
+
+    for row in rows:
+        fips = row[1]
+        county = row[3]
+        state = row[12]  # State abbreviation
+        population = row[10]  # Population column
+
+        # Remove rows where state is 'NA' or 'PR'
+        if state == 'NA' or state == 'PR':
+            continue
+
+        # Store in the dictionary with FIPS as the key
+        county_data_dict[fips] = (county, state, population)
+
+    # Update specific FIPS codes
+    new_fips_values = [
+        {'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
+        {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
+        {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
+        {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
+        {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
+        {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
+        {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
+        {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
+        {'County': 'New York City', 'State': 'NY', 'NewFIPS': '36061'}
+    ]
+
+    # Apply updates to the county_data_dict
+    for update in new_fips_values:
+        county_name = update['County']
+        state_name = update['State']
+        new_fips = update['NewFIPS']
+
+        # Find matching entries and update FIPS in the dictionary
+        for fips, (county, state, population) in county_data_dict.items():
+            if county == county_name and state == state_name:
+                county_data_dict[new_fips] = (county, state, population)
+                break
+
+    # Step 2: Generate infection estimates CSV using the county data dictionary
+
+    # Load the infection estimates CSV using pandas
+    df = pd.read_csv('/Users/timamikdashi/Downloads/estimates.csv')
+
+    # Convert the infections data to numeric and handle 'NA'
+    df['infections'] = pd.to_numeric(df.iloc[:, 73], errors='coerce')  # Assuming infections data is in the 74th column
+    df['infections'].fillna(np.nan, inplace=True)
+
+    # Convert the 'date' column to datetime format for filtering
+    df['date'] = pd.to_datetime(df['date'])
+
+    # Filter the dataframe to exclude any data after '2022-11-02'
+    df_filtered = df[df['date'] <= '2022-11-02']
+
+    # Pivot the data: each FIPS as a row, each date as a column, infection values as cells
+    df_pivot = df_filtered.pivot_table(index='fips', columns='date', values='infections', aggfunc='first')
+
+    # Create a DataFrame to store county, state, and population info along with infection data
+    county_info_columns = ['County', 'State', 'FIPS', 'Population']
+    df_county_info = pd.DataFrame(columns=county_info_columns)
+
+    # Populate the DataFrame with county, state, and population data
+    for fips in df_pivot.index:
+        if fips in county_data_dict:
+            county, state, population = county_data_dict[fips]
+            df_county_info = pd.concat([df_county_info, pd.DataFrame([[county, state, fips, population]],
+                                                                      columns=county_info_columns)],
+                                       ignore_index=True)
+        else:
+            df_county_info = pd.concat([df_county_info, pd.DataFrame([[np.nan, np.nan, fips, np.nan]],
+                                                                      columns=county_info_columns)],
+                                       ignore_index=True)
+
+    # Set the FIPS column as the index for proper alignment in concat
+    df_county_info.set_index('FIPS', inplace=True)
+
+    # Combine the county info with the pivot table
+    df_combined = pd.concat([df_county_info, df_pivot], axis=1)
+
+    # Reset the index to make FIPS a column again
+    df_combined.reset_index(inplace=True)
+
+    # Sort the columns to match the format: County, State, FIPS, Population, then dates
+    sorted_columns = ['County', 'State', 'FIPS', 'Population'] + sorted(df_pivot.columns.tolist())
+    df_combined = df_combined[sorted_columns]
+
+    # Save the combined DataFrame to CSV
+    df_combined.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv', index=False)
+
+
+def generate_county_infections_csv():
+    """
+    Generates a CSV combining county information with infection estimates linked by FIPS code.
+    """
+
+    # Step 1: Read and process the county data CSV file
+    county_file_path = '/Users/timamikdashi/Downloads/county_time_data_all_dates.csv'
+    county_df = pd.read_csv(county_file_path)
+
+    # Initialize a dictionary to store county information by FIPS
+    county_data_dict = {}
+
+    for _, row in county_df.iterrows():
+        fips = str(row[1]).split('.')[0]  # Convert FIPS code to string and remove decimals
+        county = row[3]  # Assuming county name is in the fourth column
+        state = row[12]  # Assuming state abbreviation is in the thirteenth column
+
+        # Convert population to string without decimals
+        population = str(int(float(row[10])))  # Convert to float first, then to int, and finally to string
+
+        # Skip rows where state is 'NA' or 'PR'
+        if state == 'NA' or state == 'PR':
+            continue
+
+        # Store in the dictionary with FIPS as the key
+        county_data_dict[fips] = (county, state, population)
+
+    # Update specific FIPS codes in the dictionary
+    update_fips = {
+        'Kansas City, MO': '29025',
+        'Yakutat plus Hoonah-Angoon, AK': '2282',
+        'Bristol Bay plus Lake and Peninsula, AK': '36061',
+        'Joplin, MO': '29011',
+        'New York City, NY': '36061'
+    }
+
+    # Apply updates to the county_data_dict
+    for fips, (county, state, population) in list(county_data_dict.items()):
+        key = f"{county}, {state}"
+        if key in update_fips:
+            new_fips = update_fips[key]
+            county_data_dict[new_fips] = (county, state, population)
+
+    # Step 2: Load the infection estimates CSV and process infection data
+    df = pd.read_csv('/Users/timamikdashi/Downloads/estimates.csv')
+
+    # Ensure FIPS codes are read as strings and do not contain decimals
+    df['fips'] = df['fips'].apply(lambda x: str(x).split('.')[0])
+
+    # Convert the infections data to numeric and handle 'NA'
+    df['infections'] = pd.to_numeric(df.iloc[:, 73], errors='coerce')  # Assuming infections data is in the 74th column
+    df['infections'].fillna(np.nan, inplace=True)
+
+    # Convert the 'date' column to datetime format for filtering
+    df['date'] = pd.to_datetime(df['date'])
+
+    # Filter the dataframe to exclude any data after '2022-11-02'
+    df_filtered = df[df['date'] <= '2022-11-02']
+
+    # Pivot the data: each FIPS as a row, each date as a column, infection values as cells
+    df_pivot = df_filtered.pivot_table(index='fips', columns='date', values='infections', aggfunc='first')
+
+    # Convert date columns to the desired format "YYYY-MM-DD"
+    df_pivot.columns = df_pivot.columns.strftime('%Y-%m-%d')
+
+    # Step 3: Combine county information with infection estimates
+    # Initialize a DataFrame to store county, state, population info along with infection data
+    county_info_columns = ['County', 'State', 'FIPS', 'Population']
+    df_county_info = pd.DataFrame(columns=county_info_columns)
+
+    # Populate the DataFrame with county, state, and population data
+    for fips in df_pivot.index:
+        if fips in county_data_dict:
+            county, state, population = county_data_dict[fips]
+            df_county_info.loc[fips] = [county, state, fips, population]
+        else:
+            df_county_info.loc[fips] = [np.nan, np.nan, fips, np.nan]
+
+    # Combine the county info with the infection estimates pivot table
+    df_combined = pd.concat([df_county_info, df_pivot], axis=1)
+
+    # Sort the columns to match the format: County, State, FIPS, Population, then dates
+    sorted_columns = ['County', 'State', 'FIPS', 'Population'] + sorted(df_pivot.columns.tolist())
+    df_combined = df_combined[sorted_columns]
+
+    # Save the combined DataFrame to CSV
+    df_combined.to_csv(ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv',index=False)
+
+
+
+'''
+def generate_county_data_csv_2021(data_type='cases'):
+    """
+    This function reads the county data CSV file and creates a CSV of county data over time for a specified data type.
+    :param data_type: The data type to extract ('cases', 'deaths', 'hospitalizations', 'icu admissions', etc.)
+    :return: (.csv file) a CSV file with data per county, over time, where each row corresponds to a county, identified
+    by county name, state, fips, and population.
+    """
+    # Define a dictionary to map data types to column indices
+    data_type_mapping = {
+        'cases': 5,
+        'deaths': 6,
+        'hospitalizations': 20,
+        'icu': 23,
+        'cases per 100,000': 17,
+        'deaths per 100,000': 18,
+        'hospitalizations per 100,000': 22,
+        'icu occupancy per 100,000': 24,
+    }
+
+    # Ensure the specified data_type is valid
+    if data_type not in data_type_mapping:
+        raise ValueError(
+            "Invalid data_type. Choose from 'cases', 'deaths', 'hospitalizations', "
+            "'icu', 'cases per 100,000', "
+            "'deaths per 100,000', 'hospitalizations per 100,000', 'icu occupancy per 100,000'.")
+
+    # Read the data
+    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
+                         if_ignore_first_row=True)
+
+    # Creating a dictionary to store the time series of data for each county
+    county_data_time_series = defaultdict(list)
+    for row in rows:
+        fips = row[1]
+        county = row[3]
+        state = row[12]  # State abbreviation
+        date_str = row[2]
+        population = row[10]  # Add population to this section
+
+        # Check if the date is within 2021
+        date = datetime.strptime(date_str, "%Y-%m-%d")
+        if date.year == 2021:
+            data_value = row[data_type_mapping[data_type]]
+
+            # Removing PR from analysis
+            if state == 'NA':
+                data_value = np.nan
+            # Check if data_value is empty or 'NA' and assign np.nan
+            if data_value == '' or data_value == 'NA':
+                data_value = np.nan
+            else:
+                # Convert other values to float
+                data_value = float(data_value) * 7
+
+            # Append the data to the respective county's time series
+            county_data_time_series[(county, state, fips, population)].append((date_str, data_value))
+
+    # Create a list of unique dates across all counties within 2021
+    unique_dates = sorted(set(date for time_series in county_data_time_series.values() for date, _ in time_series))
+
+    # Generate the output file name based on data_type
+    output_file = f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
+
+    # Create the header row with dates
+    header_row = ['County', 'State', 'FIPS', 'Population'] + unique_dates
+
+    # Create a list of data rows for each county, ensuring the length of all the rows is the same
+    county_data_rows = []
+    for key, time_series in county_data_time_series.items():
+        data = []
+        for date in unique_dates:
+            found = False
+            for time_date, time_data in time_series:
+                if time_date == date:
+                    data.append(time_data)
+                    found = True
+                    break
+            if not found:
+                # If data is missing for a date, fill with np.nan
+                data.append(np.nan)
+        # Check if the state name is 'NA' and skip adding the row
+        if key[1] != 'NA':
+            county_data_rows.append([key[0], key[1], key[2], key[3]] + data)
+
+    new_fips_values = [{'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
+                       {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
+                       {'County': 'Jackson', 'State': 'MO', 'NewFIPS': '29095'},
+                       {'County': 'Platte', 'State': 'MO', 'NewFIPS': '29165'},
+                       {'County': 'Kansas City', 'State': 'MO', 'NewFIPS': '29025'},
+                       {'County': 'Yakutat plus Hoonah-Angoon', 'State': 'AK', 'NewFIPS': '2282'},
+                       {'County': 'Bristol Bay plus Lake and Peninsula', 'State': 'AK', 'NewFIPS': '36061'},
+                       {'County': 'Joplin', 'State': 'MO', 'NewFIPS': '29011'},
+                       {'County': 'New York City', 'State': 'NY', 'NewFIPS': '36061'}]
+
+    for county_update in new_fips_values:
+        county_name = county_update['County']
+        state_name = county_update['State']
+        new_fips = county_update['NewFIPS']
+
+        # Update FIPS values for the specified county and state in county_data_rows
+        for i, row in enumerate(county_data_rows):
+            if row[0] == county_name and row[1] == state_name:
+                county_data_rows[i][2] = new_fips  # Update the FIPS value
+
+    # Write into a CSV file using the write_csv function
+    write_csv(rows=[header_row] + county_data_rows, file_name=ROOT_DIR + output_file)
+'''
 

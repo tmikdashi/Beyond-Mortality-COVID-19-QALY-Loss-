@@ -3,14 +3,19 @@ from classes.model import ProbabilisticAllStates
 
 probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=10)
-probabilisticModel.plot_state_level_qaly_loss_maps_2()
+probabilisticModel.print_overall_outcomes_and_qaly_loss()
+probabilisticModel.print_overall_outcomes_and_qaly_loss_prorated()
+probabilisticModel.print_outcomes_proportion_of_qaly_loss()
+probabilisticModel.plot_weekly_qaly_loss_by_outcome()
 
 
 '''
+probabilisticModel.plot_state_level_qaly_loss_maps_2()
+
 probabilisticModel.plot_county_deaths_and_qaly_loss()
-probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+
 probabilisticModel.plot_weekly_deaths_sensitivity_analysis()
-probabilisticModel.print_overall_outcomes_and_qaly_loss()
+
 
 probabilisticModel.plot_map_of_avg_qaly_loss_by_county_4()
 probabilisticModel.plot_map_of_county_outcomes()
