@@ -38,11 +38,35 @@ def get_dict_of_county_data_by_type(data_type):
         data_values = row[4:]
 
         # Convert data values to a list of floats, handling missing values
-        data_values = [float(data) if data != 'NA' else np.nan for data in data_values]
+        data_values = [float(data) if data not in ['NA', ''] else np.nan for data in data_values]
 
         county_data_by_type[(county, state, fips, population)] = data_values
 
     return county_data_by_type, dates
+def get_dict_of_county_data_by_type_2(data_type):
+    """
+    Fetch and process county data by type.
+    """
+    # Example implementation, adjust as needed for your actual function
+    # Assuming you load the data and extract `data_values` for the given type
+    # Here, we simulate the data_values for demonstration purposes.
+    data_values = ['12.5', '', 'NA', '15.2', 'abc']  # Replace this with actual data loading logic
+
+    processed_values = []
+    for i, data in enumerate(data_values):
+        try:
+            if data != 'NA' and data != '':
+                processed_value = float(data)
+            else:
+                processed_value = np.nan
+            processed_values.append(processed_value)
+        except ValueError as e:
+            print(f"Error converting value '{data}' at index {i}: {e}")
+            processed_values.append(np.nan)  # Or handle differently as needed
+
+    # Continue with the rest of your function logic
+    # For example, you might return the processed values or use them in further processing
+    return processed_values
 
 
 def generate_county_data_csv(data_type='cases'):
@@ -387,10 +411,11 @@ def generate_hsa_mapped_county_icu_data():
 
     print("ICU data has been updated based on HSA")
 
-
-
-
 '''IN USE BUT DESKTOP FORMATTING 
+
+def generate_county_infections_data_extended():
+
+
 
 def generate_deaths_by_age_group():
     """
@@ -1202,7 +1227,10 @@ def generate_county_info_csv():
         fips = row[1]
         county = row[3]
         state = row[12]  # State abbreviation
-        population = row[10]  # Population column
+        population = row[10]
+        date_str = row[2]
+
+        date = datetime.strptime(date_str, "%Y-%m-%d")
 
         # Remove rows where state is 'NA' or 'PR'
         if state == 'NA' or state == 'PR':
@@ -1214,53 +1242,10 @@ def generate_county_info_csv():
     # Create a DataFrame for county information
     county_info_df = pd.DataFrame(county_info_list, columns=['County', 'State', 'FIPS', 'Population'])
 
-    # Update specific FIPS codes in the DataFrame directly
-    update_fips = {
-        'Kansas City, MO': '29025',
-        'Yakutat plus Hoonah-Angoon, AK': '2282',
-        'Bristol Bay plus Lake and Peninsula, AK': '36061',
-        'Joplin, MO': '29011',
-        'New York City, NY': '36061'
-    }
+    # Ensure counties are not repeated by removing duplicates based on County, State, and FIPS
+    county_info_df.drop_duplicates(subset=['County', 'State', 'FIPS'], inplace=True)
 
-    # Apply updates to the county_info_df
-    for index, row in county_info_df.iterrows():
-        key = f"{row['County']}, {row['State']}"
-        if key in update_fips:
-            county_info_df.at[index, 'FIPS'] = update_fips[key]
-
-    # Save county information to CSV
-    county_info_df.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_info.csv', index=False)
-
-
-def generate_county_infection_estimates_csv():
-    """
-    Generates a CSV of infection estimates per county with additional county information.
-    Reads county data from a file, constructs a county data dictionary, and processes the infection estimates.
-    """
-    # Step 1: Generate the county data dictionary
-
-    # Read the county data CSV file
-    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
-                         if_ignore_first_row=True)
-
-    # Dictionary to store county information by FIPS
-    county_data_dict = {}
-
-    for row in rows:
-        fips = row[1]
-        county = row[3]
-        state = row[12]  # State abbreviation
-        population = row[10]  # Population column
-
-        # Remove rows where state is 'NA' or 'PR'
-        if state == 'NA' or state == 'PR':
-            continue
-
-        # Store in the dictionary with FIPS as the key
-        county_data_dict[fips] = (county, state, population)
-
-    # Update specific FIPS codes
+    # Define the list of new FIPS values for specific counties
     new_fips_values = [
         {'County': 'Cass', 'State': 'MO', 'NewFIPS': '29037'},
         {'County': 'Clay', 'State': 'MO', 'NewFIPS': '29047'},
@@ -1273,157 +1258,89 @@ def generate_county_infection_estimates_csv():
         {'County': 'New York City', 'State': 'NY', 'NewFIPS': '36061'}
     ]
 
-    # Apply updates to the county_data_dict
-    for update in new_fips_values:
-        county_name = update['County']
-        state_name = update['State']
-        new_fips = update['NewFIPS']
+    # Update FIPS values for the specified counties
+    for county_update in new_fips_values:
+        county_name = county_update['County']
+        state_name = county_update['State']
+        new_fips = county_update['NewFIPS']
 
-        # Find matching entries and update FIPS in the dictionary
-        for fips, (county, state, population) in county_data_dict.items():
-            if county == county_name and state == state_name:
-                county_data_dict[new_fips] = (county, state, population)
-                break
+        # Update FIPS values for the specified county and state in county_info_df
+        condition = (county_info_df['County'] == county_name) & (county_info_df['State'] == state_name)
+        county_info_df.loc[condition, 'FIPS'] = new_fips
 
-    # Step 2: Generate infection estimates CSV using the county data dictionary
+    # Save county information to CSV
+    output_path = ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_info.csv'
+    county_info_df.to_csv(output_path, index=False)
 
-    # Load the infection estimates CSV using pandas
-    df = pd.read_csv('/Users/timamikdashi/Downloads/estimates.csv')
+    return county_info_df
+def distribute_infections_in_counties():
+    # Load the state infections data (with dates as columns)
+    state_infections_df = pd.read_csv("/Users/timamikdashi/Downloads/infections_summary_with_new_dates.csv")
 
-    # Convert the infections data to numeric and handle 'NA'
-    df['infections'] = pd.to_numeric(df.iloc[:, 73], errors='coerce')  # Assuming infections data is in the 74th column
-    df['infections'].fillna(np.nan, inplace=True)
+    # Load the county information data
+    county_info_df = pd.read_csv(
+        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_info.csv')
 
-    # Convert the 'date' column to datetime format for filtering
-    df['date'] = pd.to_datetime(df['date'])
+    # Count the number of counties per state in county_info_df
+    counties_per_state = county_info_df.groupby('State').size().reset_index(name='county_count')
 
-    # Filter the dataframe to exclude any data after '2022-11-02'
-    df_filtered = df[df['date'] <= '2022-11-02']
+    # Convert counties_per_state DataFrame to a dictionary for quick lookup
+    counties_per_state_dict = counties_per_state.set_index('State')['county_count'].to_dict()
 
-    # Pivot the data: each FIPS as a row, each date as a column, infection values as cells
-    df_pivot = df_filtered.pivot_table(index='fips', columns='date', values='infections', aggfunc='first')
+    # Loop through each row of the state_infections_df to divide the infection values by the number of counties
+    for index, row in state_infections_df.iterrows():
+        state = row['state']  # Assuming the state name is in the 'state' column
 
-    # Create a DataFrame to store county, state, and population info along with infection data
-    county_info_columns = ['County', 'State', 'FIPS', 'Population']
-    df_county_info = pd.DataFrame(columns=county_info_columns)
+        # If the state has a matching entry in counties_per_state_dict
+        if state in counties_per_state_dict:
+            num_counties = counties_per_state_dict[state]
 
-    # Populate the DataFrame with county, state, and population data
-    for fips in df_pivot.index:
-        if fips in county_data_dict:
-            county, state, population = county_data_dict[fips]
-            df_county_info = pd.concat([df_county_info, pd.DataFrame([[county, state, fips, population]],
-                                                                      columns=county_info_columns)],
-                                       ignore_index=True)
-        else:
-            df_county_info = pd.concat([df_county_info, pd.DataFrame([[np.nan, np.nan, fips, np.nan]],
-                                                                      columns=county_info_columns)],
-                                       ignore_index=True)
+            # Print the state and its corresponding number of counties for debugging
+            print(f"State: {state}, Number of counties: {num_counties}")
 
-    # Set the FIPS column as the index for proper alignment in concat
-    df_county_info.set_index('FIPS', inplace=True)
+            # Divide each infection value by the number of counties for the corresponding state
+            state_infections_df.loc[index, state_infections_df.columns[1:]] = row[state_infections_df.columns[1:]] / num_counties
 
-    # Combine the county info with the pivot table
-    df_combined = pd.concat([df_county_info, df_pivot], axis=1)
 
-    # Reset the index to make FIPS a column again
-    df_combined.reset_index(inplace=True)
+    # Save the resulting DataFrame to a CSV file
+    output_path = '/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/state_infections_divided_by_counties.csv'
+    state_infections_df.to_csv(output_path, index=False)
 
-    # Sort the columns to match the format: County, State, FIPS, Population, then dates
-    sorted_columns = ['County', 'State', 'FIPS', 'Population'] + sorted(df_pivot.columns.tolist())
-    df_combined = df_combined[sorted_columns]
-
-    # Save the combined DataFrame to CSV
-    df_combined.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv', index=False)
+    return state_infections_df
 
 
 def generate_county_infections_csv():
     """
-    Generates a CSV combining county information with infection estimates linked by FIPS code.
+    Generates a CSV containing county-level infections by assigning the state-level
+    infection value to all counties for each time point using efficient DataFrame operations.
+    The output format will be: County, State, FIPS, Population, followed by columns of infection data for each date.
     """
 
-    # Step 1: Read and process the county data CSV file
-    county_file_path = '/Users/timamikdashi/Downloads/county_time_data_all_dates.csv'
-    county_df = pd.read_csv(county_file_path)
+    state_infections_df = distribute_infections_in_counties()
 
-    # Initialize a dictionary to store county information by FIPS
-    county_data_dict = {}
 
-    for _, row in county_df.iterrows():
-        fips = str(row[1]).split('.')[0]  # Convert FIPS code to string and remove decimals
-        county = row[3]  # Assuming county name is in the fourth column
-        state = row[12]  # Assuming state abbreviation is in the thirteenth column
+    # Load the county information data
+    county_info_df = pd.read_csv(
+        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_info.csv')
 
-        # Convert population to string without decimals
-        population = str(int(float(row[10])))  # Convert to float first, then to int, and finally to string
+    if county_info_df.isnull().any().any():
+        print("Missing values in county information data:")
+        print(county_info_df.isnull().sum())
 
-        # Skip rows where state is 'NA' or 'PR'
-        if state == 'NA' or state == 'PR':
-            continue
+    # Merge state infection data with county info using the state as the common key
+    county_infections_df = county_info_df.merge(
+        state_infections_df, left_on='State', right_on='state', how='left'
+    )
 
-        # Store in the dictionary with FIPS as the key
-        county_data_dict[fips] = (county, state, population)
+    # Drop redundant state column from the result
+    county_infections_df.drop(columns=['state'], inplace=True)
 
-    # Update specific FIPS codes in the dictionary
-    update_fips = {
-        'Kansas City, MO': '29025',
-        'Yakutat plus Hoonah-Angoon, AK': '2282',
-        'Bristol Bay plus Lake and Peninsula, AK': '36061',
-        'Joplin, MO': '29011',
-        'New York City, NY': '36061'
-    }
 
-    # Apply updates to the county_data_dict
-    for fips, (county, state, population) in list(county_data_dict.items()):
-        key = f"{county}, {state}"
-        if key in update_fips:
-            new_fips = update_fips[key]
-            county_data_dict[new_fips] = (county, state, population)
+    # Save the county-level infection data to a CSV
+    output_path = ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv'
+    county_infections_df.to_csv(output_path, index=False)
 
-    # Step 2: Load the infection estimates CSV and process infection data
-    df = pd.read_csv('/Users/timamikdashi/Downloads/estimates.csv')
-
-    # Ensure FIPS codes are read as strings and do not contain decimals
-    df['fips'] = df['fips'].apply(lambda x: str(x).split('.')[0])
-
-    # Convert the infections data to numeric and handle 'NA'
-    df['infections'] = pd.to_numeric(df.iloc[:, 73], errors='coerce')  # Assuming infections data is in the 74th column
-    df['infections'].fillna(np.nan, inplace=True)
-
-    # Convert the 'date' column to datetime format for filtering
-    df['date'] = pd.to_datetime(df['date'])
-
-    # Filter the dataframe to exclude any data after '2022-11-02'
-    df_filtered = df[df['date'] <= '2022-11-02']
-
-    # Pivot the data: each FIPS as a row, each date as a column, infection values as cells
-    df_pivot = df_filtered.pivot_table(index='fips', columns='date', values='infections', aggfunc='first')
-
-    # Convert date columns to the desired format "YYYY-MM-DD"
-    df_pivot.columns = df_pivot.columns.strftime('%Y-%m-%d')
-
-    # Step 3: Combine county information with infection estimates
-    # Initialize a DataFrame to store county, state, population info along with infection data
-    county_info_columns = ['County', 'State', 'FIPS', 'Population']
-    df_county_info = pd.DataFrame(columns=county_info_columns)
-
-    # Populate the DataFrame with county, state, and population data
-    for fips in df_pivot.index:
-        if fips in county_data_dict:
-            county, state, population = county_data_dict[fips]
-            df_county_info.loc[fips] = [county, state, fips, population]
-        else:
-            df_county_info.loc[fips] = [np.nan, np.nan, fips, np.nan]
-
-    # Combine the county info with the infection estimates pivot table
-    df_combined = pd.concat([df_county_info, df_pivot], axis=1)
-
-    # Sort the columns to match the format: County, State, FIPS, Population, then dates
-    sorted_columns = ['County', 'State', 'FIPS', 'Population'] + sorted(df_pivot.columns.tolist())
-    df_combined = df_combined[sorted_columns]
-
-    # Save the combined DataFrame to CSV
-    df_combined.to_csv(ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv',index=False)
-
+    print("County-level infection data saved to:", output_path)
 
 
 '''
@@ -1535,3 +1452,57 @@ def generate_county_data_csv_2021(data_type='cases'):
     write_csv(rows=[header_row] + county_data_rows, file_name=ROOT_DIR + output_file)
 '''
 
+
+def generate_state_and_county_infections_csv():
+    """
+    Generates a CSV file with county-level infections data, distributing state-level infections evenly
+    across counties, for the date range from 2020-07-15 to 2022-12-28.
+    """
+
+    # State name to abbreviation mapping
+    state_name_to_abbreviation = {
+        'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+        'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+        'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+        'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+        'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+        'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+        'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+        'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+        'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+        'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
+    }
+
+    # Step 1: Generate county information CSV (if not already generated)
+    generate_county_info_csv()
+    county_info_df = pd.read_csv(ROOT_DIR + '/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_info.csv')
+
+    # Step 2: Read state estimates CSV file
+    estimates_df = pd.read_csv('/Users/timamikdashi/Downloads/state/estimates.csv')
+
+    # Step 3: Generate county-level infection data
+    county_data_list = []
+
+    for _, row in estimates_df.iterrows():
+        state_full_name = row[0]  # State name
+        date_str = row[1]  # Date
+        infections = row[28]  # Infections count (29th column, 0-indexed)
+
+        # Map full state name to abbreviation
+        state_abbreviation = state_name_to_abbreviation.get(state_full_name)
+
+        # Filter counties belonging to the current state
+        state_counties_df = county_info_df[county_info_df['State'] == state_abbreviation]
+
+        if not state_counties_df.empty:
+            # Distribute state-level infections across counties
+            infections_per_county = infections / len(state_counties_df)
+
+            for _, county_row in state_counties_df.iterrows():
+                county_data_list.append([
+                    county_row['County'], county_row['State'], county_row['FIPS'], date_str, infections_per_county
+                ])
+
+    # Step 4: Save county-level infection data to CSV
+    county_data_df = pd.DataFrame(county_data_list, columns=['County', 'State', 'FIPS', 'Date', 'Infections'])
+    county_data_df.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/state_mapped_county_infections.csv', index=False)
