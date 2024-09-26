@@ -7,6 +7,7 @@ probabilisticModel.print_overall_outcomes_and_qaly_loss()
 probabilisticModel.print_overall_outcomes_and_qaly_loss_prorated()
 probabilisticModel.print_outcomes_proportion_of_qaly_loss()
 probabilisticModel.plot_weekly_qaly_loss_by_outcome()
+probabilisticModel.plot_weekly_qaly_loss_by_outcome_inf()
 
 
 '''

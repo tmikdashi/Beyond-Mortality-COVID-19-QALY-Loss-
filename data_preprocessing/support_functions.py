@@ -21,7 +21,7 @@ def get_dict_of_county_data_by_type(data_type):
 
     # Construct the file path based on the data type
     #file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
-    file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    file_path = f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
@@ -1506,3 +1506,53 @@ def generate_state_and_county_infections_csv():
     # Step 4: Save county-level infection data to CSV
     county_data_df = pd.DataFrame(county_data_list, columns=['County', 'State', 'FIPS', 'Date', 'Infections'])
     county_data_df.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/state_mapped_county_infections.csv', index=False)
+
+
+def generate_cases_infections_factor():
+    # Read the CSV file
+    county_infections = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv')
+    county_cases = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv')
+
+
+    # Exclude unnecessary columns (FIPS, Population, etc.)
+    infections_grouped = county_infections.drop(columns=['County', 'FIPS', 'Population'])
+    cases_grouped = county_cases.drop(columns=['County', 'FIPS', 'Population'])
+
+    # Group by the 'State' column and sum the values for each state at each time point
+    infections_state = infections_grouped.groupby('State').sum()
+    cases_state = cases_grouped.groupby('State').sum()
+
+    # Calculate the factor of infections to cases for each state and time point
+    factor = infections_state / cases_state
+
+    # Replace infinity or NaN values (where cases are 0) with 1
+    factor = factor.replace([float('inf'), float('nan')], 1)
+    factor.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/cases_infections_factor', index=True)
+
+
+def generate_infections_from_cases():
+    state_factors = pd.read_csv(
+        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/cases_infections_factor', index_col='State')
+    # Read the county-level case data and the state-level factors
+    county_cases = pd.read_csv(
+        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv')
+
+    # Get the list of columns with case data (dates)
+    case_columns = county_cases.columns[4:]  # Assuming first 4 columns are 'County', 'State', 'FIPS', 'Population'
+
+    # Create a copy of the county_cases DataFrame to store new infection estimates
+    county_infections_from_cases = county_cases.copy()
+
+    # Loop through each state and apply the corresponding state factor to the county case data
+    for state in county_infections_from_cases['State'].unique():
+        # Get the corresponding factor for the state
+        state_factor = state_factors.loc[state]
+
+        # Select rows where the state matches
+        state_counties = county_infections_from_cases['State'] == state
+
+        # Multiply the case data by the state factor to compute infection estimates
+        county_infections_from_cases.loc[state_counties, case_columns] = county_cases.loc[state_counties, case_columns].multiply(state_factor.values, axis=1)
+
+    # Save the new infections estimate to a CSV file
+    county_infections_from_cases.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections_from_cases.csv', index=False)
