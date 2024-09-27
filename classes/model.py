@@ -1998,7 +1998,7 @@ class ProbabilisticAllStates:
 
         output_figure(fig, filename=ROOT_DIR + '/figs/national_qaly_loss_by_outcome.png')
 
-    def plot_weekly_qaly_loss_by_outcome_cases(self):
+    def plot_weekly_qaly_loss_by_outcome_total_infections(self):
 
         """
         :return: Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
@@ -2020,9 +2020,9 @@ class ProbabilisticAllStates:
                 mean_total_sa_3a, ui_total_sa_3a, mean_total_sa_3b, ui_total_sa_3b, mean_total_sa_3c, ui_total_sa_3c] = (
             self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
 
-        ax1.plot(self.allStates.dates, mean_cases,
-                label='Detected Cases', linewidth=2, color='blue')
-        ax1.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
+        ax1.plot(self.allStates.dates, mean_infections_from_cases,
+                label='Symptomatic Infections', linewidth=2, color='blue')
+        ax1.fill_between(self.allStates.dates, ui_ifc[0], ui_ifc[1], color='lightblue', alpha=0.25)
 
         ax1.plot(self.allStates.dates, mean_total_hosps,
                 label='Hospital admissions (including ICU)', linewidth=2, color='green')
@@ -2037,6 +2037,10 @@ class ProbabilisticAllStates:
         ax1.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='purple', alpha=0.25)
 
 
+        ax2.plot(self.allStates.dates, mean_infections_from_cases,
+                label='Symptomatic Infections', linewidth=2, color='blue')
+        ax2.fill_between(self.allStates.dates, ui_ifc[0], ui_ifc[1], color='lightblue', alpha=0.25)
+
         ax2.plot(self.allStates.dates, mean_total_hosps,
                  label='Hospital admissions (including ICU)', linewidth=2, color='green')
         ax2.fill_between(self.allStates.dates, ui_total_hosps[0], ui_total_hosps[1], color='grey', alpha=0.25)
@@ -2050,7 +2054,7 @@ class ProbabilisticAllStates:
         ax2.fill_between(self.allStates.dates, ui_lc_2[0], ui_lc_2[1], color='purple', alpha=0.25)
 
         ax2.plot(self.allStates.dates, mean_lc_2_inf,
-                 label='Long COVID from infections (Health State-Dependent Appraoch)', linewidth=2, color='purple', linestyle= 'dashed')
+                 label='Long COVID from (Health State-Dependent Appraoch w/ infections)', linewidth=2, color='purple', linestyle= 'dashed')
         ax2.fill_between(self.allStates.dates, ui_lc_2_inf[0], ui_lc_2_inf[1], color='purple', alpha=0.25)
 
         [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
@@ -2130,7 +2134,7 @@ class ProbabilisticAllStates:
         ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
 
 
-        output_figure(fig, filename=ROOT_DIR + '/figs/national_qaly_loss_by_outcome.png')
+        output_figure(fig, filename=ROOT_DIR + '/figs/national_qaly_loss_by_outcome_total_infections.png')
 
     def plot_weekly_qaly_loss_by_outcome_scenarios(self):
         """
@@ -2611,7 +2615,7 @@ class ProbabilisticAllStates:
         ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
 
         # Define the scheme with Quantiles and round the bins to whole numbers
-        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=4)
+        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=3)
         rounded_bins = np.round(scheme.bins)
         scheme = mc.UserDefined(merged_geo_data_mainland["QALY Loss"], bins=rounded_bins)
 
@@ -2626,6 +2630,7 @@ class ProbabilisticAllStates:
             edgecolor="black",
             ax=ax1
         )
+
 
         # Alaska 1
         stateToInclude = ["2"]
