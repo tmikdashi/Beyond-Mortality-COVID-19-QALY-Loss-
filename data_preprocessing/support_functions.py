@@ -76,7 +76,8 @@ def generate_county_data_csv(data_type='cases'):
     :return: (.csv file) a CSV file with data per county, over time, where each row corresponds to a county, identified
     by county name, state, fips, and population.
     """
-    ROOT_DIR = '/Users/timamikdashi/PycharmProjects/covid19-qaly-loss'
+    #ROOT_DIR = '/Users/timamikdashi/PycharmProjects/covid19-qaly-loss'
+
     # Define a dictionary to map data types to column indices
     data_type_mapping = {
         'cases': 5,
@@ -98,7 +99,7 @@ def generate_county_data_csv(data_type='cases'):
             "'deaths per 100,000', 'hospitalizations per 100,000', 'icu occupancy per 100,000'.")
 
     # Read the data
-    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
+    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
 
     # Creating a dictionary to store the time series of data for each county
@@ -212,8 +213,6 @@ def generate_county_data_csv(data_type='cases'):
     # Create the output file name
     output_file = f'{ROOT_DIR}/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
-    # Rest of your logic...
-
     write_csv(rows=[header_row] + county_data_rows, file_name=output_file)
 
 
@@ -275,7 +274,8 @@ def generate_deaths_by_age_group():
 
 def generate_hsa_mapped_county_hosp_data():
     # Load county hosp data
-    county_hosp_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', skiprows=0)
+    #county_hosp_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', skiprows=0)
+    county_hosp_data = pd.read_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv',skiprows=0)
 
     # Load HSA data
     hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)

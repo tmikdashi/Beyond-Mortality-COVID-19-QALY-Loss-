@@ -4,14 +4,17 @@ from data_preprocessing.support_functions import (generate_county_data_csv,gener
                                                   get_dict_of_county_data_by_type,
                                                   generate_county_infections_csv,generate_state_and_county_infections_csv,
                                                   get_dict_of_county_data_by_type_2,generate_cases_infections_factor,generate_infections_from_cases)
-generate_county_info_csv()
-distribute_infections_in_counties()
-generate_county_infections_csv()
 
 generate_county_data_csv('cases')
 generate_county_data_csv('hospitalizations')
 generate_county_data_csv('deaths')
 generate_county_data_csv('icu')
+'''
+generate_county_info_csv()
+distribute_infections_in_counties()
+generate_county_infections_csv()
+
+
 
 generate_hsa_mapped_county_hosp_data()
 generate_hsa_mapped_county_icu_data()
@@ -21,6 +24,7 @@ generate_infections_from_cases()
 
 
 get_dict_of_county_data_by_type('infections_from_cases')
+'''
 '''
 generate_county_info_csv()
 distribute_infections_in_counties()
