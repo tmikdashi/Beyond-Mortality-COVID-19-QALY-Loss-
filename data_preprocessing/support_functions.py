@@ -1,7 +1,7 @@
 
 
 from collections import defaultdict
-
+import os
 import numpy as np
 import pandas as pd
 
@@ -76,6 +76,7 @@ def generate_county_data_csv(data_type='cases'):
     :return: (.csv file) a CSV file with data per county, over time, where each row corresponds to a county, identified
     by county name, state, fips, and population.
     """
+    ROOT_DIR = '/Users/timamikdashi/PycharmProjects/covid19-qaly-loss'
     # Define a dictionary to map data types to column indices
     data_type_mapping = {
         'cases': 5,
@@ -208,8 +209,13 @@ def generate_county_data_csv(data_type='cases'):
             if row[0] == county_name and row[1] == state_name:
                 county_data_rows[i][2] = new_fips  # Update the FIPS value
 
-    # Write into a CSV file using the write_csv function
-    write_csv(rows=[header_row] + county_data_rows, file_name=ROOT_DIR + output_file)
+    # Create the output file name
+    output_file = f'{ROOT_DIR}/csv_files/county_{data_type.replace(" ", "_")}.csv'
+
+    # Rest of your logic...
+
+    write_csv(rows=[header_row] + county_data_rows, file_name=output_file)
+
 
 def generate_deaths_by_age_group():
     """
@@ -1532,27 +1538,20 @@ def generate_cases_infections_factor():
 
 def generate_infections_from_cases():
     state_factors = pd.read_csv(
-        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/cases_infections_factor', index_col='State')
-    # Read the county-level case data and the state-level factors
+        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/cases_infections_factor',
+        index_col='State')
+
     county_cases = pd.read_csv(
         ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv')
 
-    # Get the list of columns with case data (dates)
     case_columns = county_cases.columns[4:]  # Assuming first 4 columns are 'County', 'State', 'FIPS', 'Population'
-
-    # Create a copy of the county_cases DataFrame to store new infection estimates
     county_infections_from_cases = county_cases.copy()
 
-    # Loop through each state and apply the corresponding state factor to the county case data
     for state in county_infections_from_cases['State'].unique():
-        # Get the corresponding factor for the state
         state_factor = state_factors.loc[state]
-
-        # Select rows where the state matches
         state_counties = county_infections_from_cases['State'] == state
-
-        # Multiply the case data by the state factor to compute infection estimates
-        county_infections_from_cases.loc[state_counties, case_columns] = county_cases.loc[state_counties, case_columns].multiply(state_factor.values, axis=1)
+        county_infections_from_cases.loc[state_counties, case_columns] = county_cases.loc[
+            state_counties, case_columns].multiply(state_factor.values, axis=1)
 
     # Save the new infections estimate to a CSV file
-    county_infections_from_cases.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections_from_cases.csv', index=False)
+    county_infections_from_cases.to_csv( ROOT_DIR + '/csv_files/county_infections_from_cases.csv', index=False)
