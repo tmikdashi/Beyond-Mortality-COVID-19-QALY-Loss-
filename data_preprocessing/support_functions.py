@@ -20,8 +20,8 @@ def get_dict_of_county_data_by_type(data_type):
     """
 
     # Construct the file path based on the data type
-    #file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
-    file_path = f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    #file_path = f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
@@ -278,7 +278,8 @@ def generate_hsa_mapped_county_hosp_data():
     county_hosp_data = pd.read_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv',skiprows=0)
 
     # Load HSA data
-    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+    #hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
 
     # Ensure the FIPS column has the same data type in both dataframes
     county_hosp_data['FIPS'] = county_hosp_data['FIPS'].astype(str)
@@ -341,16 +342,17 @@ def generate_hsa_mapped_county_hosp_data():
     adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
 
     # Save the adjusted data to a new CSV
-    adjusted_data.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', index=False)
+    adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv', index=False)
 
     print("Hospitalization data has been updated based on HSA")
 
 def generate_hsa_mapped_county_icu_data():
     # Load county ICU data
-    county_icu_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', skiprows=0)
+    county_icu_data = pd.read_csv(ROOT_DIR + '/csv_files/county_icu.csv', skiprows=0)
 
     # Load HSA data
-    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
+    #hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
 
     # Ensure the FIPS column has the same data type in both dataframes
     county_icu_data['FIPS'] = county_icu_data['FIPS'].astype(str)
@@ -413,9 +415,78 @@ def generate_hsa_mapped_county_icu_data():
     adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
 
     # Save the adjusted data to a new CSV
-    adjusted_data.to_csv(ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', index=False)
+    adjusted_data.to_csv(ROOT_DIR + f'/csv_files/county_icu.csv', index=False)
 
     print("ICU data has been updated based on HSA")
+
+
+def generate_hosps_by_age_group():
+    """
+    This function generates a csv containing information on the number of deaths associated with each age group.
+    A crucial step in this process is redefining the age bands to match the dQALY age groups in the Briggs paper.
+    Calculation for the number of deaths in each age band are based on Briggs spreadsheet tool
+
+    :return: A csv of COVID-19 hosps by age group.
+    """
+
+    data = pd.read_csv('C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
+    #data = pd.read_csv('/Users/timamikdashi/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
+
+    #deaths_by_age = data.groupby(['state','date']).sum().reset_index() #TODO" A REVOIR TO ENSURE THAT THE data is aggregated over state and dates
+
+    age_band_mapping = {
+        '0-9': ['previous_day_admission_pediatric_covid_confirmed_0_4', 'previous_day_admission_pediatric_covid_confirmed_5_11'],
+        '10-19': ['previous_day_admissions_pediatric_covid_confirmed_5-11', 'previous_day_admission_pediatric_covid_confirmed_12_17','previous_day_admission_adult_covid_confirmed_18-19'],
+        '20-29': ['previous_day_admission_adult_covid_confirmed_20-29'],
+        '30-39': ['previous_day_admission_adult_covid_confirmed_30-39'],
+        '40-49': ['previous_day_admission_adult_covid_confirmed_40-49'],
+        '50-59': ['previous_day_admission_adult_covid_confirmed_50-59'],
+        '60-69': ['previous_day_admission_adult_covid_confirmed_60-69'],
+        '70-79': ['previous_day_admission_adult_covid_confirmed_70-79'],
+        '80-90': ['previous_day_admission_adult_covid_confirmed_80+'],
+        '90-100': ['previous_day_admission_adult_covid_confirmed_80+']
+    }
+
+
+    new_age_data = {'Age Group': [], 'COVID-19 Hosps': []}
+
+    for age_band, age_groups in age_band_mapping.items():
+        total_hosps = 0
+
+        for age_group in age_groups:
+            # Check if the columns exist in the DataFrame
+            if age_group in data.columns:
+                total_hosps += data.groupby(['date'])[age_group].sum().sum()
+
+        if age_band == '0-9':
+            # Sum 'previous_day_admission_pediatric_covid_confirmed_0_4' and 'previous_day_admission_pediatric_covid_confirmed_5_11'
+            total_hosps = data.groupby(['date'])[['previous_day_admission_pediatric_covid_confirmed_0_4', 'previous_day_admission_pediatric_covid_confirmed_5_11']].sum().sum().sum()
+            # Add 2/3 of 'previous_day_admission_pediatric_covid_confirmed_5_11'
+            total_hosps += (2 / 3) * data.groupby(['date'])['previous_day_admission_pediatric_covid_confirmed_5_11'].sum().sum()
+        elif age_band == '10-19':
+            # Sum 'previous_day_admission_pediatric_covid_confirmed_12_17', 'previous_day_admission_adult_covid_confirmed_18-19'
+            total_hosps = data.groupby(['date'])[['previous_day_admission_pediatric_covid_confirmed_12_17', 'previous_day_admission_adult_covid_confirmed_18-19']].sum().sum().sum()
+            # Add 2/3 of 'previous_day_admission_pediatric_covid_confirmed_5_11'
+            total_hosps += (2 / 3) * data.groupby(['date'])['previous_day_admission_pediatric_covid_confirmed_5_11'].sum().sum()
+        elif age_band =='80-90':
+            total_hosps= (1/2)*data.groupby(['date'])['previous_day_admission_adult_covid_confirmed_80+'].sum().sum()
+        elif age_band =='90-100':
+            total_hosps= (1/2)*data.groupby(['date'])['previous_day_admission_adult_covid_confirmed_80+'].sum().sum()
+        else:
+            total_hosps = data.groupby(['date'])[age_groups].sum().sum().sum()
+
+        new_age_data['Age Group'].append(age_band)
+        new_age_data['COVID-19 Hosps'].append(total_hosps)
+
+    # Create a DataFrame for the new age bands
+    new_age_df = pd.DataFrame(new_age_data)
+    new_age_df['COVID-19 Hosps'] = pd.to_numeric(new_age_df['COVID-19 Hosps'], errors='coerce').fillna(0)
+
+    # Select relevant columns
+    hosps_by_age_group = new_age_df[['Age Group', 'COVID-19 Hosps']]
+
+    # Save the data as a CSV file
+    hosps_by_age_group.to_csv(ROOT_DIR + '/csv_files/hosps_by_age.csv', index=False)
 
 '''IN USE BUT DESKTOP FORMATTING 
 
@@ -1223,7 +1294,7 @@ def generate_county_info_csv():
     """
 
     # Read the county data CSV file
-    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
+    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
 
     # Initialize a list to store county information
@@ -1241,6 +1312,10 @@ def generate_county_info_csv():
         # Remove rows where state is 'NA' or 'PR'
         if state == 'NA' or state == 'PR':
             continue
+
+        # Correct the county name for Doña Ana
+        if county == 'DoÃ±a Ana':
+            county = 'Doña Ana'
 
         # Append county information to the list
         county_info_list.append((county, state, fips, population))
@@ -1275,17 +1350,19 @@ def generate_county_info_csv():
         county_info_df.loc[condition, 'FIPS'] = new_fips
 
     # Save county information to CSV
-    output_path = ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_info.csv'
+    output_path = ROOT_DIR + '/csv_files/county_info.csv'
     county_info_df.to_csv(output_path, index=False)
 
     return county_info_df
 def distribute_infections_in_counties():
     # Load the state infections data (with dates as columns)
-    state_infections_df = pd.read_csv("/Users/timamikdashi/Downloads/infections_summary_with_new_dates.csv")
+    #state_infections_df = pd.read_csv("/Users/timamikdashi/Downloads/infections_summary_with_new_dates.csv")
+    state_infections_df= pd.read_csv("C:/Users/fm478/Documents/infections_summary_with_new_dates.csv")
+
 
     # Load the county information data
     county_info_df = pd.read_csv(
-        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_info.csv')
+        ROOT_DIR + '/csv_files/county_info.csv')
 
     # Count the number of counties per state in county_info_df
     counties_per_state = county_info_df.groupby('State').size().reset_index(name='county_count')
@@ -1309,7 +1386,7 @@ def distribute_infections_in_counties():
 
 
     # Save the resulting DataFrame to a CSV file
-    output_path = '/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/state_infections_divided_by_counties.csv'
+    output_path = ROOT_DIR+ '/csv_files/state_infections_divided_by_counties.csv'
     state_infections_df.to_csv(output_path, index=False)
 
     return state_infections_df
@@ -1327,7 +1404,7 @@ def generate_county_infections_csv():
 
     # Load the county information data
     county_info_df = pd.read_csv(
-        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_info.csv')
+        ROOT_DIR + '/csv_files/county_info.csv')
 
     if county_info_df.isnull().any().any():
         print("Missing values in county information data:")
@@ -1343,7 +1420,7 @@ def generate_county_infections_csv():
 
 
     # Save the county-level infection data to a CSV
-    output_path = ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv'
+    output_path = ROOT_DIR + '/csv_files/county_infections.csv'
     county_infections_df.to_csv(output_path, index=False)
 
     print("County-level infection data saved to:", output_path)
@@ -1516,8 +1593,8 @@ def generate_state_and_county_infections_csv():
 
 def generate_cases_infections_factor():
     # Read the CSV file
-    county_infections = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv')
-    county_cases = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv')
+    county_infections = pd.read_csv(ROOT_DIR + '/csv_files/county_infections.csv')
+    county_cases = pd.read_csv(ROOT_DIR + '/csv_files/county_cases.csv')
 
 
     # Exclude unnecessary columns (FIPS, Population, etc.)
@@ -1533,16 +1610,16 @@ def generate_cases_infections_factor():
 
     # Replace infinity or NaN values (where cases are 0) with 1
     factor = factor.replace([float('inf'), float('nan')], 1)
-    factor.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/cases_infections_factor', index=True)
+    factor.to_csv(ROOT_DIR + '/csv_files/cases_infections_factor', index=True)
 
 
 def generate_infections_from_cases():
     state_factors = pd.read_csv(
-        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/cases_infections_factor',
+        ROOT_DIR + '/csv_files/cases_infections_factor',
         index_col='State')
 
     county_cases = pd.read_csv(
-        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv')
+        ROOT_DIR + '/csv_files/county_cases.csv')
 
     case_columns = county_cases.columns[4:]  # Assuming first 4 columns are 'County', 'State', 'FIPS', 'Population'
     county_infections_from_cases = county_cases.copy()

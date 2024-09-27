@@ -72,6 +72,7 @@ class AnOutcome:
 class PandemicOutcomes:
     def __init__(self):
         self.cases = AnOutcome()
+        self. infections_from_cases = AnOutcome()
         self.infections = AnOutcome()
         self.sympmtomatic_cases= AnOutcome()
         self.hosps = AnOutcome()
@@ -128,9 +129,9 @@ class PandemicOutcomes:
         self.weeklyQALYLoss = np.array([])
         self.totalQALYLoss = 0
 
-    #def add_traj(self, weekly_cases, weekly_hosps, weekly_deaths, weekly_icu):
-    def add_traj(self, weekly_infections_from_cases, weekly_hosps, weekly_deaths, weekly_icu, weekly_infections):
-        self.cases.add_traj(weekly_obs=weekly_infections_from_cases)
+    def add_traj(self, weekly_cases, weekly_infections_from_cases, weekly_hosps, weekly_deaths, weekly_icu, weekly_infections):
+        self.cases.add_traj(weekly_obs=weekly_cases)
+        self.infections_from_cases.add_traj(weekly_obs=weekly_infections_from_cases)
         self.sympmtomatic_cases.add_traj(weekly_obs=weekly_infections_from_cases)
         self.hosps.add_traj(weekly_obs=weekly_hosps)
         self.deaths.add_traj(weekly_obs=weekly_deaths)
@@ -177,15 +178,16 @@ class PandemicOutcomes:
         self.deaths.calculate_qaly_loss(quality_weight=death_weight)
         self.icu.calculate_qaly_loss(quality_weight=icu_weight)
         self.infections.calculate_qaly_loss(quality_weight=case_weight)
+        self.infections_from_cases.calculate_qaly_loss(quality_weight=case_weight)
 
         self.hosp_non_icu.calculate_qaly_loss(quality_weight=hosp_ward_weight)
         self.hosp_icu.calculate_qaly_loss(quality_weight=hosp_icu_weight)
         self.longCOVID_1.calculate_qaly_loss(quality_weight=long_covid_weight_1)
 
 
-        self.weeklyQALYLoss = (self.cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
+        self.weeklyQALYLoss = (self.infections_from_cases.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
                                + self.deaths.weeklyQALYLoss + self.icu.weeklyQALYLoss + self.longCOVID_1.weeklyQALYLoss)
-        self.totalQALYLoss = (self.cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
+        self.totalQALYLoss = (self.infections_from_cases.totalQALYLoss + self.hosp_non_icu.totalQALYLoss + self.hosp_icu.totalQALYLoss
                               + self.deaths.totalQALYLoss + self.icu.totalQALYLoss + self.longCOVID_1.totalQALYLoss)
 
         self.icu_total.weeklyQALYLoss = (self.hosp_icu.weeklyQALYLoss + self.icu.weeklyQALYLoss)
@@ -300,7 +302,7 @@ class County:
         self.population = int(population)
         self.pandemicOutcomes = PandemicOutcomes()
 
-    def add_traj(self, weekly_infections_from_cases,  weekly_hosps, weekly_deaths, weekly_icu, weekly_infections):
+    def add_traj(self, weekly_cases, weekly_infections_from_cases,  weekly_hosps, weekly_deaths, weekly_icu, weekly_infections):
         """
         Add weekly data to the County object.
         :param weekly_cases: Weekly cases data as a numpy array.
@@ -308,7 +310,7 @@ class County:
         :param weekly_deaths: Weekly deaths data as a numpy array.
         """
         self.pandemicOutcomes.add_traj(
-            weekly_infections_from_cases=weekly_infections_from_cases, weekly_hosps=weekly_hosps, weekly_deaths=weekly_deaths, weekly_icu=weekly_icu, weekly_infections=weekly_infections)
+            weekly_cases=weekly_cases, weekly_infections_from_cases=weekly_infections_from_cases, weekly_hosps=weekly_hosps, weekly_deaths=weekly_deaths, weekly_icu=weekly_icu, weekly_infections=weekly_infections)
 
 
     def calculate_qaly_loss(self, case_weight, death_weight, icu_weight, hosp_icu_weight, hosp_ward_weight,
@@ -371,6 +373,7 @@ class State:
         self.counties[county.name] = county
         self.population += county.population
         self.pandemicOutcomes.add_traj(
+            weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
             weekly_infections_from_cases=county.pandemicOutcomes.infections_from_cases.weeklyObs,
             weekly_hosps=county.pandemicOutcomes.hosps.weeklyObs,
             weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs,
@@ -448,7 +451,8 @@ class AllStates:
         Populates the AllStates object with county case data.
         """
 
-        county_case_data, dates = get_dict_of_county_data_by_type('infections_from_cases')
+        county_case_data, dates = get_dict_of_county_data_by_type('cases')
+        county_infections_from_cases_data, dates = get_dict_of_county_data_by_type('infections_from_cases')
         county_death_data, dates = get_dict_of_county_data_by_type('deaths')
         county_hosp_data, dates = get_dict_of_county_data_by_type('hospitalizations')
         county_icu_data, dates = get_dict_of_county_data_by_type('icu')
@@ -472,6 +476,7 @@ class AllStates:
                 hosp_values = county_hosp_data[(county_name, state, fips, population)]
                 icu_values = county_icu_data[(county_name, state, fips, population)]
                 infection_values=county_infections_data[(county_name, state, fips, population)]
+                infections_from_cases_values = county_infections_from_cases_data[(county_name, state, fips, population)]
 
 
             except KeyError as e:
@@ -482,13 +487,14 @@ class AllStates:
                 name=county_name, state=state, fips=fips, population=int(population))
 
             # Add weekly data to county object
-            county.add_traj(
-                weekly_infections_from_cases=case_values, weekly_hosps=hosp_values, weekly_deaths=death_values,weekly_icu=icu_values,weekly_infections=infection_values)
+            county.add_traj(weekly_cases=case_values,
+                weekly_infections_from_cases=infections_from_cases_values, weekly_hosps=hosp_values, weekly_deaths=death_values,weekly_icu=icu_values,weekly_infections=infection_values)
 
 
             # update the nation pandemic outcomes based on the outcomes for this county
             self.pandemicOutcomes.add_traj(
-                weekly_infections_from_cases=county.pandemicOutcomes.cases.weeklyObs,
+                weekly_cases=county.pandemicOutcomes.cases.weeklyObs,
+                weekly_infections_from_cases=county.pandemicOutcomes.infections_from_cases.weeklyObs,
                 weekly_deaths=county.pandemicOutcomes.deaths.weeklyObs,
                 weekly_hosps = county.pandemicOutcomes.hosps.weeklyObs,
                 weekly_icu=county.pandemicOutcomes.icu.weeklyObs,
@@ -584,6 +590,7 @@ class AllStates:
                         'hosp(icu pts)': self.pandemicOutcomes.hosp_icu.totalQALYLoss,
                         'deaths': self.pandemicOutcomes.deaths.totalQALYLoss,
                         'infections': self.pandemicOutcomes.infections.totalQALYLoss,
+                        'infections from cases': self.pandemicOutcomes.infections_from_cases.totalQALYLoss,
                         'icu': self.pandemicOutcomes.icu.totalQALYLoss,
                         'icu (total pt experience)': self.pandemicOutcomes.icu_total.totalQALYLoss,
                         'total hosp (icu + general ward)': self.pandemicOutcomes.total_hosp.totalQALYLoss,
@@ -1059,6 +1066,7 @@ class SummaryOutcomes:
         self.overallQALYlossesCases = []
         self.overallQALYlossesDeaths = []
         self.overallQALYlossesInfections = []
+        self.overallQALYlossesInfectionsFromCases = []
         self.overallQALYlossesHospNonICU = []
         self.overallQALYlossesHospICU = []
         self.overallQALYlossesICU = []
@@ -1095,6 +1103,7 @@ class SummaryOutcomes:
         self.weeklyQALYlossesByState = []
         self.weeklyQALYlossesCases = []
         self.weeklyQALYlossesInfections = []
+        self.weeklyQALYlossesInfectionsFromCases = []
         self.weeklyQALYlossesHospNonICU = []
         self.weeklyQALYlossesHospICU = []
         self.weeklyQALYlossesDeaths = []
@@ -1148,6 +1157,7 @@ class SummaryOutcomes:
         self.statOverallQALYLossHospICU = None
         self.statOverallQALYLossDeaths = None
         self.statOverallQALYLossInfections = None
+        self.statOverallQALYLossInfectionsFromCases = None
         self.statOverallQALYLossICU = None
         self.statOverallQALYLossICUTotal = None
         self.statOverallQALYLossTotalHosp = None
@@ -1197,6 +1207,7 @@ class SummaryOutcomes:
         self.weeklyQALYlossesHospICU.append(simulated_model.pandemicOutcomes.hosp_icu.weeklyQALYLoss)
         self.weeklyQALYlossesDeaths.append(simulated_model.pandemicOutcomes.deaths.weeklyQALYLoss)
         self.weeklyQALYlossesInfections.append(simulated_model.pandemicOutcomes.infections.weeklyQALYLoss)
+        self.weeklyQALYlossesInfectionsFromCases.append(simulated_model.pandemicOutcomes.infections_from_cases.weeklyQALYLoss)
         self.weeklyQALYlossesICU.append(simulated_model.pandemicOutcomes.icu.weeklyQALYLoss)
         self.weeklyQALYlossesICUTotal.append(simulated_model.pandemicOutcomes.icu_total.weeklyQALYLoss)
         self.weeklyQALYlossesTotalHosp.append(simulated_model.pandemicOutcomes.total_hosp.weeklyQALYLoss)
@@ -1228,6 +1239,7 @@ class SummaryOutcomes:
 
         self.overallQALYlossesCases.append(simulated_model.pandemicOutcomes.cases.totalQALYLoss)
         self.overallQALYlossesInfections.append(simulated_model.pandemicOutcomes.infections.totalQALYLoss)
+        self.overallQALYlossesInfectionsFromCases.append(simulated_model.pandemicOutcomes.infections_from_cases.totalQALYLoss)
         self.overallQALYlossesHospNonICU.append(simulated_model.pandemicOutcomes.hosp_non_icu.totalQALYLoss)
         self.overallQALYlossesHospICU.append(simulated_model.pandemicOutcomes.hosp_icu.totalQALYLoss)
         self.overallQALYlossesDeaths.append(simulated_model.pandemicOutcomes.deaths.totalQALYLoss)
@@ -1285,6 +1297,7 @@ class SummaryOutcomes:
         self.statOverallQALYLossHospNonICU = SummaryStat(data=self.overallQALYlossesHospNonICU)
         self.statOverallQALYLossHospICU = SummaryStat(data=self.overallQALYlossesHospICU)
         self.statOverallQALYLossInfections=SummaryStat(data=self.overallQALYlossesInfections)
+        self.statOverallQALYLossInfectionsFromCases = SummaryStat(data=self.overallQALYlossesInfectionsFromCases)
         self.statOverallQALYLossDeaths = SummaryStat(data=self.overallQALYlossesDeaths)
         self.statOverallQALYLossICU= SummaryStat(data=self.overallQALYlossesICU)
         self.statOverallQALYLossTotalHosp = SummaryStat(data=self.overallQALYlossesTotalHosp)
@@ -1330,6 +1343,10 @@ class SummaryOutcomes:
                 self.statOverallQALYLossCases.get_mean(),
                 self.statOverallQALYLossCases.get_t_CI(alpha=0.05),
                 self.statOverallQALYLossCases.get_PI(alpha=0.05),
+
+                self.statOverallQALYLossInfectionsFromCases.get_mean(),
+                self.statOverallQALYLossInfectionsFromCases.get_t_CI(alpha=0.05),
+                self.statOverallQALYLossInfectionsFromCases.get_PI(alpha=0.05),
 
                 self.statOverallQALYLossInfections.get_mean(),
                 self.statOverallQALYLossInfections.get_t_CI(alpha=0.05),
@@ -1501,7 +1518,7 @@ class ProbabilisticAllStates:
         return death_qaly_loss_proportion
 
     def print_outcomes_proportion_of_qaly_loss(self):
-        (mean, ci, ui, mean_cases, ci_c, ui_c, mean_infections, ci_i, ui_i,mean_hosps_non_icu, ci_hosps_non_icu, ui_hosps_non_icu,
+        (mean, ci, ui, mean_cases, ci_c, ui_c, mean_infections, ci_i, ui_i, mean_infections_from_cases, ci_ifc, ui_ifc,mean_hosps_non_icu, ci_hosps_non_icu, ui_hosps_non_icu,
          mean_hosps_icu, ci_hosps_icu, ui_hosps_icu, mean_deaths, ci_d, ui_d,
          mean_icu, ci_icu, ui_icu, mean_total_hosps, ci_total_hosps, ui_total_hosps, mean_lc_1, ci_lc_1, ui_lc_1,
          mean_lc_1_alt, ci_lc_1_alt, ui_lc_1_alt, mean_lc_2, ci_lc_2, ui_lc_2,
@@ -1541,6 +1558,7 @@ class ProbabilisticAllStates:
 
         mean_cases = self.allStates.pandemicOutcomes.cases.totalObs
         mean_infections =self.allStates.pandemicOutcomes.infections.totalObs
+        mean_infections_from_cases = self.allStates.pandemicOutcomes.infections_from_cases.totalObs
         mean_hosps = self.allStates.pandemicOutcomes.hosp_non_icu.totalObs
         mean_icu = self.allStates.pandemicOutcomes.icu.totalObs
         mean_deaths = self.allStates.pandemicOutcomes.deaths.totalObs
@@ -1550,6 +1568,7 @@ class ProbabilisticAllStates:
         print('Overall Outcomes:')
         print('  Number of Cases: {:,.0f}'.format(mean_cases))
         print('  Number of Infections: {:,.0f}'.format(mean_infections))
+        print('  Number of Infections from cases : {:,.0f}'.format(mean_infections_from_cases))
 
         print('  Number of Hospital Admissions: {:,.0f}'.format(mean_hosps))
         print('  Mean Deaths: {:,.0f}'.format(mean_deaths))
@@ -1564,7 +1583,7 @@ class ProbabilisticAllStates:
         print(' Deaths 1 test weekly qaly', self.allStates.pandemicOutcomes.deaths_sa_1_a.weeklyQALYLoss)
 
 
-        (mean, ci, ui, mean_cases, ci_c, ui_c, mean_infections, ci_i, ui_i,mean_hosps_non_icu, ci_hosps_non_icu, ui_hosps_non_icu,
+        (mean, ci, ui, mean_cases, ci_c, ui_c, mean_infections, ci_i, ui_i,mean_infections_from_cases, ci_ifc, ui_ifc,mean_hosps_non_icu, ci_hosps_non_icu, ui_hosps_non_icu,
          mean_hosps_icu, ci_hosps_icu, ui_hosps_icu, mean_deaths, ci_d, ui_d,
          mean_icu, ci_icu, ui_icu, mean_total_hosps, ci_total_hosps, ui_total_hosps, mean_lc_1, ci_lc_1, ui_lc_1,
          mean_lc_1_alt, ci_lc_1_alt, ui_lc_1_alt, mean_lc_2, ci_lc_2, ui_lc_2,
@@ -1605,6 +1624,10 @@ class ProbabilisticAllStates:
         print('  95% Confidence Interval:', format_interval(ci_i, deci=0, format=','))
         print('  95% Uncertainty Interval:', format_interval(ui_i, deci=0, format=','))
 
+        print('Infections from Cases Overall QALY loss:')
+        print('  Mean: {:,.0f}'.format(mean_infections_from_cases))
+        print('  95% Confidence Interval:', format_interval(ci_ifc, deci=0, format=','))
+        print('  95% Uncertainty Interval:', format_interval(ui_ifc, deci=0, format=','))
 
         print(' Hosps (non ICU pts, ward care) Overall QALY loss:')
         print('  Mean: {:,.0f}'.format(mean_hosps_non_icu))
@@ -1663,6 +1686,7 @@ class ProbabilisticAllStates:
 
         mean_cases = self.allStates.pandemicOutcomes.cases.totalObs
         mean_infections =self.allStates.pandemicOutcomes.infections.totalObs
+        mean_infections_from_cases = self.allStates.pandemicOutcomes.infections_from_cases.totalObs
         mean_hosps = self.allStates.pandemicOutcomes.hosp_non_icu.totalObs
         mean_icu = self.allStates.pandemicOutcomes.icu.totalObs
         mean_deaths = self.allStates.pandemicOutcomes.deaths.totalObs
@@ -1671,6 +1695,7 @@ class ProbabilisticAllStates:
         print('Overall Outcomes:')
         print('  Number of Cases: {:,.0f}'.format(mean_cases))
         print('  Number of Infections: {:,.0f}'.format(mean_infections))
+        print('  Number of Infections: {:,.0f}'.format(mean_infections_from_cases))
         print('  Number of Hospital Admissions: {:,.0f}'.format(mean_hosps))
         print('  Mean Deaths: {:,.0f}'.format(mean_deaths))
         print('  Mean ICU: {:,.0f}'.format(mean_icu))
@@ -1678,7 +1703,7 @@ class ProbabilisticAllStates:
 
 
 
-        (mean, ci, ui, mean_cases, ci_c, ui_c, mean_infections, ci_i, ui_i,mean_hosps_non_icu, ci_hosps_non_icu, ui_hosps_non_icu,
+        (mean, ci, ui, mean_cases, ci_c, ui_c, mean_infections, ci_i, ui_i,mean_infections_from_cases, ci_ifc, ui_ifc,mean_hosps_non_icu, ci_hosps_non_icu, ui_hosps_non_icu,
          mean_hosps_icu, ci_hosps_icu, ui_hosps_icu, mean_deaths, ci_d, ui_d,
          mean_icu, ci_icu, ui_icu, mean_total_hosps, ci_total_hosps, ui_total_hosps, mean_lc_1, ci_lc_1, ui_lc_1,
          mean_lc_1_alt, ci_lc_1_alt, ui_lc_1_alt, mean_lc_2, ci_lc_2, ui_lc_2,
@@ -1720,6 +1745,13 @@ class ProbabilisticAllStates:
               format_interval((ci_i[0] * 52 / 129, ci_i[1] * 52 / 129), deci=0, format=','))
         print('  95% Uncertainty Interval:',
               format_interval((ui_i[0] * 52 / 129, ui_i[1] * 52 / 129), deci=0, format=','))
+
+        print('Prorated Infections from Cases Overall QALY loss:')
+        print('  Mean: {:,.0f}'.format(mean_infections_from_cases * 52 / 129))
+        print('  95% Confidence Interval:',
+              format_interval((ci_ifc[0] * 52 / 129, ci_ifc[1] * 52 / 129), deci=0, format=','))
+        print('  95% Uncertainty Interval:',
+              format_interval((ui_ifc[0] * 52 / 129, ui_ifc[1] * 52 / 129), deci=0, format=','))
 
 
         print('Prorated Hosps (non ICU pts, ward care) Overall QALY loss:')
@@ -1778,7 +1810,7 @@ class ProbabilisticAllStates:
     def print_per_outcome_qaly_loss(self):
 
 
-        (mean, ci, ui, mean_cases, ci_c, ui_c, mean_infections, ci_i, ui_i,mean_hosps_non_icu, ci_hosps_non_icu, ui_hosps_non_icu,
+        (mean, ci, ui, mean_cases, ci_c, ui_c, mean_infections, ci_i, ui_i,mean_infections_from_cases, ci_ifc, ui_ifc,mean_hosps_non_icu, ci_hosps_non_icu, ui_hosps_non_icu,
          mean_hosps_icu, ci_hosps_icu, ui_hosps_icu, mean_deaths, ci_d, ui_d,
          mean_icu, ci_icu, ui_icu, mean_total_hosps, ci_total_hosps, ui_total_hosps, mean_lc_1, ci_lc_1, ui_lc_1,
          mean_lc_1_alt, ci_lc_1_alt, ui_lc_1_alt, mean_lc_2, ci_lc_2, ui_lc_2,
@@ -1832,7 +1864,7 @@ class ProbabilisticAllStates:
         mean, ui = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlosses, alpha=alpha)
         return mean, ui
 
-    def plot_weekly_qaly_loss_by_outcome(self):
+    def plot_weekly_qaly_loss_by_outcome_cases(self):
 
         """
         :return: Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
@@ -1843,7 +1875,7 @@ class ProbabilisticAllStates:
 
 
 
-        [mean_cases, ui_cases, mean_infections, ui_infections, mean_deaths, ui_deaths, mean_hosps_non_icu, ui_hosps_non_icu,
+        [mean_cases, ui_cases, mean_infections, ui_infections, mean_infections_from_cases, ui_ifc, mean_deaths, ui_deaths, mean_hosps_non_icu, ui_hosps_non_icu,
                 mean_hosps_icu, ui_hosps_icu,mean_icu, ui_icu, mean_total_hosps, ui_total_hosps,
                 mean_lc_1, ui_lc_1,mean_lc_1_alt, ui_lc_1_alt, mean_lc_2, ui_lc_2,mean_lc_2_inf, ui_lc_2_inf,mean_lc_2_alt, ui_lc_2_alt,
                 mean_deaths_sa_1a, ui_deaths_sa_1a, mean_deaths_sa_1b, ui_deaths_sa_1b, mean_deaths_sa_1c, ui_deaths_sa_1c,
@@ -1858,9 +1890,6 @@ class ProbabilisticAllStates:
                 label='Detected Cases', linewidth=2, color='blue')
         ax1.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
 
-        ax1.plot(self.allStates.dates, mean_infections,label='Infections', linewidth=2, color='blue', linestyle='--')
-        ax1.fill_between(self.allStates.dates, ui_infections[0], ui_infections[1], color='lightblue', alpha=0.25)
-
         ax1.plot(self.allStates.dates, mean_total_hosps,
                 label='Hospital admissions (including ICU)', linewidth=2, color='green')
         ax1.fill_between(self.allStates.dates,ui_total_hosps[0], ui_total_hosps[1], color='grey', alpha=0.25)
@@ -1873,13 +1902,6 @@ class ProbabilisticAllStates:
                 label='Long COVID (Simplified Approach)', linewidth=2, color='purple')
         ax1.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='purple', alpha=0.25)
 
-        ax2.plot(self.allStates.dates, mean_cases,
-                 label='Detected Cases', linewidth=2, color='blue')
-        ax2.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
-
-        ax2.plot(self.allStates.dates, mean_infections,
-                 label='Infections', linewidth=2, color='blue',linestyle='--')
-        ax2.fill_between(self.allStates.dates, ui_infections[0], ui_infections[1], color='lightblue', alpha=0.25)
 
         ax2.plot(self.allStates.dates, mean_total_hosps,
                  label='Hospital admissions (including ICU)', linewidth=2, color='green')
@@ -1976,87 +1998,139 @@ class ProbabilisticAllStates:
 
         output_figure(fig, filename=ROOT_DIR + '/figs/national_qaly_loss_by_outcome.png')
 
-    def plot_weekly_qaly_loss_by_outcome_inf(self):
-        """
-        :return: Plots National Weekly QALY Loss from Cases, Hospitalizations, and Deaths across all states
-        with data on total infections (single plot)
-        """
-        # Create a single plot
-        fig, ax1 = plt.subplots(figsize=(12, 8))
+    def plot_weekly_qaly_loss_by_outcome_cases(self):
 
-        # Unpack data for plotting
-        [mean_cases, ui_cases, mean_infections, ui_infections, mean_deaths, ui_deaths, mean_hosps_non_icu,
-         ui_hosps_non_icu,
-         mean_hosps_icu, ui_hosps_icu, mean_icu, ui_icu, mean_total_hosps, ui_total_hosps,
-         mean_lc_1, ui_lc_1, mean_lc_1_alt, ui_lc_1_alt, mean_lc_2, ui_lc_2, mean_lc_2_inf, ui_lc_2_inf, mean_lc_2_alt,
-         ui_lc_2_alt,
-         mean_deaths_sa_1a, ui_deaths_sa_1a, mean_deaths_sa_1b, ui_deaths_sa_1b, mean_deaths_sa_1c, ui_deaths_sa_1c,
-         mean_deaths_sa_2a, ui_deaths_sa_2a, mean_deaths_sa_2b, ui_deaths_sa_2b, mean_deaths_sa_2c, ui_deaths_sa_2c,
-         mean_deaths_sa_3a, ui_deaths_sa_3a, mean_deaths_sa_3b, ui_deaths_sa_3b, mean_deaths_sa_3c, ui_deaths_sa_3c,
-         mean_total_sa_1a, ui_total_sa_1a, mean_total_sa_1b, ui_total_sa_1b, mean_total_sa_1c, ui_total_sa_1c,
-         mean_total_sa_2a, ui_total_sa_2a, mean_total_sa_2b, ui_total_sa_2b, mean_total_sa_2c, ui_total_sa_2c,
-         mean_total_sa_3a, ui_total_sa_3a, mean_total_sa_3b, ui_total_sa_3b, mean_total_sa_3c, ui_total_sa_3c] = (
+        """
+        :return: Plots National Weekly QALY Loss from Cases, Hospitalizations and Deaths across all states
+        """
+        # Create a plot
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10,11))
+        #fig, ax = plt.subplots(figsize=(10, 6))
+
+
+
+        [mean_cases, ui_cases, mean_infections, ui_infections, mean_infections_from_cases, ui_ifc, mean_deaths, ui_deaths, mean_hosps_non_icu, ui_hosps_non_icu,
+                mean_hosps_icu, ui_hosps_icu,mean_icu, ui_icu, mean_total_hosps, ui_total_hosps,
+                mean_lc_1, ui_lc_1,mean_lc_1_alt, ui_lc_1_alt, mean_lc_2, ui_lc_2,mean_lc_2_inf, ui_lc_2_inf,mean_lc_2_alt, ui_lc_2_alt,
+                mean_deaths_sa_1a, ui_deaths_sa_1a, mean_deaths_sa_1b, ui_deaths_sa_1b, mean_deaths_sa_1c, ui_deaths_sa_1c,
+                mean_deaths_sa_2a, ui_deaths_sa_2a, mean_deaths_sa_2b, ui_deaths_sa_2b, mean_deaths_sa_2c, ui_deaths_sa_2c,
+                mean_deaths_sa_3a, ui_deaths_sa_3a, mean_deaths_sa_3b, ui_deaths_sa_3b, mean_deaths_sa_3c, ui_deaths_sa_3c,
+                mean_total_sa_1a, ui_total_sa_1a, mean_total_sa_1b, ui_total_sa_1b, mean_total_sa_1c,ui_total_sa_1c,
+                mean_total_sa_2a, ui_total_sa_2a, mean_total_sa_2b, ui_total_sa_2b, mean_total_sa_2c,ui_total_sa_2c,
+                mean_total_sa_3a, ui_total_sa_3a, mean_total_sa_3b, ui_total_sa_3b, mean_total_sa_3c, ui_total_sa_3c] = (
             self.get_mean_ui_weekly_qaly_loss_by_outcome(alpha=0.05))
 
-        # Plot cases
-        ax1.plot(self.allStates.dates, mean_cases, label='Detected Cases', linewidth=2, color='blue')
+        ax1.plot(self.allStates.dates, mean_cases,
+                label='Detected Cases', linewidth=2, color='blue')
         ax1.fill_between(self.allStates.dates, ui_cases[0], ui_cases[1], color='lightblue', alpha=0.25)
 
-        # Plot infections
-        ax1.plot(self.allStates.dates, mean_infections, label='Total Infections', linewidth=2, color='blue', linestyle='--')
-        ax1.fill_between(self.allStates.dates, ui_infections[0], ui_infections[1], color='lightblue', alpha=0.25)
+        ax1.plot(self.allStates.dates, mean_total_hosps,
+                label='Hospital admissions (including ICU)', linewidth=2, color='green')
+        ax1.fill_between(self.allStates.dates,ui_total_hosps[0], ui_total_hosps[1], color='grey', alpha=0.25)
 
-        # Plot hospitalizations
-        ax1.plot(self.allStates.dates, mean_total_hosps, label='Hospital admissions (including ICU)', linewidth=2,
-                 color='green')
-        ax1.fill_between(self.allStates.dates, ui_total_hosps[0], ui_total_hosps[1], color='grey', alpha=0.25)
-
-        # Plot deaths
-        ax1.plot(self.allStates.dates, mean_deaths, label='Deaths', linewidth=2, color='red')
+        ax1.plot(self.allStates.dates, mean_deaths,
+                label='Deaths', linewidth=2, color='red')
         ax1.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='red', alpha=0.25)
 
-        # Plot Long COVID
-        ax1.plot(self.allStates.dates, mean_lc_2, label='Long COVID (Health State-Dependent)', linewidth=2,
-                 color='purple')
-        ax1.fill_between(self.allStates.dates, ui_lc_2[0], ui_lc_2[1], color='purple', alpha=0.25)
-
-        ax1.plot(self.allStates.dates, mean_lc_2_inf, label='Long COVID (from total infections)', linewidth=2, color='purple',
-                 linestyle='--')
-        ax1.fill_between(self.allStates.dates, ui_lc_2_inf[0], ui_lc_2_inf[1], color='purple', alpha=0.25)
+        ax1.plot(self.allStates.dates, mean_lc_1,
+                label='Long COVID (Simplified Approach)', linewidth=2, color='purple')
+        ax1.fill_between(self.allStates.dates, ui_lc_1[0], ui_lc_1[1], color='purple', alpha=0.25)
 
 
-        # Highlight variants
-        ax1.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")  # Delta variant
-        ax1.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")  # Omicron variant
-        ax1.axvline(x="2021-08-04", color='black', linestyle='--')  # Notable event
+        ax2.plot(self.allStates.dates, mean_total_hosps,
+                 label='Hospital admissions (including ICU)', linewidth=2, color='green')
+        ax2.fill_between(self.allStates.dates, ui_total_hosps[0], ui_total_hosps[1], color='grey', alpha=0.25)
 
-        # Set title and labels
+        ax2.plot(self.allStates.dates, mean_deaths,
+                 label='Deaths', linewidth=2, color='red')
+        ax2.fill_between(self.allStates.dates, ui_deaths[0], ui_deaths[1], color='red', alpha=0.25)
+
+        ax2.plot(self.allStates.dates, mean_lc_2,
+                 label='Long COVID (Health State-Dependent Appraoch)', linewidth=2, color='purple')
+        ax2.fill_between(self.allStates.dates, ui_lc_2[0], ui_lc_2[1], color='purple', alpha=0.25)
+
+        ax2.plot(self.allStates.dates, mean_lc_2_inf,
+                 label='Long COVID from infections (Health State-Dependent Appraoch)', linewidth=2, color='purple', linestyle= 'dashed')
+        ax2.fill_between(self.allStates.dates, ui_lc_2_inf[0], ui_lc_2_inf[1], color='purple', alpha=0.25)
+
+        [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
+
+        ax1.plot(self.allStates.dates, mean,
+                 label='Total', linewidth=2, color='black')
+        ax1.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
+        ax1.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")  # delta variant
+        ax1.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")  # omicron variant
+        ax1.axvline(x="2021-08-04", color='black', linestyle='--')
+
         ax1.set_title('National Weekly QALY Loss', fontsize=16)
         ax1.set_xlabel('Date', fontsize=14)
         ax1.set_ylabel('QALY Loss', fontsize=14)
+        ax1.legend(loc='lower center', bbox_to_anchor=(0.5, -0.5), ncol=3)
+        #ax.legend()
 
-        # Customize x-axis ticks
         date_range = self.allStates.dates
         tick_positions = range(0, len(date_range))
         ax1.set_xticks(tick_positions)
-        ax1.set_xticklabels([date_range[i] if i % 4 == 0 else '' for i in tick_positions], fontsize=10, rotation=45)
+        ax1.set_xticklabels(
+            [date_range[i] if i % 4 == 0 else '' for i in tick_positions],  # Label every 4th tick mark
+            fontsize=10, rotation=45 )
 
-        # Adjust legend
-        ax1.legend(loc='lower center', bbox_to_anchor=(0.5, -0.35), ncol=3)
-
-        # Final touches for x-axis ticks
+        # Make the labeled tick marks slightly longer and bold
         for i, tick in enumerate(ax1.xaxis.get_major_ticks()):
-            if i % 4 == 0:
+            if i % 4 == 0:  # Every 4th tick mark
                 tick.label1.set_fontsize(10)
                 tick.label1.set_rotation(45)
                 tick.label1.set_horizontalalignment('right')
+                tick.label1.set_weight('normal')
                 tick.tick1line.set_markersize(6)
                 tick.tick1line.set_linewidth(2)
                 tick.tick2line.set_markersize(6)
                 tick.tick2line.set_linewidth(2)
 
-        # Save the figure
-        output_figure(fig, filename=ROOT_DIR + '/figs/national_qaly_loss_by_outcome_inf.png')
+            else:
+                tick.label1.set_fontsize(10)
+                tick.label1.set_weight('normal')
+        ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
+
+        ax2.plot(self.allStates.dates, mean,
+                 label='Total', linewidth=2, color='black')
+        ax2.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
+        ax2.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")  # delta variant
+        ax2.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")  # omicron variant
+        ax2.axvline(x="2021-08-04", color='black', linestyle='--')
+
+        ax2.set_title('National Weekly QALY Loss', fontsize=16)
+        ax2.set_xlabel('Date', fontsize=14)
+        ax2.set_ylabel('QALY Loss', fontsize=14)
+        ax2.legend(loc='lower center', bbox_to_anchor=(0.5, -0.5), ncol=3)
+        # ax.legend()
+
+        date_range = self.allStates.dates
+        tick_positions = range(0, len(date_range))
+        ax2.set_xticks(tick_positions)
+        ax2.set_xticklabels(
+            [date_range[i] if i % 4 == 0 else '' for i in tick_positions],  # Label every 4th tick mark
+            fontsize=10, rotation=45)
+
+        # Make the labeled tick marks slightly longer and bold
+        for i, tick in enumerate(ax2.xaxis.get_major_ticks()):
+            if i % 4 == 0:  # Every 4th tick mark
+                tick.label1.set_fontsize(10)
+                tick.label1.set_rotation(45)
+                tick.label1.set_horizontalalignment('right')
+                tick.label1.set_weight('normal')
+                tick.tick1line.set_markersize(6)
+                tick.tick1line.set_linewidth(2)
+                tick.tick2line.set_markersize(6)
+                tick.tick2line.set_linewidth(2)
+
+            else:
+                tick.label1.set_fontsize(10)
+                tick.label1.set_weight('normal')
+        ax2.text(0.01, 0.98, "B", transform=ax2.transAxes, fontsize=14, fontweight='bold', va='top')
+
+
+        output_figure(fig, filename=ROOT_DIR + '/figs/national_qaly_loss_by_outcome.png')
 
     def plot_weekly_qaly_loss_by_outcome_scenarios(self):
         """
@@ -2262,6 +2336,7 @@ class ProbabilisticAllStates:
 
         mean_cases, ui_cases = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesCases, alpha=alpha)
         mean_infections, ui_infections = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesInfections, alpha=alpha)
+        mean_infections_from_cases, ui_ifc = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesInfectionsFromCases, alpha=alpha)
         mean_deaths, ui_deaths = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesDeaths, alpha=alpha)
         mean_hosps_non_icu, ui_hosps_non_icu = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesHospNonICU, alpha=alpha)
         mean_hosps_icu, ui_hosps_icu = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesHospICU, alpha=alpha)
@@ -2292,7 +2367,7 @@ class ProbabilisticAllStates:
         mean_total_sa_3c, ui_total_sa_3c = get_mean_ui_of_a_time_series(self.summaryOutcomes.weeklyQALYlossesTotal_SA_3c, alpha=alpha)
 
 
-        return (mean_cases, ui_cases, mean_infections, ui_infections, mean_deaths, ui_deaths, mean_hosps_non_icu, ui_hosps_non_icu,
+        return (mean_cases, ui_cases, mean_infections, ui_infections,mean_infections_from_cases, ui_ifc, mean_deaths, ui_deaths, mean_hosps_non_icu, ui_hosps_non_icu,
                 mean_hosps_icu, ui_hosps_icu,mean_icu, ui_icu, mean_total_hosps, ui_total_hosps,
                 mean_lc_1, ui_lc_1,mean_lc_1_alt, ui_lc_1_alt, mean_lc_2, ui_lc_2,mean_lc_2_inf, ui_lc_2_inf,mean_lc_2_alt, ui_lc_2_alt,
                 mean_deaths_sa_1a, ui_deaths_sa_1a, mean_deaths_sa_1b, ui_deaths_sa_1b, mean_deaths_sa_1c, ui_deaths_sa_1c,
