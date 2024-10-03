@@ -2615,7 +2615,7 @@ class ProbabilisticAllStates:
         ax1.text(0.01, 0.98, "A", transform=ax1.transAxes, fontsize=14, fontweight='bold', va='top')
 
         # Define the scheme with Quantiles and round the bins to whole numbers
-        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=3)
+        scheme = mc.Quantiles(merged_geo_data_mainland["QALY Loss"], k=4)
         rounded_bins = np.round(scheme.bins)
         scheme = mc.UserDefined(merged_geo_data_mainland["QALY Loss"], bins=rounded_bins)
 
