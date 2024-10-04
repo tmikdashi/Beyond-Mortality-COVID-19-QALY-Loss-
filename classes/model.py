@@ -142,18 +142,11 @@ class PandemicOutcomes:
         self.icu.add_traj(weekly_obs=weekly_icu)
 
         self.longCOVID_1.add_traj(weekly_obs=weekly_infections_from_cases)
-        self.cases_lc_1_alt.add_traj(weekly_obs=weekly_infections_from_cases)
-        self.deaths_lc_1_alt.add_traj(weekly_obs=weekly_deaths)
 
         self.cases_lc_2.add_traj(weekly_infections_from_cases)
         self.hosps_lc_2.add_traj(weekly_obs=weekly_hosps)
         self.icu_lc_2.add_traj(weekly_obs=weekly_hosps)
         self.cases_lc_2_inf.add_traj(weekly_obs=weekly_infections)
-
-        self.cases_lc_2_alt.add_traj(weekly_obs=weekly_infections_from_cases)
-        self.hosps_nh_lc_2_alt.add_traj(weekly_obs=weekly_hosps)
-        self.hosps_lc_2_alt.add_traj(weekly_obs=weekly_hosps)
-        self.icu_lc_2_alt.add_traj(weekly_obs=weekly_hosps)
 
         self.deaths_sa_1_a.add_traj(weekly_obs=weekly_deaths)
         self.deaths_sa_1_b.add_traj(weekly_obs=weekly_deaths)
@@ -169,7 +162,7 @@ class PandemicOutcomes:
 
     def calculate_qaly_loss(self, case_weight, death_weight, icu_weight, hosp_icu_weight, hosp_ward_weight,
                             long_covid_weight_1, long_covid_weight_1_c, long_covid_weight_1_d, long_covid_weight_2_nh,
-                            long_covid_weight_2_h, long_covid_weight_2_i, long_covid_weight_2_nh_c, long_covid_weight_2_nh_h,
+                            long_covid_weight_2_h, long_covid_weight_2_i,
                             death_sa_1a_weight,death_sa_1b_weight,death_sa_1c_weight,
                             death_sa_2a_weight,death_sa_2b_weight,death_sa_2c_weight,
                             death_sa_3a_weight,death_sa_3b_weight,death_sa_3c_weight):
@@ -196,13 +189,6 @@ class PandemicOutcomes:
         self.total_hosp.weeklyQALYLoss = self.icu.weeklyQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.weeklyQALYLoss
         self.total_hosp.totalQALYLoss = self.icu.totalQALYLoss + self.hosp_non_icu.weeklyQALYLoss + self.hosp_icu.totalQALYLoss
 
-        # SCENARIO 1 ALT:
-        self.cases_lc_1_alt.calculate_qaly_loss(quality_weight=long_covid_weight_1_c)
-        self.deaths_lc_1_alt.calculate_qaly_loss(quality_weight=long_covid_weight_1_d)
-
-        self.longCOVID_1_alt.weeklyQALYLoss = self.cases_lc_1_alt.weeklyQALYLoss - self.deaths_lc_1_alt.weeklyQALYLoss
-        self.longCOVID_1_alt.totalQALYLoss = self.cases_lc_1_alt.totalQALYLoss - self.deaths_lc_1_alt.totalQALYLoss
-
         # SCENARIO 2:
         self.cases_lc_2.calculate_qaly_loss(quality_weight=long_covid_weight_2_nh)
         self.hosps_lc_2.calculate_qaly_loss(quality_weight=long_covid_weight_2_h)
@@ -216,16 +202,6 @@ class PandemicOutcomes:
         self.longCOVID_2_inf.weeklyQALYLoss = self.cases_lc_2_inf.weeklyQALYLoss + self.hosps_lc_2.weeklyQALYLoss + self.icu_lc_2.weeklyQALYLoss
         self.longCOVID_2_inf.totalQALYLoss = self.cases_lc_2_inf.totalQALYLoss + self.hosps_lc_2.totalQALYLoss + self.icu_lc_2.totalQALYLoss
 
-        # SCENARIO 2 Alt
-        self.cases_lc_2_alt.calculate_qaly_loss(quality_weight=long_covid_weight_2_nh_c)
-        self.hosps_nh_lc_2_alt.calculate_qaly_loss(quality_weight=long_covid_weight_2_nh_h)
-        self.hosps_lc_2_alt.calculate_qaly_loss(quality_weight=long_covid_weight_2_h)
-        self.icu_lc_2_alt.calculate_qaly_loss(quality_weight=long_covid_weight_2_i)
-
-        self.longCOVID_2_alt.weeklyQALYLoss = (self.cases_lc_2_alt.weeklyQALYLoss + self.hosps_lc_2.weeklyQALYLoss
-                                               + self.icu_lc_2.weeklyQALYLoss - self.hosps_nh_lc_2_alt.weeklyQALYLoss)
-        self.longCOVID_2_alt.totalQALYLoss = (self.cases_lc_2_alt.totalQALYLoss + self.hosps_lc_2.totalQALYLoss
-                                              + self.icu_lc_2.totalQALYLoss - self.hosps_nh_lc_2_alt.totalQALYLoss)
 
         # Deaths SA: SMR
         self.deaths_sa_1_a.calculate_qaly_loss(quality_weight=death_sa_1a_weight)

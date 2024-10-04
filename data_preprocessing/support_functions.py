@@ -1362,7 +1362,7 @@ def generate_county_info_csv():
     return county_info_df
 def distribute_infections_in_counties():
     # Load the state infections data (with dates as columns)
-    state_infections_df = pd.read_csv("/Users/timamikdashi/Downloads/infections_summary_with_new_dates.csv")
+    state_infections_df = pd.read_csv("/Users/timamikdashi/Downloads/symptomatic_infections_summary_with_new_dates.csv")
     #state_infections_df= pd.read_csv("C:/Users/fm478/Documents/infections_summary_with_new_dates.csv")
 
 

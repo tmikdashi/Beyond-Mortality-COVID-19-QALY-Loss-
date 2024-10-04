@@ -118,7 +118,7 @@ class ParameterGenerator:
     def _update_param_values(self, param):
 
         param.qWeightCase = (self.parameters['case_weight_symp'].value
-                             * self.parameters['cases_prob_symp'].value
+                              #*self.parameters['cases_prob_symp'].value
                              * self.parameters['case_dur_symp'].value)
 
         param.qWeightHosp = ((1-self.parameters['icu_prob'].value)
@@ -146,15 +146,15 @@ class ParameterGenerator:
         param.qWeightDeath_sa_3_b = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2.25_qcm_0.8_r_3'].value)
         param.qWeightDeath_sa_3_c = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2.25_qcm_0.75_r_3'].value)
 
-        param.qWeightLongCOVID_1 = ( self.parameters['cases_prob_symp'].value
-                                  * self.parameters['long_covid_prob'].value
+        param.qWeightLongCOVID_1 = ( #self.parameters['cases_prob_symp'].value
+                                    self.parameters['long_covid_prob'].value
                                   * self.parameters['prob_surv'].value
                                   * self.parameters['long_covid_dur'].value
                                   * self.parameters['long_covid_weight'].value)
 
 
         param.qWeightLongCOVID_2_nh = ( (1-self.parameters['cases_prob_hosp'].value)
-                                      * self.parameters['cases_prob_symp'].value
+                                      #* self.parameters['cases_prob_symp'].value
                                       * self.parameters['long_covid_nonhosp_prob_surv'].value
                                       * self.parameters['long_covid_nonhosp_prob_symp'].value
                                       * self.parameters['long_covid_nonhosp_dur'].value
@@ -182,16 +182,6 @@ class ParameterGenerator:
                                       * self.parameters['long_covid_dur'].value
                                       * self.parameters['long_covid_weight'].value)
 
-        param.qWeightLongCOVID_2_nh_c = (self.parameters['cases_prob_symp'].value
-                                       * self.parameters['long_covid_nonhosp_prob_surv'].value
-                                       * self.parameters['long_covid_nonhosp_prob_symp'].value
-                                       * self.parameters['long_covid_nonhosp_dur'].value
-                                       * self.parameters['long_covid_weight'].value)
-
-        param.qWeightLongCOVID_2_nh_h = (self.parameters['long_covid_nonhosp_prob_surv'].value
-                                         * self.parameters['long_covid_nonhosp_prob_symp'].value
-                                         * self.parameters['long_covid_nonhosp_dur'].value
-                                         * self.parameters['long_covid_weight'].value)
 
         param.qWeightCase_symp = (self.parameters['cases_prob_symp'].value)
 
