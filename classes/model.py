@@ -904,7 +904,7 @@ class AllStates:
             overall_qaly_loss_cases_by_state[state_name] = state_obj.pandemicOutcomes.cases.totalQALYLoss
         return overall_qaly_loss_cases_by_state
 
-    def get_overall_qaly_loss_by_state_symtpomatic_infections(self):
+    def get_overall_qaly_loss_by_state_symptomatic_infections(self):
         """
         :return: (dictionary) Overall QALY loss from cases by states (as dictionary key)
         """
@@ -1198,7 +1198,7 @@ class SummaryOutcomes:
         self.weeklyQALYlossesTotal_SA_3c.append(simulated_model.pandemicOutcomes.total_sa_3_c.weeklyQALYLoss)
 
         self.overallQALYlossesCases.append(simulated_model.pandemicOutcomes.cases.totalQALYLoss)
-        self.overallQALYlossesSymptomaticInfections.append(simulated_model.pandemicOutcomes.Symptomaticinfections.totalQALYLoss)
+        self.overallQALYlossesSymptomaticInfections.append(simulated_model.pandemicOutcomes.symptomatic_infections.totalQALYLoss)
         self.overallQALYlossesHospNonICU.append(simulated_model.pandemicOutcomes.hosp_non_icu.totalQALYLoss)
         self.overallQALYlossesHospICU.append(simulated_model.pandemicOutcomes.hosp_icu.totalQALYLoss)
         self.overallQALYlossesDeaths.append(simulated_model.pandemicOutcomes.deaths.totalQALYLoss)
@@ -1816,7 +1816,7 @@ class ProbabilisticAllStates:
 
         # Subplot 2
         ax2.plot(self.allStates.dates, mean_symptomatic_infections,
-                 label='Symptomatic Infections', linewidth=2, color='blue', linestyle='dashed')
+                 label='Symptomatic Infections', linewidth=2, color='blue')
         ax2.fill_between(self.allStates.dates, ui_si[0], ui_si[1], color='lightblue', alpha=0.25)
 
         ax2.plot(self.allStates.dates, mean_total_hosps,
@@ -1831,16 +1831,8 @@ class ProbabilisticAllStates:
                  label='Long COVID (Health State-Dependent Appraoch)', linewidth=2, color='purple')
         ax2.fill_between(self.allStates.dates, ui_lc_2[0], ui_lc_2[1], color='purple', alpha=0.25)
 
-        ax2.plot(self.allStates.dates, mean_total_2,
-                 label='Total', linewidth=2, color='black')
-        ax2.fill_between(self.allStates.dates, ui_total_2[0], ui_total_2[1], color='grey', alpha=0.25)
-
 
         [mean, ui] = self.get_mean_ui_weekly_qaly_loss(alpha=0.05)
-
-        ax1.plot(self.allStates.dates, mean,
-                 label='Total', linewidth=2, color='black')
-        ax1.fill_between(self.allStates.dates, ui[0], ui[1], color='grey', alpha=0.25)
         ax1.axvspan("2021-06-30", "2021-10-27", alpha=0.2, color="lightblue")  # delta variant
         ax1.axvspan("2021-10-27", "2022-12-28", alpha=0.2, color="grey")  # omicron variant
         ax1.axvline(x="2021-08-04", color='black', linestyle='--')
