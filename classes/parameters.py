@@ -87,6 +87,14 @@ class ParameterGenerator:
         self.parameters['long_covid_icu_prob_surv'] = Beta(mean=0.61, st_dev=0.09)
         self.parameters['long_covid_icu_prob_symp'] =Beta(mean=0.431, st_dev=0.107)
 
+        # Vax modification: parameters to calculate impact of vax on QALY loss due to long COVID
+        self.parameters['reduction_long_prob'] = Beta(mean=0.68, st_dev=0.012)
+        self.parameters['prob_surv_v']= ConstantArray(values=0.99)
+
+
+
+
+
 
     def generate(self, rng):
         """
@@ -181,6 +189,20 @@ class ParameterGenerator:
         param.qWeightLongCOVID_1_d = (self.parameters['long_covid_prob'].value
                                       * self.parameters['long_covid_dur'].value
                                       * self.parameters['long_covid_weight'].value)
+
+
+        param.qWeightLongCOVID_1_uv = (  # self.parameters['cases_prob_symp'].value
+                self.parameters['long_covid_prob'].value
+                * self.parameters['prob_surv'].value
+                * self.parameters['long_covid_dur'].value
+                * self.parameters['long_covid_weight'].value)
+
+        param.qWeightLongCOVID_1_v = (  # self.parameters['cases_prob_symp'].value
+                self.parameters['long_covid_prob'].value
+                * self.parameters['prob_surv_v'].value
+                * self.parameters['long_covid_dur'].value
+                * self.parameters['long_covid_weight'].value
+                * self.parameters['reduction_long_prob'].value)
 
 
         param.qWeightCase_symp = (self.parameters['cases_prob_symp'].value)

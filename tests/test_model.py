@@ -1,8 +1,12 @@
 from classes.model import ProbabilisticAllStates
 
 
+
 probabilisticModel = ProbabilisticAllStates()
 probabilisticModel.simulate(n=10)
+probabilisticModel.plot_weekly_outcomes()
+#probabilisticModel.plot_weekly_qaly_loss_by_outcome_vax_sensitivity_analysis()
+
 probabilisticModel.print_overall_outcomes_and_qaly_loss()
 probabilisticModel.print_qaly_loss_prorated()
 probabilisticModel.plot_weekly_qaly_loss_by_outcome()
