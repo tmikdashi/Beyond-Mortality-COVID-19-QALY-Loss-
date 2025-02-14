@@ -72,12 +72,13 @@ class ParameterGenerator:
         #self.parameters['case_prob_symp'] = Beta(mean=0.692, st_dev=0.115)
         self.parameters['long_covid_prob'] = Beta(mean=0.062, st_dev=0.0273)
         self.parameters['long_covid_weight'] = Beta(mean=0.29, st_dev =0.0275)
+        self.parameters['long_covid_prob_v_red'] = Beta(mean=0.872, st_dev=0.0306)
 
         # LONG COVID  2: parameters to calculate the QALY loss due to long COVID
         self.parameters['cases_prob_hosp'] = ConstantArray(values=0.058)
         # self.parameters['case_prob_symp'] = Beta(mean=0.692, st_dev=0.115)
         self.parameters['long_covid_nonhosp_prob_surv'] = ConstantArray(values=1)
-        self.parameters['long_covid_nonhosp_prob_symp'] = Beta(mean=0.057, st_dev=0.028)
+        self.parameters['long_covid_nonhosp_prob_symp'] = Beta(mean=0.057, st_dev=0.0028)
         self.parameters['long_covid_nonhosp_dur'] = Beta(mean=4/12, st_dev=(1/48))
 
         self.parameters['long_covid_hosp_prob_surv'] = Beta(mean=0.82, st_dev=0.02)
@@ -88,8 +89,8 @@ class ParameterGenerator:
         self.parameters['long_covid_icu_prob_symp'] =Beta(mean=0.431, st_dev=0.107)
 
         # Vax modification: parameters to calculate impact of vax on QALY loss due to long COVID
-        self.parameters['reduction_long_prob'] = Beta(mean=0.68, st_dev=0.012)
-        self.parameters['prob_surv_v']= ConstantArray(values=0.99)
+        self.parameters['reduction_long_prob'] = Beta(mean=0.872, st_dev=0.006)
+
 
 
 
@@ -126,7 +127,7 @@ class ParameterGenerator:
     def _update_param_values(self, param):
 
         param.qWeightCase = (self.parameters['case_weight_symp'].value
-                              #*self.parameters['cases_prob_symp'].value
+                              *self.parameters['cases_prob_symp'].value
                              * self.parameters['case_dur_symp'].value)
 
         param.qWeightHosp = ((1-self.parameters['icu_prob'].value)
@@ -154,15 +155,28 @@ class ParameterGenerator:
         param.qWeightDeath_sa_3_b = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2.25_qcm_0.8_r_3'].value)
         param.qWeightDeath_sa_3_c = np.dot(self.parameters['death_age_dist'].value,self.parameters['dQALY_loss_by_age_smr_2.25_qcm_0.75_r_3'].value)
 
-        param.qWeightLongCOVID_1 = ( #self.parameters['cases_prob_symp'].value
-                                    self.parameters['long_covid_prob'].value
+        param.qWeightLongCOVID_1 = (self.parameters['cases_prob_symp'].value
+                                      * self.parameters['long_covid_prob'].value
+                                      * self.parameters['prob_surv'].value
+                                      * self.parameters['long_covid_dur'].value
+                                      * self.parameters['long_covid_weight'].value)
+
+        param.qWeightLongCOVID_1_v = (self.parameters['cases_prob_symp'].value
+                                  *  self.parameters['long_covid_prob'].value
                                   * self.parameters['prob_surv'].value
                                   * self.parameters['long_covid_dur'].value
-                                  * self.parameters['long_covid_weight'].value)
+                                  * self.parameters['long_covid_weight'].value
+                                 * self.parameters['long_covid_prob_v_red'].value)
+
+        param.qWeightLongCOVID_1_uv = (self.parameters['cases_prob_symp'].value
+                                    * self.parameters['long_covid_prob'].value
+                                    * self.parameters['prob_surv'].value
+                                    * self.parameters['long_covid_dur'].value
+                                    * self.parameters['long_covid_weight'].value)
 
 
         param.qWeightLongCOVID_2_nh = ( (1-self.parameters['cases_prob_hosp'].value)
-                                      #* self.parameters['cases_prob_symp'].value
+                                      * self.parameters['cases_prob_symp'].value
                                       * self.parameters['long_covid_nonhosp_prob_surv'].value
                                       * self.parameters['long_covid_nonhosp_prob_symp'].value
                                       * self.parameters['long_covid_nonhosp_dur'].value
@@ -191,15 +205,16 @@ class ParameterGenerator:
                                       * self.parameters['long_covid_weight'].value)
 
 
-        param.qWeightLongCOVID_1_uv = (  # self.parameters['cases_prob_symp'].value
-                self.parameters['long_covid_prob'].value
-                * self.parameters['prob_surv'].value
-                * self.parameters['long_covid_dur'].value
-                * self.parameters['long_covid_weight'].value)
+        param.qWeightLongCOVID_1_uv = (self.parameters['cases_prob_symp'].value
+                                       *self.parameters['long_covid_prob'].value
+                                       * self.parameters['prob_surv'].value
+                                       * self.parameters['long_covid_dur'].value
+                                       * self.parameters['long_covid_weight'].value)
 
-        param.qWeightLongCOVID_1_v = (  # self.parameters['cases_prob_symp'].value
-                self.parameters['long_covid_prob'].value
-                * self.parameters['prob_surv_v'].value
+
+        param.qWeightLongCOVID_1_v = (  self.parameters['cases_prob_symp'].value
+               * self.parameters['long_covid_prob'].value
+                * self.parameters['prob_surv'].value
                 * self.parameters['long_covid_dur'].value
                 * self.parameters['long_covid_weight'].value
                 * self.parameters['reduction_long_prob'].value)

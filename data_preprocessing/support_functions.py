@@ -20,8 +20,8 @@ def get_dict_of_county_data_by_type(data_type):
     """
 
     # Construct the file path based on the data type
-    file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
-    #file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    #file_path = ROOT_DIR + f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    file_path = ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     # Read the data
     data_rows = read_csv_rows(file_name=file_path, if_ignore_first_row=False)
@@ -75,10 +75,10 @@ def generate_county_data_csv(data_type='cases'):
             "'deaths per 100,000', 'hospitalizations per 100,000', 'icu occupancy per 100,000'.")
 
     # Read the data
-    #rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
-                         #if_ignore_first_row=True)
-    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
+    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
+    #rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
+                         #if_ignore_first_row=True)
 
     # Creating a dictionary to store the time series of data for each county
     county_data_time_series = defaultdict(list)
@@ -194,66 +194,6 @@ def generate_county_data_csv(data_type='cases'):
     write_csv(rows=[header_row] + county_data_rows, file_name=output_file)
 
 
-def generate_symptomatic_infections_vax():
-    """
-    Generate CSV files for symptomatic infections with lower bound (LB) and upper bound (UB) long COVID estimates.
-    """
-    # Get county data and dates for symptomatic infections
-    county_data_by_type, dates = get_dict_of_county_data_by_type('symptomatic_infections')
-
-    # Define parameters for the sigmoid function
-    L_UB = 0.8  # Upper bound cap
-    L_LB = 0.5  # Lower bound cap
-    k = 0.3
-    x0 = 0.55 * len(dates)
-
-    # Generate weeks (x-values) corresponding to the number of dates
-    weeks = np.arange(len(dates))
-
-    # Compute sigmoid values for both lower and upper bounds
-    sigmoid_values_LB = L_LB / (1 + np.exp(-k * (weeks - x0)))
-    sigmoid_values_UB = L_UB / (1 + np.exp(-k * (weeks - x0)))
-
-    # Prepare rows for CSV output
-    county_data_rows_v_LB = []
-    county_data_rows_uv_LB = []
-    county_data_rows_v_UB = []
-    county_data_rows_uv_UB = []
-
-    for (county, state, fips, population), weekly_obs in county_data_by_type.items():
-        # Apply sigmoid transformations to generate long COVID estimates
-        weekly_long_covid_v_LB = np.array(weekly_obs) * sigmoid_values_LB
-        weekly_long_covid_uv_LB = np.array(weekly_obs) * (1 - sigmoid_values_LB)
-
-        weekly_long_covid_v_UB = np.array(weekly_obs) * sigmoid_values_UB
-        weekly_long_covid_uv_UB = np.array(weekly_obs) * (1 - sigmoid_values_UB)
-
-        # Add rows for both LB and UB estimates
-        county_data_rows_v_LB.append([county, state, fips, population] + weekly_long_covid_v_LB.tolist())
-        county_data_rows_v_UB.append([county, state, fips, population] + weekly_long_covid_v_UB.tolist())
-        county_data_rows_uv_LB.append([county, state, fips, population] + weekly_long_covid_uv_LB.tolist())
-        county_data_rows_uv_UB.append([county, state, fips, population] + weekly_long_covid_uv_UB.tolist())
-
-    # Define headers with dates
-    header_row = ['County', 'State', 'FIPS', 'Population'] + dates
-
-
-    output_file_v_LB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_v_LB.csv'
-    write_csv(rows=[header_row] + county_data_rows_v_LB, file_name=output_file_v_LB)
-
-    # Write UB data to CSV
-    output_file_v_UB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_v_UB.csv'
-    write_csv(rows=[header_row] + county_data_rows_v_UB, file_name=output_file_v_UB)
-
-    # Write LB data to CSV
-    output_file_uv_LB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_uv_LB.csv'
-    write_csv(rows=[header_row] + county_data_rows_uv_LB, file_name=output_file_uv_LB)
-
-    # Write UB data to CSV
-    output_file_uv_UB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_uv_UB.csv'
-    write_csv(rows=[header_row] + county_data_rows_uv_UB, file_name=output_file_uv_UB)
-
-
 def generate_deaths_by_age_group():
     """
     This function generates a csv containing information on the number of deaths associated with each age group.
@@ -312,12 +252,12 @@ def generate_deaths_by_age_group():
 
 def generate_hsa_mapped_county_hosp_data():
     # Load county hosp data
-    #county_hosp_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', skiprows=0)
-    county_hosp_data = pd.read_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv',skiprows=0)
+    county_hosp_data = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', skiprows=0)
+    #county_hosp_data = pd.read_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv',skiprows=0)
 
     # Load HSA data
-    #hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
-    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
+    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+    #hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
     #hsa_data = pd.read_csv('C:/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
 
     # Ensure the FIPS column has the same data type in both dataframes
@@ -381,18 +321,18 @@ def generate_hsa_mapped_county_hosp_data():
     adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
 
     # Save the adjusted data to a new CSV
-    adjusted_data.to_csv(ROOT_DIR + '/csv_files/hsa_county_hospitalizations.csv', index=False)
+    adjusted_data.to_csv(ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_hospitalizations.csv', index=False)
 
     print("Hospitalization data has been updated based on HSA")
 
 def generate_hsa_mapped_county_icu_data():
     # Load county ICU data
-    county_icu_data = pd.read_csv(ROOT_DIR + '/csv_files/county_icu.csv', skiprows=0)
-    #county_icu_data=pd.read_csv(ROOT_DIR +'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', skiprows=0)
+    #county_icu_data = pd.read_csv(ROOT_DIR + '/csv_files/county_icu.csv', skiprows=0)
+    county_icu_data=pd.read_csv(ROOT_DIR +'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', skiprows=0)
 
     # Load HSA data
-    hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
-    #hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+    #hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
+    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
 
     # Ensure the FIPS column has the same data type in both dataframes
     county_icu_data['FIPS'] = county_icu_data['FIPS'].astype(str)
@@ -455,7 +395,7 @@ def generate_hsa_mapped_county_icu_data():
     adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
 
     # Save the adjusted data to a new CSV
-    adjusted_data.to_csv(ROOT_DIR + f'/csv_files/county_icu.csv', index=False)
+    adjusted_data.to_csv(ROOT_DIR + f'/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_icu.csv', index=False)
 
     print("ICU data has been updated based on HSA")
 
@@ -469,8 +409,8 @@ def generate_hosps_by_age_group():
     :return: A csv of COVID-19 hosps by age group.
     """
 
-    data = pd.read_csv('C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
-    #data = pd.read_csv('/Users/timamikdashi/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
+    #data = pd.read_csv('C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
+    data = pd.read_csv('/Users/timamikdashi/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
 
     #deaths_by_age = data.groupby(['state','date']).sum().reset_index() #TODO" A REVOIR TO ENSURE THAT THE data is aggregated over state and dates
 
@@ -535,10 +475,10 @@ def generate_county_info_csv():
     """
 
     # Read the county data CSV file
-    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
-                         if_ignore_first_row=True)
-    #rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
+    #rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
                          #if_ignore_first_row=True)
+    rows = read_csv_rows(file_name='/Users/timamikdashi/Downloads/county_time_data_all_dates.csv',
+                         if_ignore_first_row=True)
 
     # Initialize a list to store county information
     county_info_list = []
@@ -601,8 +541,8 @@ def generate_county_info_csv():
 
 def distribute_infections_in_counties():
     # Load the state infections data (with dates as columns)
-    #state_infections_df = pd.read_csv("/Users/timamikdashi/Downloads/symptomatic_infections_summary_with_new_dates.csv")
-    state_infections_df= pd.read_csv("C:/Users/fm478/Downloads/symptomatic_infections_new_dates.csv")
+    state_infections_df = pd.read_csv('/Users/timamikdashi/Downloads/infections_new_dates.csv')
+    #state_infections_df= pd.read_csv("C:/Users/fm478/Downloads/symptomatic_infections_new_dates.csv")
 
 
     # Load the county information data
@@ -664,7 +604,7 @@ def generate_county_infections_csv():
 
 
     # Save the county-level infection data to a CSV
-    output_path = ROOT_DIR + '/csv_files/county_infections.csv'
+    output_path = ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv'
     county_infections_df.to_csv(output_path, index=False)
 
     print("County-level infection data saved to:", output_path)
@@ -673,26 +613,24 @@ def generate_county_infections_csv():
 
 def generate_state_cases_infections_factor():
     # Read the CSV file
-    #county_infections= pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv')
-    #county_cases = pd.read_csv(
-        #ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv')
+    county_symptomatic_infections= pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_infections.csv')
+    county_cases = pd.read_csv(
+        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv')
 
-    county_symptomatic_infections = pd.read_csv(ROOT_DIR + '/csv_files/county_infections.csv')
-    county_cases = pd.read_csv(ROOT_DIR + '/csv_files/county_cases.csv')
+    #county_symptomatic_infections = pd.read_csv(ROOT_DIR + '/csv_files/county_infections.csv')
+    #county_cases = pd.read_csv(ROOT_DIR + '/csv_files/county_cases.csv')
 
     symptomatic_infections_grouped = county_symptomatic_infections.drop(columns=['County', 'FIPS', 'Population'])
     symptomatic_infections_state = symptomatic_infections_grouped.groupby('State').sum()
     cases_grouped = county_cases.drop(columns=['County', 'FIPS', 'Population'])
     cases_state = cases_grouped.groupby('State').sum()
-    print("Symptomatic infections by state", symptomatic_infections_state)
-
 
     # Calculate the factor of infections to cases for each state and time point
     factor = symptomatic_infections_state / cases_state
 
     # Replace infinity or NaN values (where cases are 0) with 1
     factor = factor.replace([float('inf'), float('nan')], 1)
-    factor.to_csv(ROOT_DIR + '/csv_files/state_cases_infections_factor', index=True)
+    factor.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/state_cases_infections_factor', index=True)
 
 
 
@@ -752,13 +690,13 @@ def generate_state_and_county_infections_csv():
 
 
 def generate_infections_from_cases():
-    state_factors = pd.read_csv(ROOT_DIR + '/csv_files/state_cases_infections_factor',index_col='State')
-    #state_factors = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/cases_infections_factor', index_col='State')
+    #state_factors = pd.read_csv(ROOT_DIR + '/csv_files/state_cases_infections_factor',index_col='State')
+    state_factors = pd.read_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/state_cases_infections_factor', index_col='State')
 
 
-    county_cases = pd.read_csv(ROOT_DIR + '/csv_files/county_cases.csv')
-    #county_cases = pd.read_csv(
-        #ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv')
+    #county_cases = pd.read_csv(ROOT_DIR + '/csv_files/county_cases.csv')
+    county_cases = pd.read_csv(
+        ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_cases.csv')
 
     case_columns = county_cases.columns[4:]  # Assuming first 4 columns are 'County', 'State', 'FIPS', 'Population'
     county_infections_from_cases = county_cases.copy()
@@ -770,4 +708,64 @@ def generate_infections_from_cases():
             state_counties, case_columns].multiply(state_factor.values, axis=1)
 
     # Save the new infections estimate to a CSV file
-    county_infections_from_cases.to_csv( ROOT_DIR + '/csv_files/county_symptomatic_infections.csv', index=False)
+    county_infections_from_cases.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_symptomatic_infections.csv', index=False)
+    #county_infections_from_cases.to_csv( ROOT_DIR + '/csv_files/county_symptomatic_infections.csv', index=False)
+
+
+def generate_symptomatic_infections_vax():
+    """
+    Generate CSV files for symptomatic infections with lower bound (LB) and upper bound (UB) long COVID estimates.
+    """
+    # Get county data and dates for symptomatic infections
+    county_data_by_type, dates = get_dict_of_county_data_by_type('symptomatic_infections')
+
+    # Define parameters for the sigmoid function
+    L_UB = 0.8  # Upper bound cap
+    L_LB = 0.5  # Lower bound cap
+    k = 0.3
+    x0 = 0.45 * len(dates)
+
+    # Generate weeks (x-values) corresponding to the number of dates
+    weeks = np.arange(len(dates))
+
+    # Compute sigmoid values for both lower and upper bounds
+    sigmoid_values_LB = L_LB / (1 + np.exp(-k * (weeks - x0)))
+    sigmoid_values_UB = L_UB / (1 + np.exp(-k * (weeks - x0)))
+
+    # Prepare rows for CSV output
+    county_data_rows_v_LB = []
+    county_data_rows_uv_LB = []
+    county_data_rows_v_UB = []
+    county_data_rows_uv_UB = []
+
+    for (county, state, fips, population), weekly_obs in county_data_by_type.items():
+        # Apply sigmoid transformations to generate long COVID estimates
+        weekly_long_covid_v_LB = np.array(weekly_obs) * sigmoid_values_LB
+        weekly_long_covid_uv_LB = np.array(weekly_obs) * (1 - sigmoid_values_LB)
+
+        weekly_long_covid_v_UB = np.array(weekly_obs) * sigmoid_values_UB
+        weekly_long_covid_uv_UB = np.array(weekly_obs) * (1 - sigmoid_values_UB)
+
+        # Add rows for both LB and UB estimates
+        county_data_rows_v_LB.append([county, state, fips, population] + weekly_long_covid_v_LB.tolist())
+        county_data_rows_v_UB.append([county, state, fips, population] + weekly_long_covid_v_UB.tolist())
+        county_data_rows_uv_LB.append([county, state, fips, population] + weekly_long_covid_uv_LB.tolist())
+        county_data_rows_uv_UB.append([county, state, fips, population] + weekly_long_covid_uv_UB.tolist())
+
+    # Define headers with dates
+    header_row = ['County', 'State', 'FIPS', 'Population'] + dates
+
+    output_file_v_LB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_v_LB.csv'
+    write_csv(rows=[header_row] + county_data_rows_v_LB, file_name=output_file_v_LB)
+
+    # Write UB data to CSV
+    output_file_v_UB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_v_UB.csv'
+    write_csv(rows=[header_row] + county_data_rows_v_UB, file_name=output_file_v_UB)
+
+    # Write LB data to CSV
+    output_file_uv_LB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_uv_LB.csv'
+    write_csv(rows=[header_row] + county_data_rows_uv_LB, file_name=output_file_uv_LB)
+
+    # Write UB data to CSV
+    output_file_uv_UB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_uv_UB.csv'
+    write_csv(rows=[header_row] + county_data_rows_uv_UB, file_name=output_file_uv_UB)
