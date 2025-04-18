@@ -52,3 +52,4 @@ This folder contains model parameters used in the analysis. These correspond to 
 
 Helper functions used throughout data preparation. Referenced in both main scripts and modularized for reuse.
 
+All data analysis was performed in Python (PyCharm 2023.3.4 (Community Edition). If Python is already installed, there should be no additional install time on on the computer.
