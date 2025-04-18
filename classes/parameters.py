@@ -38,7 +38,7 @@ class ParameterGenerator:
 
         # parameters to calculate the QALY loss due to a hospitalizations + ICU
         hosp_data = pd.read_csv(ROOT_DIR + '/csv_files/hosps_by_age.csv')
-        self.parameters['hosp_dur_stay_ICU'] = Gamma(mean=8.3/365.25, st_dev=0.875/365.25) #TODO: A REVOIR LES VALEURS SD
+        self.parameters['hosp_dur_stay_ICU'] = Gamma(mean=8.3/365.25, st_dev=0.875/365.25)
         self.parameters['hosp_dur_stay_ward'] = Gamma(mean=6/365.25, st_dev=3.7/365.25)
         self.parameters['hosp_weight'] = Beta(mean=0.5, st_dev=0.05)
         self.parameters['hosps_age_dist'] = Dirichlet(par_ns=hosp_data['COVID-19 Hosps'])

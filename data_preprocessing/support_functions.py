@@ -73,7 +73,7 @@ def generate_county_data_csv(data_type='cases'):
             "'deaths per 100,000', 'hospitalizations per 100,000', 'icu occupancy per 100,000'.")
 
     # Read the data
-    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv',
+    rows = read_csv_rows(ROOT_DIR+ '/Data/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
 
     # Creating a dictionary to store the time series of data for each county
@@ -456,7 +456,7 @@ def generate_county_info_csv():
     """
 
     # Read the county data CSV file
-    rows = read_csv_rows(file_name='/Users/fm478/Downloads/county_time_data_all_dates.csv', # A REVOIR
+    rows = read_csv_rows(ROOT_DIR + '/Data/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
 
     # Initialize a list to store county information
