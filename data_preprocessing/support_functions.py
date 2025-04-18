@@ -52,7 +52,6 @@ def generate_county_data_csv(data_type='cases'):
     :return: (.csv file) a CSV file with data per county, over time, where each row corresponds to a county, identified
     by county name, state, fips, and population.
     """
-    #ROOT_DIR = '/Users/timamikdashi/PycharmProjects/covid19-qaly-loss'
 
     # Define a dictionary to map data types to column indices
     data_type_mapping = {
@@ -256,7 +255,8 @@ def generate_hsa_mapped_county_hosp_data():
     #county_hosp_data = pd.read_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv',skiprows=0)
 
     # Load HSA data
-    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+    #hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+    hsa_data = pd.read_csv(ROOT_DIR + '/Data/county_names_HSA_number.csv', skiprows=0)
     #hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
     #hsa_data = pd.read_csv('C:/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
 
@@ -332,7 +332,8 @@ def generate_hsa_mapped_county_icu_data():
 
     # Load HSA data
     #hsa_data = pd.read_csv('C:/Users/fm478/Downloads/county_names_HSA_number.csv', skiprows=0)
-    hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+    #hsa_data = pd.read_csv('/Users/timamikdashi/Downloads/county_names_HSA_number.csv', skiprows=0)
+    hsa_data = pd.read_csv(ROOT_DIR + '/Data/county_names_HSA_number.csv', skiprows=0)
 
     # Ensure the FIPS column has the same data type in both dataframes
     county_icu_data['FIPS'] = county_icu_data['FIPS'].astype(str)
@@ -410,9 +411,8 @@ def generate_hosps_by_age_group():
     """
 
     #data = pd.read_csv('C:/Users/fm478/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
-    data = pd.read_csv('/Users/timamikdashi/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
-
-    #deaths_by_age = data.groupby(['state','date']).sum().reset_index() #TODO" A REVOIR TO ENSURE THAT THE data is aggregated over state and dates
+    #data = pd.read_csv('/Users/timamikdashi/Downloads/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
+    data = pd.read_csv(ROOT_DIR + '/Data/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
 
     age_band_mapping = {
         '0-9': ['previous_day_admission_pediatric_covid_confirmed_0_4', 'previous_day_admission_pediatric_covid_confirmed_5_11'],
@@ -541,8 +541,7 @@ def generate_county_info_csv():
 
 def distribute_infections_in_counties():
     # Load the state infections data (with dates as columns)
-    state_infections_df = pd.read_csv('/Users/timamikdashi/Downloads/infections_new_dates.csv')
-    #state_infections_df= pd.read_csv("C:/Users/fm478/Downloads/symptomatic_infections_new_dates.csv")
+    state_infections_df = pd.read_csv(ROOT_DIR +'/Data/infections_new_dates.csv')
 
 
     # Load the county information data
@@ -632,61 +631,6 @@ def generate_state_cases_infections_factor():
     factor = factor.replace([float('inf'), float('nan')], 1)
     factor.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/state_cases_infections_factor', index=True)
 
-
-
-def generate_state_and_county_infections_csv():
-    """
-    Generates a CSV file with county-level infections data, distributing state-level infections evenly
-    across counties, for the date range from 2020-07-15 to 2022-12-28.
-    """
-
-    # State name to abbreviation mapping
-    state_name_to_abbreviation = {
-        'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
-        'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
-        'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
-        'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
-        'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
-        'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
-        'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
-        'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
-        'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
-        'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
-    }
-
-    # Step 1: Generate county information CSV (if not already generated)
-    generate_county_info_csv()
-    county_info_df = pd.read_csv(ROOT_DIR + '/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/county_info.csv')
-
-    # Step 2: Read state estimates CSV file
-    estimates_df = pd.read_csv('/Users/timamikdashi/Downloads/state/estimates.csv')
-
-    # Step 3: Generate county-level infection data
-    county_data_list = []
-
-    for _, row in estimates_df.iterrows():
-        state_full_name = row[0]  # State name
-        date_str = row[1]  # Date
-        infections = row[28]  # Infections count (29th column, 0-indexed)
-
-        # Map full state name to abbreviation
-        state_abbreviation = state_name_to_abbreviation.get(state_full_name)
-
-        # Filter counties belonging to the current state
-        state_counties_df = county_info_df[county_info_df['State'] == state_abbreviation]
-
-        if not state_counties_df.empty:
-            # Distribute state-level infections across counties
-            infections_per_county = infections / len(state_counties_df)
-
-            for _, county_row in state_counties_df.iterrows():
-                county_data_list.append([
-                    county_row['County'], county_row['State'], county_row['FIPS'], date_str, infections_per_county
-                ])
-
-    # Step 4: Save county-level infection data to CSV
-    county_data_df = pd.DataFrame(county_data_list, columns=['County', 'State', 'FIPS', 'Date', 'Infections'])
-    county_data_df.to_csv(ROOT_DIR + '/tests/Users/timamikdashi/PycharmProjects/covid19-qaly-loss/csv_files/state_mapped_county_infections.csv', index=False)
 
 
 def generate_infections_from_cases():

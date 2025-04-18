@@ -32,8 +32,7 @@ class ParameterGenerator:
         # parameters to calculate the QALY loss due to a case
         self.parameters['cases_prob_symp'] = Beta(mean=0.692, st_dev=0.115)
         self.parameters['case_dur_symp'] = Gamma(mean=7/365.25, st_dev=0.5/365.25)
-        #self.parameters['case_weight_symp'] = Beta(mean=0.43, st_dev=0.015)
-        self.parameters['case_weight_symp'] = Beta(mean=0.19, st_dev=0.048) #updated value
+        self.parameters['case_weight_symp'] = Beta(mean=0.13, st_dev=0.02) #updated value
 
         self.parameters['prob_surv'] =ConstantArray(values=0.983)
 
@@ -47,7 +46,7 @@ class ParameterGenerator:
 
         self.parameters['icu_prob'] = ConstantArray(0.174)
         #self.parameters['icu_weight'] = Beta(mean=0.60, st_dev=0.1)
-        self.parameters['icu_weight'] = Beta(mean=0.70, st_dev= 0.175) #updated value
+        self.parameters['icu_weight'] = Beta(mean=0.70, st_dev= 0.10) #updated value
         self.parameters['occupancy_dur'] = ConstantArray(values=(7 / 365))
 
         # parameters to calculate the QALY loss due to a death
@@ -78,7 +77,7 @@ class ParameterGenerator:
         self.parameters['cases_prob_hosp'] = ConstantArray(values=0.058)
         # self.parameters['case_prob_symp'] = Beta(mean=0.692, st_dev=0.115)
         self.parameters['long_covid_nonhosp_prob_surv'] = ConstantArray(values=1)
-        self.parameters['long_covid_nonhosp_prob_symp'] = Beta(mean=0.057, st_dev=0.0028)
+        self.parameters['long_covid_nonhosp_prob_symp'] = Beta(mean=0.057, st_dev=0.022)
         self.parameters['long_covid_nonhosp_dur'] = Beta(mean=4/12, st_dev=(1/48))
 
         self.parameters['long_covid_hosp_prob_surv'] = Beta(mean=0.82, st_dev=0.02)
