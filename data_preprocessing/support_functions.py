@@ -195,7 +195,7 @@ def generate_deaths_by_age_group():
     :return: A csv of COVID-19 deaths by age group.
     """
 
-    data = pd.read_csv(ROOT_DIR + '/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')
+    data = pd.read_csv(ROOT_DIR + '/data/data_deaths/Provisional_COVID-19_Deaths_by_Sex_and_Age.csv')
 
     deaths_by_age = data.groupby(['Age Group'])['COVID-19 Deaths'].sum().reset_index()
 
@@ -393,7 +393,7 @@ def generate_hosps_by_age_group():
     :return: A csv of COVID-19 hosps by age group.
     """
 
-    data = pd.read_csv(ROOT_DIR + '/Data/COVID-19_Reported_Patient_Impact_and_Hospital_Capacity_by_State_Timeseries__RAW__20240307 (1).csv')
+    data = pd.read_csv(ROOT_DIR + '/Data/HHS_COVID_Reported_Hospital_ICU_Capacity.csv')
 
     age_band_mapping = {
         '0-9': ['previous_day_admission_pediatric_covid_confirmed_0_4', 'previous_day_admission_pediatric_covid_confirmed_5_11'],
@@ -520,7 +520,7 @@ def generate_county_info_csv():
 
 def distribute_infections_in_counties():
     # Load the state infections data (with dates as columns)
-    state_infections_df = pd.read_csv(ROOT_DIR +'/Data/infections_new_dates.csv')
+    state_infections_df = pd.read_csv(ROOT_DIR +'/Data/covidestim_state_infections.csv')
 
 
     # Load the county information data
@@ -544,14 +544,9 @@ def distribute_infections_in_counties():
             # Divide each infection value by the number of counties for the corresponding state
             state_infections_df.loc[index, state_infections_df.columns[1:]] = row[state_infections_df.columns[1:]] / num_counties
 
-
-    # Save the resulting DataFrame to a CSV file
-    output_path = ROOT_DIR+ '/csv_files/state_infections_divided_by_counties.csv'
-    state_infections_df.to_csv(output_path, index=False)
-
     return state_infections_df
 
-def generate_county_infections_csv():
+def generate_state_divided_county_infections_csv():
     """
     Generates a CSV containing county-level infections by assigning the state-level
     infection value to all counties for each time point using efficient DataFrame operations.
@@ -578,23 +573,23 @@ def generate_county_infections_csv():
 
 
     # Save the county-level infection data to a CSV
-    output_path = ROOT_DIR + '/csv_files/county_infections.csv'
+    output_path = ROOT_DIR + '/csv_files/state_divided_county_infections.csv'
     county_infections_df.to_csv(output_path, index=False)
 
 
 
 def generate_state_cases_infections_factor():
     # Read the CSV file
-    county_symptomatic_infections = pd.read_csv(ROOT_DIR + '/csv_files/county_infections.csv')
+    state_divided_county_infections = pd.read_csv(ROOT_DIR + '/csv_files/state_divided_county_infections.csv')
     county_cases = pd.read_csv(ROOT_DIR + '/csv_files/county_cases.csv')
 
-    symptomatic_infections_grouped = county_symptomatic_infections.drop(columns=['County', 'FIPS', 'Population'])
-    symptomatic_infections_state = symptomatic_infections_grouped.groupby('State').sum()
+    infections_grouped = state_divided_county_infections.drop(columns=['County', 'FIPS', 'Population'])
+    infections_state = infections_grouped.groupby('State').sum()
     cases_grouped = county_cases.drop(columns=['County', 'FIPS', 'Population'])
     cases_state = cases_grouped.groupby('State').sum()
 
     # Calculate the factor of infections to cases for each state and time point
-    factor = symptomatic_infections_state / cases_state
+    factor = infections_state / cases_state
 
     # Replace infinity or NaN values (where cases are 0) with 1
     factor = factor.replace([float('inf'), float('nan')], 1)
@@ -618,7 +613,7 @@ def generate_infections_from_cases():
             state_counties, case_columns].multiply(state_factor.values, axis=1)
 
     # Save the new infections estimate to a CSV file
-    county_infections_from_cases.to_csv( ROOT_DIR + '/csv_files/county_symptomatic_infections.csv', index=False)
+    county_infections_from_cases.to_csv( ROOT_DIR + '/csv_files/county_infections.csv', index=False)
 
 
 def generate_symptomatic_infections_vax():
@@ -626,7 +621,7 @@ def generate_symptomatic_infections_vax():
     Generate CSV files for symptomatic infections with lower bound (LB) and upper bound (UB) long COVID estimates.
     """
     # Get county data and dates for symptomatic infections
-    county_data_by_type, dates = get_dict_of_county_data_by_type('symptomatic_infections')
+    county_data_by_type, dates = get_dict_of_county_data_by_type('infections')
 
     # Define parameters for the sigmoid function
     L_UB = 0.8  # Upper bound cap
@@ -664,17 +659,17 @@ def generate_symptomatic_infections_vax():
     # Define headers with dates
     header_row = ['County', 'State', 'FIPS', 'Population'] + dates
 
-    output_file_v_LB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_v_LB.csv'
+    output_file_v_LB = f'{ROOT_DIR}/csv_files/county_infections_v_LB.csv'
     write_csv(rows=[header_row] + county_data_rows_v_LB, file_name=output_file_v_LB)
 
     # Write UB data to CSV
-    output_file_v_UB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_v_UB.csv'
+    output_file_v_UB = f'{ROOT_DIR}/csv_files/county_infections_v_UB.csv'
     write_csv(rows=[header_row] + county_data_rows_v_UB, file_name=output_file_v_UB)
 
     # Write LB data to CSV
-    output_file_uv_LB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_uv_LB.csv'
+    output_file_uv_LB = f'{ROOT_DIR}/csv_files/county_infections_uv_LB.csv'
     write_csv(rows=[header_row] + county_data_rows_uv_LB, file_name=output_file_uv_LB)
 
     # Write UB data to CSV
-    output_file_uv_UB = f'{ROOT_DIR}/csv_files/county_symptomatic_infections_uv_UB.csv'
+    output_file_uv_UB = f'{ROOT_DIR}/csv_files/county_infections_uv_UB.csv'
     write_csv(rows=[header_row] + county_data_rows_uv_UB, file_name=output_file_uv_UB)

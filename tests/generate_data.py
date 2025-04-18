@@ -1,7 +1,7 @@
 from data_preprocessing.support_functions import (generate_county_data_csv,generate_deaths_by_age_group,
                                                   generate_hsa_mapped_county_icu_data, generate_hsa_mapped_county_hosp_data,
                                                    generate_county_info_csv,distribute_infections_in_counties,
-                                                   generate_deaths_by_age_group,generate_county_infections_csv,
+                                                   generate_deaths_by_age_group,generate_state_divided_county_infections_csv,
                                                   generate_state_cases_infections_factor,generate_infections_from_cases,
                                                   generate_hosps_by_age_group,generate_symptomatic_infections_vax)
 
@@ -9,7 +9,7 @@ from data_preprocessing.support_functions import (generate_county_data_csv,gener
 generate_county_data_csv('cases')
 generate_county_info_csv()
 distribute_infections_in_counties()
-generate_county_infections_csv()
+generate_state_divided_county_infections_csv()
 generate_state_cases_infections_factor()
 generate_infections_from_cases()
 

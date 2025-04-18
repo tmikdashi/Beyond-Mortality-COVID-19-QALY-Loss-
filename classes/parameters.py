@@ -52,7 +52,7 @@ class ParameterGenerator:
         # parameters to calculate the QALY loss due to a death
         data = pd.read_csv(ROOT_DIR + '/csv_files/deaths_by_age.csv')
         self.parameters['death_age_dist'] = Dirichlet(par_ns=data['COVID-19 Deaths'])
-        self.parameters['dQALY_loss_by_age'] = ConstantArray(values=[22.53, 20.89, 19.08, 16.96, 14.30, 11.52, 8.61, 5.50, 3.00, 1.46]) # TODO
+        self.parameters['dQALY_loss_by_age'] = ConstantArray(values=[22.53, 20.89, 19.08, 16.96, 14.30, 11.52, 8.61, 5.50, 3.00, 1.46])
         self.parameters['dQALY_loss_by_age_smr_1.75_qcm_0.85_r_3'] = ConstantArray(values=[22.94,20.85,18.78,16.55,13.91,11.09,8.22,5.17,2.82,1.27])
         self.parameters['dQALY_loss_by_age_smr_1.75_qcm_0.8_r_3'] = ConstantArray(values=[21.59,19.63,17.67,15.58,13.10,10.43,7.74,4.87,2.65,1.20])
         self.parameters['dQALY_loss_by_age_smr_1.75_qcm_0.75_r_3'] = ConstantArray(values=[20.24, 18.40, 16.57, 14.60, 12.28, 9.78, 7.26, 4.57, 2.49,1.12])
@@ -219,7 +219,7 @@ class ParameterGenerator:
                 * self.parameters['reduction_long_prob'].value)
 
 
-        param.qWeightCase_symp = (self.parameters['cases_prob_symp'].value)
+
 
 
 
