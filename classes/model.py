@@ -1857,53 +1857,6 @@ class ProbabilisticAllStates:
         print('  95% Uncertainty Interval:',
               format_interval((ui_total_2[0] * 52 / 129, ui_total_2[1] * 52 / 129), deci=0, format=','))
 
-    def print_qaly_loss_per_outcome(self):
-
-
-        (mean, ci, ui, mean_cases, ci_c, ui_c, mean_infections, ci_inf, ui_inf,mean_hosps_non_icu, ci_hosps_non_icu, ui_hosps_non_icu,
-         mean_hosps_icu, ci_hosps_icu, ui_hosps_icu, mean_deaths, ci_d, ui_d,
-         mean_icu, ci_icu, ui_icu, mean_total_hosps, ci_total_hosps, ui_total_hosps,
-         mean_lc_1, ci_lc_1, ui_lc_1,
-         mean_lc_2, ci_lc_2, ui_lc_2,
-         mean_deaths_sa_1a, ci_deaths_sa_1a, ui_deaths_sa_1a,
-         mean_deaths_sa_1b, ci_deaths_sa_1b, ui_deaths_sa_1b,
-         mean_deaths_sa_1c, ci_deaths_sa_1c, ui_deaths_sa_1c,
-         mean_deaths_sa_2a, ci_deaths_sa_2a, ui_deaths_sa_2a,
-         mean_deaths_sa_2b, ci_deaths_sa_2b, ui_deaths_sa_2b,
-         mean_deaths_sa_2c, ci_deaths_sa_2c, ui_deaths_sa_2c,
-         mean_deaths_sa_3a, ci_deaths_sa_3a, ui_deaths_sa_3a,
-         mean_deaths_sa_3b, ci_deaths_sa_3b, ui_deaths_sa_3b,
-         mean_deaths_sa_3c, ci_deaths_sa_3c, ui_deaths_sa_3c,
-         mean_total_1, ci_total_1, ui_total_1,
-         mean_total_2, ci_total_2, ui_total_2,
-         mean_total_sa_1a, ci_total_sa_1a, ui_total_sa_1a,
-         mean_total_sa_1b, ci_total_sa_1b, ui_total_sa_1b,
-         mean_total_sa_1c, ci_total_sa_1c, ui_total_sa_1c,
-         mean_total_sa_2a, ci_total_sa_2a, ui_total_sa_2a,
-         mean_total_sa_2b, ci_total_sa_2b, ui_total_sa_2b,
-         mean_total_sa_2c, ci_total_sa_2c, ui_total_sa_2c,
-         mean_total_sa_3a, ci_total_sa_3a, ui_total_sa_3a,
-         mean_total_sa_3b, ci_total_sa_3b, ui_total_sa_3b,
-         mean_total_sa_3c, ci_total_sa_3c, ui_total_sa_3c) = self.summaryOutcomes.get_mean_ci_ui_overall_qaly_loss()
-
-
-        print('Cases :')
-        print('  Mean QALY Loss per case: ', (mean_cases/self.allStates.pandemicOutcomes.cases.totalObs))
-        print('Symptomatic Infections :')
-        print('  Mean QALY Loss per symptomatic infections', (mean_infections / (self.allStates.pandemicOutcomes.infections.totalObs)))
-        print('  95% Confidence Interval:', (ci_inf/ self.allStates.pandemicOutcomes.infections.totalObs))
-        print('  95% Uncertainty Interval:', format_interval(ui_inf/ self.allStates.pandemicOutcomes.infections.totalObs, deci=0, format=','))
-
-        print(' Hosps:')
-        print('  Mean QALY loss per hospital admission:', (mean_total_hosps/self.allStates.pandemicOutcomes.hosps.totalObs))
-        print('  95% Confidence Interval:', (ci_total_hosps/self.allStates.pandemicOutcomes.hosps.totalObs))
-        print('  95% Uncertainty Interval:', (ui_total_hosps/self.allStates.pandemicOutcomes.hosps.totalObs))
-
-        print('Deaths:')
-        print('  Mean QALY loss per Deaths:', (mean_deaths/self.allStates.pandemicOutcomes.deaths.totalObs))
-        print('  95% Confidence Interval:', (ci_d/self.allStates.pandemicOutcomes.cases.totalObs))
-        print('  95% Uncertainty Interval:', (ui_d/self.allStates.pandemicOutcomes.cases.totalObs))
-
 
     def get_mean_ui_weekly_qaly_loss(self, alpha=0.05):
         """
@@ -3204,9 +3157,9 @@ class ProbabilisticAllStates:
                 county_outcomes_data["HSA Total Hospitalizations per 100K"].append(None)
                 county_outcomes_data["HSA Total Deaths per 100K"].append(None)
 
-        # Create a DataFrame from the county data
+
         county_outcomes_df = pd.DataFrame(county_outcomes_data)
-        county_outcomes_df.to_csv(ROOT_DIR + '/csv_files/county_outcomes_by_hsa.csv', index=False)
+
 
 
         # Merge the county QALY loss data with the geometry data
@@ -3562,6 +3515,69 @@ class ProbabilisticAllStates:
         plt.xticks(rotation=45)
         plt.show()
 
+    def Fig_S4_plot_vax_sigmoid(self):
+        L_UB = 0.8  # Upper bound cap
+        L_LB = 0.5  # Lower bound cap
+        k = 0.3
 
+        # Define the target date for the vertical line
+        vline_date = "2021-08-04"
 
+        # Convert self.allStates.dates to string if they aren't already, and ensure it's in the correct format
+        all_dates = np.array(self.allStates.dates, dtype=str)  # Ensure dates are in string format
 
+        # Find the index of the date
+        vline_index = np.where(all_dates == vline_date)[0][0]
+
+        # Generate weeks (x-values) corresponding to the number of dates
+        weeks = np.arange(len(self.allStates.dates))
+
+        # Compute sigmoid values for both lower and upper bounds
+        sigmoid_values_LB = L_LB / (1 + np.exp(-k * (weeks - vline_index)))
+        sigmoid_values_UB = L_UB / (1 + np.exp(-k * (weeks - vline_index)))
+
+        # Create figure and assign it to `fig`
+        fig = plt.figure(figsize=(8, 5))
+
+        # Plot the sigmoid curves
+        plt.plot(self.allStates.dates, sigmoid_values_LB, label="50% BTI", color='b')
+        plt.plot(self.allStates.dates, sigmoid_values_UB, label="80% BTI", color='r')
+
+        # Plot the vertical line at vline_index
+        plt.axvline(x=vline_index, color='black', linestyle='--')
+
+        # Set x-axis ticks
+        date_range = self.allStates.dates
+        tick_positions = range(0, len(date_range))
+        plt.xticks(tick_positions, [date_range[i] if i % 4 == 0 else '' for i in tick_positions], fontsize=10,
+                   rotation=45)
+
+        # Customize tick marks
+        for i, tick in enumerate(plt.gca().xaxis.get_major_ticks()):
+            if i % 4 == 0:  # Every 4th tick mark
+                tick.label1.set_fontsize(10)
+                tick.label1.set_rotation(45)
+                tick.label1.set_horizontalalignment('right')
+                tick.label1.set_weight('normal')
+                tick.tick1line.set_markersize(6)
+                tick.tick1line.set_linewidth(2)
+                tick.tick2line.set_markersize(6)
+                tick.tick2line.set_linewidth(2)
+            else:
+                tick.label1.set_fontsize(10)
+                tick.label1.set_weight('normal')
+
+        # Set title and labels
+        plt.title('Proportion of Breakthrough Infections (BTI) among Total Infections')
+        plt.xlabel('Dates')
+        plt.ylabel('BTI %')
+
+        # Add legend
+        plt.legend()
+
+        # Add grid and tight layout to avoid label clipping
+        plt.grid(False)
+        plt.tight_layout()
+
+        # Save the plot to file
+        plt.savefig(ROOT_DIR + '/figs/Fig_S4_vax_sigmoid.png', format='png')

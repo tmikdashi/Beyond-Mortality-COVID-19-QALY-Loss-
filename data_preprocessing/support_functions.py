@@ -73,8 +73,9 @@ def generate_county_data_csv(data_type='cases'):
             "'deaths per 100,000', 'hospitalizations per 100,000', 'icu occupancy per 100,000'.")
 
     # Read the data
-    rows = read_csv_rows(ROOT_DIR+ '/Data/county_time_data_all_dates.csv',
+    rows = read_csv_rows(ROOT_DIR + '/Data/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
+
 
     # Creating a dictionary to store the time series of data for each county
     county_data_time_series = defaultdict(list)
@@ -136,8 +137,6 @@ def generate_county_data_csv(data_type='cases'):
     # Create a list of unique dates across all counties within the specified range
     unique_dates = sorted(set(date for time_series in county_data_time_series.values() for date, _ in time_series))
 
-    # Generate the output file name based on data_type
-    output_file = ROOT_DIR +f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     # Create the header row with dates
     header_row = ['County', 'State', 'FIPS', 'Population'] + unique_dates
@@ -181,7 +180,7 @@ def generate_county_data_csv(data_type='cases'):
                 county_data_rows[i][2] = new_fips  # Update the FIPS value
 
     # Create the output file name
-    output_file = f'{ROOT_DIR}/csv_files/county_{data_type.replace(" ", "_")}.csv'
+    output_file = ROOT_DIR +f'/csv_files/county_{data_type.replace(" ", "_")}.csv'
 
     write_csv(rows=[header_row] + county_data_rows, file_name=output_file)
 
@@ -309,14 +308,13 @@ def generate_hsa_mapped_county_hosp_data():
     adjusted_data = adjusted_data.where(pd.notna(adjusted_data), 'nan')
 
     # Save the adjusted data to a new CSV
-    adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv', index=False) # A REVOIR
+    adjusted_data.to_csv(ROOT_DIR + '/csv_files/county_hospitalizations.csv', index=False)
 
     print("Hospitalization data has been updated based on HSA")
 
 def generate_hsa_mapped_county_icu_data():
     # Load county ICU data
     county_icu_data = pd.read_csv(ROOT_DIR + '/csv_files/county_icu.csv', skiprows=0)
-
 
     # Load HSA data
     hsa_data = pd.read_csv(ROOT_DIR + '/Data/county_names_HSA_number.csv', skiprows=0)
@@ -459,6 +457,7 @@ def generate_county_info_csv():
     rows = read_csv_rows(ROOT_DIR + '/Data/county_time_data_all_dates.csv',
                          if_ignore_first_row=True)
 
+
     # Initialize a list to store county information
     county_info_list = []
 
@@ -583,6 +582,8 @@ def generate_state_cases_infections_factor():
     state_divided_county_infections = pd.read_csv(ROOT_DIR + '/csv_files/state_divided_county_infections.csv')
     county_cases = pd.read_csv(ROOT_DIR + '/csv_files/county_cases.csv')
 
+
+
     infections_grouped = state_divided_county_infections.drop(columns=['County', 'FIPS', 'Population'])
     infections_state = infections_grouped.groupby('State').sum()
     cases_grouped = county_cases.drop(columns=['County', 'FIPS', 'Population'])
@@ -601,7 +602,6 @@ def generate_infections_from_cases():
     state_factors = pd.read_csv(ROOT_DIR + '/csv_files/state_cases_infections_factor',index_col='State')
 
     county_cases = pd.read_csv(ROOT_DIR + '/csv_files/county_cases.csv')
-
 
     case_columns = county_cases.columns[4:]  # Assuming first 4 columns are 'County', 'State', 'FIPS', 'Population'
     county_infections_from_cases = county_cases.copy()
@@ -627,9 +627,10 @@ def generate_symptomatic_infections_vax():
     L_UB = 0.8  # Upper bound cap
     L_LB = 0.5  # Lower bound cap
     k = 0.3
-    x0 = 0.45 * len(dates)
+    # Find the index of the date
+    all_dates = np.array(dates, dtype=str)
+    x0 = np.where(all_dates == "2021-08-04")[0][0]
 
-    # Generate weeks (x-values) corresponding to the number of dates
     weeks = np.arange(len(dates))
 
     # Compute sigmoid values for both lower and upper bounds

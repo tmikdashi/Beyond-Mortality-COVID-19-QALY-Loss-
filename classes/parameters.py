@@ -32,7 +32,7 @@ class ParameterGenerator:
         # parameters to calculate the QALY loss due to a case
         self.parameters['cases_prob_symp'] = Beta(mean=0.692, st_dev=0.115)
         self.parameters['case_dur_symp'] = Gamma(mean=7/365.25, st_dev=0.5/365.25)
-        self.parameters['case_weight_symp'] = Beta(mean=0.13, st_dev=0.02) #updated value
+        self.parameters['case_weight_symp'] = Beta(mean=0.13, st_dev=0.02)
 
         self.parameters['prob_surv'] =ConstantArray(values=0.983)
 
@@ -45,8 +45,7 @@ class ParameterGenerator:
         self.parameters['hosps_prob_surv'] = Beta(mean=0.82, st_dev=0.02)
 
         self.parameters['icu_prob'] = ConstantArray(0.174)
-        #self.parameters['icu_weight'] = Beta(mean=0.60, st_dev=0.1)
-        self.parameters['icu_weight'] = Beta(mean=0.70, st_dev= 0.10) #updated value
+        self.parameters['icu_weight'] = Beta(mean=0.70, st_dev= 0.10)
         self.parameters['occupancy_dur'] = ConstantArray(values=(7 / 365))
 
         # parameters to calculate the QALY loss due to a death
@@ -68,14 +67,12 @@ class ParameterGenerator:
 
         # LONG COVID 1: parameters to calculate the QALY loss due to long COVID
         self.parameters['long_covid_dur'] = Beta(mean=4/12, st_dev=(1/48))
-        #self.parameters['case_prob_symp'] = Beta(mean=0.692, st_dev=0.115)
         self.parameters['long_covid_prob'] = Beta(mean=0.062, st_dev=0.0273)
         self.parameters['long_covid_weight'] = Beta(mean=0.29, st_dev =0.0275)
-        self.parameters['long_covid_prob_v_red'] = Beta(mean=0.872, st_dev=0.0306)
+        #self.parameters['long_covid_prob_v_red'] = Beta(mean=0.872, st_dev=0.0306)
 
         # LONG COVID  2: parameters to calculate the QALY loss due to long COVID
         self.parameters['cases_prob_hosp'] = ConstantArray(values=0.058)
-        # self.parameters['case_prob_symp'] = Beta(mean=0.692, st_dev=0.115)
         self.parameters['long_covid_nonhosp_prob_surv'] = ConstantArray(values=1)
         self.parameters['long_covid_nonhosp_prob_symp'] = Beta(mean=0.057, st_dev=0.022)
         self.parameters['long_covid_nonhosp_dur'] = Beta(mean=4/12, st_dev=(1/48))
@@ -165,7 +162,7 @@ class ParameterGenerator:
                                   * self.parameters['prob_surv'].value
                                   * self.parameters['long_covid_dur'].value
                                   * self.parameters['long_covid_weight'].value
-                                 * self.parameters['long_covid_prob_v_red'].value)
+                                 * self.parameters['reduction_long_prob'].value)
 
         param.qWeightLongCOVID_1_uv = (self.parameters['cases_prob_symp'].value
                                     * self.parameters['long_covid_prob'].value
