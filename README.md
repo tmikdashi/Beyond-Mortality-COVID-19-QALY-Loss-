@@ -24,10 +24,11 @@ This repository provides the data, code, and scripts used to prepare the analysi
   - Reference:  Arias E, Xu JQ. United States life tables, 2019. National Vital Statistics Reports; vol 70 no 19. Hyattsville, MD: National Center for Health Statistics. 2022. DOI: https://dx.doi.org/10.15620/cdc:113096.
   - Data is available at: https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/NVSR/70-19/Table02.xlsx 
 
+  
 #### _/Tests_
 
 To replicate the figures in the manuscript and supplementary materials, run the two scripts located in the `/tests` folder:
-- `generate_data.py`: Prepares all necessary data for analysis.
+- `generate_data.py`: Prepares all necessary data for analysis. 
 - `test_model.py`: Runs the main model and generates all figures for the manuscript and supplementary materials.
 
 **Step 1: Data Preparation** (`/tests/generate_data`) 
@@ -40,6 +41,7 @@ This script prepares all data required for analysis. Key processing steps includ
 - Preparing age-stratified data for hospital admissions and deaths
 	
 The functions used to prepare this data and their description is provided in `/data_prepocessing/support_functions`. Outputs will be saved in `/csv_files` directory 
+(Note: These functions are already executed and generated files are located in csv_files. The file county_time_data_all_dates is a large in size and can be shared upon request.)
 
 **Step 2: Data Analysis and Figure Generation** (`/tests/test_model`)
 This script performs the full analysis and reproduces all figures presented in the manuscript and supplementary materials. Figures are saved to the /figs directory 
